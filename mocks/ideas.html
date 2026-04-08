@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>[MOCK] Ideas Board — College Readiness Hub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background: #f4f6f9; color: #1a1a2e; }
+
+    .note {
+      background: #fff9c4;
+      border-left: 4px solid #f0c400;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #555;
+      margin-top: 6px;
+      border-radius: 2px;
+    }
+
+    nav {
+      background: #1a1a2e;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 32px;
+    }
+    nav .logo { font-size: 20px; font-weight: 700; }
+    nav .links a { color: #ccc; text-decoration: none; margin-left: 24px; font-size: 14px; }
+    nav .links a.active { color: white; font-weight: 600; border-bottom: 2px solid #e94560; padding-bottom: 2px; }
+
+    .page-header {
+      background: linear-gradient(135deg, #4a148c, #7b1fa2);
+      color: white;
+      padding: 40px 32px 32px;
+    }
+    .page-header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .page-header p { font-size: 15px; opacity: 0.85; max-width: 600px; }
+
+    /* Quick jot bar */
+    .jot-bar {
+      background: white;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 20px 32px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .jot-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #ce93d8;
+      border-radius: 8px;
+      font-size: 15px;
+      color: #333;
+      resize: none;
+      height: 52px;
+      transition: height 0.2s;
+    }
+    .jot-input:focus { height: 90px; outline: none; border-color: #7b1fa2; }
+    .jot-tags-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .jot-tag-chip { padding: 4px 12px; border-radius: 20px; font-size: 12px; border: 1px solid #ce93d8; color: #7b1fa2; background: white; cursor: pointer; }
+    .jot-tag-chip.selected { background: #7b1fa2; color: white; }
+    .jot-actions { display: flex; flex-direction: column; gap: 8px; }
+    .btn-jot { background: #7b1fa2; color: white; border: none; padding: 12px 22px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-jot-secondary { background: white; color: #7b1fa2; border: 2px solid #ce93d8; padding: 10px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+
+    /* Toolbar */
+    .toolbar {
+      background: #fafafa;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 12px 32px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .chip { padding: 6px 14px; border-radius: 20px; font-size: 13px; border: 1px solid #d0d0d0; background: white; color: #555; cursor: pointer; }
+    .chip.active { background: #7b1fa2; color: white; border-color: #7b1fa2; }
+    .search-box { flex: 1; min-width: 180px; padding: 8px 14px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 14px; color: #999; }
+    .view-toggle { display: flex; border: 1px solid #d0d0d0; border-radius: 6px; overflow: hidden; margin-left: auto; }
+    .view-btn { padding: 7px 14px; font-size: 13px; background: white; color: #555; border: none; cursor: pointer; }
+    .view-btn.active { background: #7b1fa2; color: white; }
+
+    /* Ideas grid */
+    .ideas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 32px auto;
+      padding: 0 32px;
+    }
+
+    /* Idea card */
+    .idea-card {
+      background: white;
+      border-radius: 10px;
+      border: 1px solid #e4e8f0;
+      border-top: 4px solid #7b1fa2;
+      padding: 20px;
+      position: relative;
+    }
+    .idea-card.priority-high { border-top-color: #c62828; }
+    .idea-card.priority-med  { border-top-color: #f57f17; }
+    .idea-card.priority-low  { border-top-color: #aaa; }
+
+    .idea-card .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .idea-card .card-top h4 { font-size: 15px; font-weight: 700; flex: 1; }
+    .priority-dot { width: 10px; height: 10px; border-radius: 50%; margin-left: 10px; margin-top: 4px; flex-shrink: 0; }
+    .dot-high { background: #c62828; }
+    .dot-med  { background: #f57f17; }
+    .dot-low  { background: #aaa; }
+
+    .idea-card .body { font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 14px; }
+    .idea-card .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .tag-summer { background: #fff3e0; color: #e65100; }
+    .tag-intern { background: #e8f5e9; color: #2e7d32; }
+    .tag-ec     { background: #ede7f6; color: #4527a0; }
+    .tag-essay  { background: #e3f2fd; color: #1565c0; }
+    .tag-india  { background: #fce4ec; color: #880e4f; }
+    .tag-research { background: #e0f7fa; color: #006064; }
+    .tag-misc   { background: #f5f5f5; color: #616161; }
+
+    .idea-card .card-footer { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #bbb; }
+    .idea-card .actions { display: flex; gap: 10px; }
+    .action-btn { font-size: 12px; color: #7b1fa2; background: none; border: none; cursor: pointer; text-decoration: underline; }
+    .action-btn.danger { color: #c62828; }
+
+    /* Convert-to-entry banner */
+    .convert-banner {
+      background: #f3e5f5;
+      border: 1px solid #ce93d8;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #4a148c;
+      margin-bottom: 0;
+      margin-top: 10px;
+    }
+    .convert-banner strong { font-weight: 700; }
+
+    /* Add new tile */
+    .add-tile {
+      border: 2px dashed #ce93d8;
+      border-radius: 10px;
+      padding: 40px 24px;
+      text-align: center;
+      color: #ce93d8;
+      font-size: 24px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .add-tile span { font-size: 14px; }
+    .add-tile:hover { border-color: #7b1fa2; color: #7b1fa2; }
+
+    footer { background: #1a1a2e; color: #888; text-align: center; padding: 20px; font-size: 12px; margin-top: 48px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">CollegeReady</div>
+  <div class="links">
+    <a href="landing.html">Home</a>
+    <a href="summer-programs.html">Summer Programs</a>
+    <a href="internships.html">Internships</a>
+    <a href="extracurriculars.html">Extra Curriculars</a>
+    <a href="india-activities.html">India Activities</a>
+    <a href="ideas.html" class="active">Ideas</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <h1>💡 Ideas Board</h1>
+  <p>A fast scratchpad for opportunities, essay topics, things to research, and anything that sparks an idea. Nothing gets lost here.</p>
+</div>
+
+<!-- ── QUICK JOT BAR ── -->
+<div class="jot-bar">
+  <div style="flex:1">
+    <textarea class="jot-input" placeholder="Jot a quick idea... (e.g. 'Look into science olympiad teams at school')"></textarea>
+    <div class="jot-tags-row">
+      <div class="jot-tag-chip">Summer</div>
+      <div class="jot-tag-chip selected">EC</div>
+      <div class="jot-tag-chip">Internship</div>
+      <div class="jot-tag-chip">Essay</div>
+      <div class="jot-tag-chip">India</div>
+      <div class="jot-tag-chip">Research</div>
+      <div class="jot-tag-chip">Misc</div>
+      <div class="jot-tag-chip">+ New Tag</div>
+    </div>
+    <div class="note">[MOCK] Tags are single-click toggles. Priority (High/Med/Low) selector would sit beside them.</div>
+  </div>
+  <div class="jot-actions">
+    <button class="btn-jot">Save Idea</button>
+    <button class="btn-jot-secondary">Save + Promote</button>
+  </div>
+</div>
+<div class="note" style="margin:0 32px 0;">[MOCK] "Save + Promote" saves the idea AND opens a modal to convert it directly into a Summer Program, Internship, or EC entry.</div>
+
+<!-- ── TOOLBAR ── -->
+<div class="toolbar">
+  <input class="search-box" type="text" placeholder="Search ideas..." />
+  <div class="chip active">All</div>
+  <div class="chip">Summer</div>
+  <div class="chip">Internship</div>
+  <div class="chip">EC</div>
+  <div class="chip">Essay</div>
+  <div class="chip">India</div>
+  <div class="chip">Research</div>
+  <div class="chip">Misc</div>
+  <div class="chip">⭐ High Priority</div>
+  <div class="view-toggle">
+    <button class="view-btn active">Grid</button>
+    <button class="view-btn">List</button>
+  </div>
+</div>
+
+<!-- ── IDEAS GRID ── -->
+<div class="ideas-grid">
+
+  <!-- Idea 1 -->
+  <div class="idea-card priority-high">
+    <div class="card-top">
+      <h4>Science fair → lab partnership with university</h4>
+      <div class="priority-dot dot-high"></div>
+    </div>
+    <p class="body">Could reach out to local university (state school or community college) to co-develop a science fair project. Would build a mentorship relationship, possibly lead to summer research or a letter of rec.</p>
+    <div class="tags">
+      <span class="tag tag-research">Research</span>
+      <span class="tag tag-ec">EC</span>
+      <span class="tag tag-summer">Summer</span>
+    </div>
+    <div class="convert-banner"><strong>Promote?</strong> Convert this idea to a Summer Program or EC entry.</div>
+    <div class="card-footer" style="margin-top:10px;">
+      <span>2 days ago</span>
+      <div class="actions">
+        <button class="action-btn">Edit</button>
+        <button class="action-btn">Promote</button>
+        <button class="action-btn danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Idea 2 -->
+  <div class="idea-card priority-med">
+    <div class="card-top">
+      <h4>Start a tutoring or coding club at school</h4>
+      <div class="priority-dot dot-med"></div>
+    </div>
+    <p class="body">Found no active coding club. Could start one — aligns with CS interest, gives leadership position, and could tie into community service hours. Look into how to get school approval.</p>
+    <div class="tags">
+      <span class="tag tag-ec">EC</span>
+      <span class="tag tag-misc">Leadership</span>
+    </div>
+    <div class="card-footer" style="margin-top:14px;">
+      <span>5 days ago</span>
+      <div class="actions">
+        <button class="action-btn">Edit</button>
+        <button class="action-btn">Promote</button>
+        <button class="action-btn danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Idea 3 -->
+  <div class="idea-card priority-low">
+    <div class="card-top">
+      <h4>Essay topic: growing up between two cultures</h4>
+      <div class="priority-dot dot-low"></div>
+    </div>
+    <p class="body">The push-pull of Indian heritage vs. American environment. Could be a strong common app essay if framed around a specific moment — not just a broad identity statement.</p>
+    <div class="tags">
+      <span class="tag tag-essay">Essay</span>
+      <span class="tag tag-india">India</span>
+    </div>
+    <div class="card-footer" style="margin-top:14px;">
+      <span>1 week ago</span>
+      <div class="actions">
+        <button class="action-btn">Edit</button>
+        <button class="action-btn danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Idea 4 -->
+  <div class="idea-card priority-med">
+    <div class="card-top">
+      <h4>Look into DECA or FBLA for business EC</h4>
+      <div class="priority-dot dot-med"></div>
+    </div>
+    <p class="body">Both are nationally recognized. DECA has case competitions that look great on applications. Check if school has a chapter; if not, could start one.</p>
+    <div class="tags">
+      <span class="tag tag-ec">EC</span>
+      <span class="tag tag-misc">Business</span>
+    </div>
+    <div class="card-footer" style="margin-top:14px;">
+      <span>2 weeks ago</span>
+      <div class="actions">
+        <button class="action-btn">Edit</button>
+        <button class="action-btn">Promote</button>
+        <button class="action-btn danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Idea 5 -->
+  <div class="idea-card priority-high">
+    <div class="card-top">
+      <h4>Volunteer at India cultural organization in summer</h4>
+      <div class="priority-dot dot-high"></div>
+    </div>
+    <p class="body">Local Indian cultural orgs (temples, cultural associations) often need teen volunteers for events. Ties into India Activities section. Also a meaningful essay angle.</p>
+    <div class="tags">
+      <span class="tag tag-india">India</span>
+      <span class="tag tag-ec">EC</span>
+      <span class="tag tag-summer">Summer</span>
+    </div>
+    <div class="card-footer" style="margin-top:14px;">
+      <span>3 weeks ago</span>
+      <div class="actions">
+        <button class="action-btn">Edit</button>
+        <button class="action-btn">Promote</button>
+        <button class="action-btn danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add tile -->
+  <div class="add-tile">
+    +
+    <span>New Idea</span>
+  </div>
+
+</div>
+
+<div class="note" style="margin:0 32px 48px;">[MOCK] Cards are sortable by priority, date added, or tag. "Promote" converts idea into a structured entry on another page. High priority ideas could show a reminder banner on the landing page.</div>
+
+<footer>CollegeReady &mdash; Personal Use</footer>
+</body>
+</html>

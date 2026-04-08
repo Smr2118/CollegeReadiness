@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>[MOCK] Extra Curriculars — College Readiness Hub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background: #f4f6f9; color: #1a1a2e; }
+
+    .note {
+      background: #fff9c4;
+      border-left: 4px solid #f0c400;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #555;
+      margin-top: 6px;
+      border-radius: 2px;
+    }
+
+    nav {
+      background: #1a1a2e;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 32px;
+    }
+    nav .logo { font-size: 20px; font-weight: 700; }
+    nav .links a { color: #ccc; text-decoration: none; margin-left: 24px; font-size: 14px; }
+    nav .links a.active { color: white; font-weight: 600; border-bottom: 2px solid #e94560; padding-bottom: 2px; }
+
+    .page-header {
+      background: linear-gradient(135deg, #1a237e, #283593);
+      color: white;
+      padding: 40px 32px 32px;
+    }
+    .page-header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .page-header p { font-size: 15px; opacity: 0.85; max-width: 600px; }
+
+    /* ── COMMON APP TRACKER BANNER ── */
+    .ca-banner {
+      background: #e8eaf6;
+      border: 1px solid #9fa8da;
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 14px;
+      color: #283593;
+    }
+    .ca-banner strong { font-size: 15px; }
+    .ca-count { background: #283593; color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; margin-left: auto; }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      background: white;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 14px 32px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .chip { padding: 6px 14px; border-radius: 20px; font-size: 13px; border: 1px solid #d0d0d0; background: white; color: #555; }
+    .chip.active { background: #283593; color: white; border-color: #283593; }
+    .search-box { flex: 1; min-width: 200px; padding: 8px 14px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 14px; color: #999; }
+
+    /* ── LAYOUT ── */
+    .content { display: flex; gap: 24px; max-width: 1200px; margin: 32px auto; padding: 0 32px; }
+
+    .sidebar { width: 240px; flex-shrink: 0; }
+    .filter-box { background: white; border-radius: 10px; border: 1px solid #e4e8f0; padding: 20px; margin-bottom: 20px; }
+    .filter-box h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 12px; }
+    .filter-item { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 8px; color: #444; }
+    .filter-item input { accent-color: #283593; }
+    .filter-item .count-badge { margin-left: auto; background: #f4f6f9; color: #888; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+
+    /* ── EC CARD ── */
+    .ec-list { flex: 1; }
+    .results-meta { font-size: 13px; color: #888; margin-bottom: 16px; }
+    .ec-card {
+      background: white;
+      border-radius: 10px;
+      border: 1px solid #e4e8f0;
+      border-left: 5px solid #283593;
+      padding: 22px 24px;
+      margin-bottom: 16px;
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .ec-card .icon-box { width: 52px; height: 52px; border-radius: 10px; background: #e8eaf6; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
+    .ec-card .info { flex: 1; }
+    .ec-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
+    .ec-card .role { font-size: 13px; color: #283593; font-weight: 600; margin-bottom: 6px; }
+    .ec-card .desc { font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 10px; }
+    .ec-card .meta { display: flex; gap: 16px; font-size: 13px; color: #666; flex-wrap: wrap; margin-bottom: 10px; }
+    .ec-card .tags { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .tag-stem  { background: #e8f5e9; color: #2e7d32; }
+    .tag-arts  { background: #fce4ec; color: #880e4f; }
+    .tag-lead  { background: #ede7f6; color: #4527a0; }
+    .tag-sport { background: #e3f2fd; color: #1565c0; }
+    .tag-svc   { background: #fff8e1; color: #f57f17; }
+    .tag-comp  { background: #e0f7fa; color: #006064; }
+    .tag-govt  { background: #fbe9e7; color: #b71c1c; }
+
+    .ec-card .right { text-align: right; flex-shrink: 0; min-width: 160px; }
+    .ca-slot-badge { display: inline-block; background: #e8eaf6; color: #283593; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 6px; margin-bottom: 8px; }
+    .hours-info { font-size: 12px; color: #888; margin-bottom: 8px; }
+    .years-info { font-size: 12px; color: #888; margin-bottom: 10px; }
+    .btn-edit { display: block; text-align: center; background: #283593; color: white; padding: 8px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; border: none; width: 100%; }
+
+    /* ── COMMON APP PREVIEW ── */
+    .ca-preview {
+      background: white;
+      border-radius: 10px;
+      border: 2px solid #9fa8da;
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+    .ca-preview h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; color: #1a237e; }
+    .ca-preview .subtitle { font-size: 13px; color: #888; margin-bottom: 16px; }
+    .ca-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+    .ca-row .slot-num { width: 28px; height: 28px; border-radius: 50%; background: #e8eaf6; color: #283593; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; }
+    .ca-row .name { font-weight: 600; flex: 1; }
+    .ca-row .role-text { color: #888; font-size: 12px; }
+    .ca-row .drag-handle { color: #ccc; font-size: 18px; cursor: grab; }
+    .ca-slot-empty { color: #bbb; font-style: italic; }
+
+    .add-card { border: 2px dashed #d0d0d0; border-radius: 10px; padding: 24px; text-align: center; color: #aaa; font-size: 15px; cursor: pointer; margin-bottom: 16px; }
+    .add-card:hover { border-color: #283593; color: #283593; }
+
+    footer { background: #1a1a2e; color: #888; text-align: center; padding: 20px; font-size: 12px; margin-top: 48px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">CollegeReady</div>
+  <div class="links">
+    <a href="landing.html">Home</a>
+    <a href="summer-programs.html">Summer Programs</a>
+    <a href="internships.html">Internships</a>
+    <a href="extracurriculars.html" class="active">Extra Curriculars</a>
+    <a href="india-activities.html">India Activities</a>
+    <a href="ideas.html">Ideas</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <h1>🏆 Extra Curriculars</h1>
+  <p>Track clubs, competitions, sports, volunteering, and community involvement. Organize by Common App slot and log hours per activity.</p>
+</div>
+
+<!-- Common App tracker bar -->
+<div class="ca-banner">
+  <div>
+    <strong>Common App Activity List</strong><br />
+    You have 10 slots on the Common App. Drag-and-drop to rank them. Aim for depth, not just breadth.
+  </div>
+  <div class="ca-count">6 / 10 slots filled</div>
+</div>
+<div class="note" style="margin:8px 32px;">[MOCK] CA slot count updates as you mark activities as "Include on Common App." Top 10 by priority are auto-selected, user can reorder.</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <input class="search-box" type="text" placeholder="Search activities..." />
+  <div class="chip active">All</div>
+  <div class="chip">STEM / Academic</div>
+  <div class="chip">Arts / Music</div>
+  <div class="chip">Leadership</div>
+  <div class="chip">Sports</div>
+  <div class="chip">Service</div>
+  <div class="chip">Competition</div>
+  <div class="chip">Government / Debate</div>
+</div>
+
+<div class="content">
+
+  <aside class="sidebar">
+    <div class="filter-box">
+      <h4>Commitment</h4>
+      <label class="filter-item"><input type="checkbox" checked /> Year-round <span class="count-badge">3</span></label>
+      <label class="filter-item"><input type="checkbox" /> School Year <span class="count-badge">2</span></label>
+      <label class="filter-item"><input type="checkbox" /> Summer Only <span class="count-badge">1</span></label>
+    </div>
+    <div class="filter-box">
+      <h4>Grade Active</h4>
+      <label class="filter-item"><input type="checkbox" /> 9th</label>
+      <label class="filter-item"><input type="checkbox" /> 10th</label>
+      <label class="filter-item"><input type="checkbox" /> 11th</label>
+      <label class="filter-item"><input type="checkbox" /> 12th</label>
+    </div>
+    <div class="filter-box">
+      <h4>Role Level</h4>
+      <label class="filter-item"><input type="checkbox" /> Founder / President</label>
+      <label class="filter-item"><input type="checkbox" /> Officer / Captain</label>
+      <label class="filter-item"><input type="checkbox" /> Member / Participant</label>
+    </div>
+    <div class="filter-box">
+      <h4>Awards / Recognition</h4>
+      <label class="filter-item"><input type="checkbox" /> National</label>
+      <label class="filter-item"><input type="checkbox" /> State / Regional</label>
+      <label class="filter-item"><input type="checkbox" /> School</label>
+    </div>
+
+    <!-- CA Preview Sidebar -->
+    <div class="ca-preview">
+      <h3>CA Order Preview</h3>
+      <p class="subtitle">Drag to re-rank. Top 10 go on application.</p>
+      <div class="ca-row"><div class="slot-num">1</div><div><div class="name">Math Olympiad Team</div><div class="role-text">Captain</div></div><div class="drag-handle">⋮⋮</div></div>
+      <div class="ca-row"><div class="slot-num">2</div><div><div class="name">Bharatanatyam Dance</div><div class="role-text">Performer</div></div><div class="drag-handle">⋮⋮</div></div>
+      <div class="ca-row"><div class="slot-num">3</div><div><div class="name">School Coding Club</div><div class="role-text">Founder</div></div><div class="drag-handle">⋮⋮</div></div>
+      <div class="ca-row"><div class="slot-num">4</div><div><div class="name">Model UN</div><div class="role-text">Delegate</div></div><div class="drag-handle">⋮⋮</div></div>
+      <div class="ca-row"><div class="slot-num">5</div><div><div class="name">Hospital Volunteer</div><div class="role-text">Volunteer</div></div><div class="drag-handle">⋮⋮</div></div>
+      <div class="ca-row"><div class="slot-num">6</div><div class="name ca-slot-empty">Empty</div><div class="drag-handle">⋮⋮</div></div>
+      <div class="note" style="margin-top:8px;">[MOCK] Drag-and-drop reordering. Blank slots show as empty. Clicking a row scrolls to that card.</div>
+    </div>
+  </aside>
+
+  <div class="ec-list">
+    <div class="results-meta">6 activities tracked</div>
+
+    <!-- Card 1 -->
+    <div class="ec-card">
+      <div class="icon-box">🔢</div>
+      <div class="info">
+        <h3>Math Olympiad (MATHCOUNTS / AMC)</h3>
+        <div class="role">Captain — School Team</div>
+        <div class="desc">Lead weekly practice sessions. Competed at regional and state MATHCOUNTS; qualified for AMC 10/12. Organized a school math tournament for middle schoolers.</div>
+        <div class="meta">
+          <span>📅 Grades 9–12 (Year-round)</span>
+          <span>⏱ 5–8 hrs/week</span>
+          <span>🏅 State Qualifier</span>
+        </div>
+        <div class="tags">
+          <span class="tag tag-stem">STEM</span>
+          <span class="tag tag-comp">Competition</span>
+          <span class="tag tag-lead">Leadership</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="ca-slot-badge">CA Slot #1</div>
+        <div class="hours-info">~7 hrs/week · 36 wks/yr</div>
+        <div class="years-info">Years: 9, 10, 11, 12</div>
+        <button class="btn-edit">Edit Entry</button>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="ec-card" style="border-left-color:#880e4f">
+      <div class="icon-box" style="background:#fce4ec;">💃</div>
+      <div class="info">
+        <h3>Bharatanatyam Dance</h3>
+        <div class="role" style="color:#880e4f;">Performer — Academy</div>
+        <div class="desc">Classical Indian dance training for 6+ years. Completed Arangetram (solo debut) in 10th grade. Performed at cultural events and festivals.</div>
+        <div class="meta">
+          <span>📅 Grades 8–12 (Year-round)</span>
+          <span>⏱ 6 hrs/week</span>
+          <span>🎭 Arangetram completed</span>
+        </div>
+        <div class="tags">
+          <span class="tag tag-arts">Arts</span>
+          <span class="tag" style="background:#fce4ec;color:#880e4f;">Heritage</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="ca-slot-badge">CA Slot #2</div>
+        <div class="hours-info">~6 hrs/week · 50 wks/yr</div>
+        <div class="years-info">Years: 9, 10, 11, 12</div>
+        <button class="btn-edit">Edit Entry</button>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="ec-card" style="border-left-color:#1565c0">
+      <div class="icon-box" style="background:#e3f2fd;">🖥️</div>
+      <div class="info">
+        <h3>Coding Club — Founder</h3>
+        <div class="role" style="color:#1565c0;">Founder & President</div>
+        <div class="desc">Founded school's first coding club in 10th grade. Weekly meetings teaching Python and web dev basics. Organized hackathon with 40+ student participants.</div>
+        <div class="meta">
+          <span>📅 Grades 10–12 (School Year)</span>
+          <span>⏱ 4 hrs/week</span>
+          <span>👥 40 members</span>
+        </div>
+        <div class="tags">
+          <span class="tag tag-stem">STEM</span>
+          <span class="tag tag-lead">Leadership</span>
+          <span class="tag tag-comp">Hackathon</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="ca-slot-badge">CA Slot #3</div>
+        <div class="hours-info">~4 hrs/week · 36 wks/yr</div>
+        <div class="years-info">Years: 10, 11, 12</div>
+        <button class="btn-edit">Edit Entry</button>
+      </div>
+    </div>
+
+    <div class="add-card">+ Add Extra Curricular</div>
+    <div class="note">[MOCK] Add form: Activity name, Organization, Role/Position, Grades active, Hours/week, Weeks/year, Description (150 chars — mirrors Common App limit), Awards, Tags, CA include toggle, CA description field.</div>
+  </div>
+</div>
+
+<footer>CollegeReady &mdash; Personal Use</footer>
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>[MOCK] Summer Programs — College Readiness Hub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background: #f4f6f9; color: #1a1a2e; }
+
+    .note {
+      background: #fff9c4;
+      border-left: 4px solid #f0c400;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #555;
+      margin-top: 6px;
+      border-radius: 2px;
+    }
+
+    nav {
+      background: #1a1a2e;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 32px;
+    }
+    nav .logo { font-size: 20px; font-weight: 700; }
+    nav .links a { color: #ccc; text-decoration: none; margin-left: 24px; font-size: 14px; }
+    nav .links a.active { color: white; font-weight: 600; border-bottom: 2px solid #e94560; padding-bottom: 2px; }
+
+    .page-header {
+      background: linear-gradient(135deg, #e65100, #ff8f00);
+      color: white;
+      padding: 40px 32px 32px;
+    }
+    .page-header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .page-header p { font-size: 15px; opacity: 0.85; max-width: 560px; }
+
+    /* ── FILTER + SEARCH BAR ── */
+    .toolbar {
+      background: white;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 16px 32px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .search-box {
+      flex: 1;
+      min-width: 200px;
+      padding: 9px 14px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #999;
+    }
+    .chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid #d0d0d0;
+      background: white;
+      color: #555;
+      cursor: pointer;
+    }
+    .chip.active { background: #e65100; color: white; border-color: #e65100; }
+    .sort-select {
+      padding: 8px 12px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #555;
+      background: white;
+    }
+
+    /* ── LAYOUT ── */
+    .content { display: flex; gap: 24px; max-width: 1200px; margin: 32px auto; padding: 0 32px; }
+
+    /* ── SIDEBAR ── */
+    .sidebar { width: 240px; flex-shrink: 0; }
+    .filter-box {
+      background: white;
+      border-radius: 10px;
+      border: 1px solid #e4e8f0;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .filter-box h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 12px; }
+    .filter-item { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 8px; color: #444; }
+    .filter-item input[type=checkbox] { accent-color: #e65100; }
+    .filter-item .count-badge { margin-left: auto; background: #f4f6f9; color: #888; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+
+    /* ── PROGRAM CARDS ── */
+    .programs { flex: 1; }
+    .results-meta { font-size: 13px; color: #888; margin-bottom: 16px; }
+    .program-card {
+      background: white;
+      border-radius: 10px;
+      border: 1px solid #e4e8f0;
+      padding: 24px;
+      margin-bottom: 16px;
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .program-card .logo-box {
+      width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      background: #fff3e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+    .program-card .info { flex: 1; }
+    .program-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+    .program-card .org { font-size: 13px; color: #888; margin-bottom: 10px; }
+    .program-card .meta { display: flex; gap: 16px; font-size: 13px; color: #555; flex-wrap: wrap; margin-bottom: 10px; }
+    .program-card .meta span { display: flex; align-items: center; gap: 4px; }
+    .program-card .tags { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; background: #f0f4ff; color: #0f3460; }
+    .tag-stem { background: #e8f5e9; color: #2e7d32; }
+    .tag-leadership { background: #ede7f6; color: #4527a0; }
+    .tag-arts { background: #fce4ec; color: #880e4f; }
+    .tag-free { background: #e0f7fa; color: #006064; }
+    .tag-paid { background: #fff3e0; color: #e65100; }
+
+    .program-card .right { text-align: right; flex-shrink: 0; min-width: 130px; }
+    .deadline-badge {
+      display: inline-block;
+      background: #fff3e0;
+      color: #e65100;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .deadline-badge.urgent { background: #fdecea; color: #c62828; }
+    .status-select {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 8px;
+    }
+    .btn-detail {
+      display: block;
+      text-align: center;
+      background: #e65100;
+      color: white;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      width: 100%;
+    }
+
+    /* ── ADD NEW ── */
+    .add-card {
+      border: 2px dashed #d0d0d0;
+      border-radius: 10px;
+      padding: 24px;
+      text-align: center;
+      color: #aaa;
+      font-size: 15px;
+      cursor: pointer;
+      margin-bottom: 16px;
+    }
+    .add-card:hover { border-color: #e65100; color: #e65100; }
+
+    footer { background: #1a1a2e; color: #888; text-align: center; padding: 20px; font-size: 12px; margin-top: 48px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">CollegeReady</div>
+  <div class="links">
+    <a href="landing.html">Home</a>
+    <a href="summer-programs.html" class="active">Summer Programs</a>
+    <a href="internships.html">Internships</a>
+    <a href="extracurriculars.html">Extra Curriculars</a>
+    <a href="india-activities.html">India Activities</a>
+    <a href="ideas.html">Ideas</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <h1>☀️ Summer Programs</h1>
+  <p>Research institutes, pre-college programs, STEM camps, and leadership academies. Track deadlines and application status all in one place.</p>
+</div>
+
+<!-- ── TOOLBAR ── -->
+<div class="toolbar">
+  <input class="search-box" type="text" placeholder="Search programs by name, school, or keyword..." />
+  <div class="chip-group">
+    <div class="chip active">All</div>
+    <div class="chip">STEM</div>
+    <div class="chip">Leadership</div>
+    <div class="chip">Arts</div>
+    <div class="chip">Research</div>
+    <div class="chip">Business</div>
+  </div>
+  <select class="sort-select">
+    <option>Sort: Deadline (soonest)</option>
+    <option>Sort: Selectivity</option>
+    <option>Sort: Cost (low to high)</option>
+    <option>Sort: Recently Added</option>
+  </select>
+</div>
+<div class="note" style="margin:8px 32px;">[MOCK] Search is live filter. Chips filter by category. Sort is a dropdown. All client-side or via simple JSON data file.</div>
+
+<div class="content">
+
+  <!-- ── SIDEBAR FILTERS ── -->
+  <aside class="sidebar">
+    <div class="filter-box">
+      <h4>Status</h4>
+      <label class="filter-item"><input type="checkbox" checked /> Interested <span class="count-badge">5</span></label>
+      <label class="filter-item"><input type="checkbox" /> Applied <span class="count-badge">3</span></label>
+      <label class="filter-item"><input type="checkbox" /> Accepted <span class="count-badge">1</span></label>
+      <label class="filter-item"><input type="checkbox" /> Waitlisted <span class="count-badge">1</span></label>
+      <label class="filter-item"><input type="checkbox" /> Not Applying <span class="count-badge">2</span></label>
+    </div>
+    <div class="filter-box">
+      <h4>Cost</h4>
+      <label class="filter-item"><input type="checkbox" /> Free / Full Aid</label>
+      <label class="filter-item"><input type="checkbox" /> Stipend Paid</label>
+      <label class="filter-item"><input type="checkbox" /> Paid (tuition)</label>
+      <label class="filter-item"><input type="checkbox" /> Need-based Aid</label>
+    </div>
+    <div class="filter-box">
+      <h4>Location</h4>
+      <label class="filter-item"><input type="checkbox" /> In-Person</label>
+      <label class="filter-item"><input type="checkbox" /> Remote</label>
+      <label class="filter-item"><input type="checkbox" /> Residential</label>
+    </div>
+    <div class="filter-box">
+      <h4>Grade Level</h4>
+      <label class="filter-item"><input type="checkbox" /> 9th Grade</label>
+      <label class="filter-item"><input type="checkbox" /> 10th Grade</label>
+      <label class="filter-item"><input type="checkbox" /> 11th Grade</label>
+      <label class="filter-item"><input type="checkbox" /> 12th Grade</label>
+    </div>
+    <div class="note">[MOCK] Filters are checkboxes that narrow the card list in real time.</div>
+  </aside>
+
+  <!-- ── PROGRAM LIST ── -->
+  <div class="programs">
+    <div class="results-meta">Showing 12 programs &mdash; sorted by deadline</div>
+
+    <!-- Card 1 -->
+    <div class="program-card">
+      <div class="logo-box">🔬</div>
+      <div class="info">
+        <h3>RSI — Research Science Institute</h3>
+        <div class="org">MIT / Center for Excellence in Education</div>
+        <div class="meta">
+          <span>📍 Cambridge, MA (Residential)</span>
+          <span>📅 6 weeks, June–July</span>
+          <span>💰 Free (fully funded)</span>
+          <span>⭐ Extremely Selective (~1.5%)</span>
+        </div>
+        <div class="tags">
+          <span class="tag tag-stem">STEM</span>
+          <span class="tag tag-free">Free</span>
+          <span class="tag">Research</span>
+          <span class="tag">National</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="deadline-badge urgent">Deadline: Dec 15</div>
+        <select class="status-select">
+          <option>Interested</option>
+          <option>Applied</option>
+          <option>Accepted</option>
+          <option>Waitlisted</option>
+          <option>Not Applying</option>
+        </select>
+        <a class="btn-detail" href="#">View Details</a>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="program-card">
+      <div class="logo-box">🧬</div>
+      <div class="info">
+        <h3>PRIMES — Program for Research in Mathematics, Engineering, and Science</h3>
+        <div class="org">MIT</div>
+        <div class="meta">
+          <span>📍 Remote / Cambridge, MA</span>
+          <span>📅 Year-round + summer</span>
+          <span>💰 Free</span>
+          <span>⭐ Very Selective</span>
+        </div>
+        <div class="tags">
+          <span class="tag tag-stem">STEM</span>
+          <span class="tag tag-free">Free</span>
+          <span class="tag">Math</span>
+          <span class="tag">CS</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="deadline-badge">Deadline: Dec 1</div>
+        <select class="status-select"><option>Applied</option></select>
+        <a class="btn-detail" href="#">View Details</a>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="program-card">
+      <div class="logo-box">🏛️</div>
+      <div class="info">
+        <h3>Girls State / Boys State</h3>
+        <div class="org">American Legion</div>
+        <div class="meta">
+          <span>📍 State Capital (Residential)</span>
+          <span>📅 1 week, June</span>
+          <span>💰 Free / Low Cost</span>
+          <span>⭐ Selective</span>
+        </div>
+        <div class="tags">
+          <span class="tag tag-leadership">Leadership</span>
+          <span class="tag tag-free">Free</span>
+          <span class="tag">Civics</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="deadline-badge">Deadline: Feb 1</div>
+        <select class="status-select"><option>Interested</option></select>
+        <a class="btn-detail" href="#">View Details</a>
+      </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="program-card">
+      <div class="logo-box">🎨</div>
+      <div class="info">
+        <h3>Yale Young Global Scholars</h3>
+        <div class="org">Yale University</div>
+        <div class="meta">
+          <span>📍 New Haven, CT (Residential)</span>
+          <span>📅 2 weeks, July–August</span>
+          <span>💰 ~$6,500 (Aid available)</span>
+          <span>⭐ Moderately Selective</span>
+        </div>
+        <div class="tags">
+          <span class="tag tag-leadership">Leadership</span>
+          <span class="tag">Global Issues</span>
+          <span class="tag">Social Sciences</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="deadline-badge">Deadline: Mar 1</div>
+        <select class="status-select"><option>Interested</option></select>
+        <a class="btn-detail" href="#">View Details</a>
+      </div>
+    </div>
+
+    <!-- Add New -->
+    <div class="add-card">+ Add New Summer Program</div>
+    <div class="note">[MOCK] "Add New" opens a form/modal with fields: Name, Org, Deadline, Cost, Location, Category, Notes, Link, Status.</div>
+  </div>
+</div>
+
+<footer>CollegeReady &mdash; Personal Use</footer>
+</body>
+</html>

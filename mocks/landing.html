@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>[MOCK] Landing Page — College Readiness Hub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background: #f4f6f9; color: #1a1a2e; }
+
+    .note {
+      background: #fff9c4;
+      border-left: 4px solid #f0c400;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #555;
+      margin-top: 6px;
+      border-radius: 2px;
+    }
+
+    nav {
+      background: #1a1a2e;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 32px;
+    }
+    nav .logo { font-size: 20px; font-weight: 700; letter-spacing: 1px; }
+    nav .links a { color: #ccc; text-decoration: none; margin-left: 24px; font-size: 14px; }
+
+    .hero {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+      color: white;
+      text-align: center;
+      padding: 80px 40px 60px;
+    }
+    .hero h1 { font-size: 42px; font-weight: 800; margin-bottom: 14px; }
+    .hero p { font-size: 18px; color: #a8b8d8; margin-bottom: 32px; max-width: 560px; margin-left: auto; margin-right: auto; }
+    .hero-btns { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+    .btn-primary { background: #e94560; color: white; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px; }
+    .btn-secondary { background: transparent; color: white; border: 2px solid #a8b8d8; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 15px; }
+
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      background: white;
+      padding: 24px 40px;
+      border-bottom: 1px solid #e0e0e0;
+      flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat .num { font-size: 28px; font-weight: 800; color: #0f3460; }
+    .stat .label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+    .section-title { text-align: center; font-size: 24px; font-weight: 700; margin: 48px 0 24px; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px;
+      max-width: 1100px;
+      margin: 0 auto 48px;
+      padding: 0 32px;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 28px 24px;
+      border: 1px solid #e4e8f0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      text-align: center;
+      text-decoration: none;
+      color: inherit;
+    }
+    .card .icon { font-size: 36px; margin-bottom: 12px; }
+    .card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: #1a1a2e; }
+    .card p { font-size: 13px; color: #666; line-height: 1.5; }
+    .card .count { display: inline-block; margin-top: 12px; background: #f0f4ff; color: #0f3460; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+
+    .deadlines-wrap { max-width: 1100px; margin: 0 auto 48px; padding: 0 32px; }
+    .deadlines-section { background: white; padding: 32px; border-radius: 10px; border: 1px solid #e4e8f0; }
+    .deadlines-section h2 { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
+    .deadline-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+    .deadline-row .name { font-weight: 600; }
+    .deadline-row .type { color: #888; margin-left: 10px; font-size: 12px; }
+    .deadline-row .date { color: #e94560; font-weight: 600; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-summer { background: #fff3e0; color: #e65100; }
+    .badge-intern { background: #e8f5e9; color: #2e7d32; }
+    .badge-ec { background: #ede7f6; color: #4527a0; }
+
+    .ideas-teaser {
+      background: #f0f4ff;
+      border: 2px dashed #7c9ce0;
+      border-radius: 10px;
+      padding: 28px;
+      max-width: 1100px;
+      margin: 0 32px 48px;
+    }
+    .ideas-teaser h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: #0f3460; }
+    .ideas-teaser .quick-note { font-style: italic; color: #888; font-size: 13px; margin-top: 6px; }
+
+    footer { background: #1a1a2e; color: #888; text-align: center; padding: 20px; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">CollegeReady</div>
+  <div class="links">
+    <a href="summer-programs.html">Summer Programs</a>
+    <a href="internships.html">Internships</a>
+    <a href="extracurriculars.html">Extra Curriculars</a>
+    <a href="india-activities.html">India Activities</a>
+    <a href="ideas.html">Ideas</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <h1>Your College Readiness Hub</h1>
+  <p>Track every opportunity, deadline, and idea in one place — so nothing slips through the cracks.</p>
+  <div class="hero-btns">
+    <a class="btn-primary" href="summer-programs.html">Explore Summer Programs</a>
+    <a class="btn-secondary" href="ideas.html">Jot an Idea</a>
+  </div>
+  <div class="note" style="margin-top:24px; max-width:480px; margin-left:auto; margin-right:auto; text-align:left;">
+    [MOCK] Hero background illustration or photo could go here. Tagline is a placeholder.
+  </div>
+</section>
+
+<div class="stats-bar">
+  <div class="stat"><div class="num">12</div><div class="label">Summer Programs</div></div>
+  <div class="stat"><div class="num">8</div><div class="label">Internships</div></div>
+  <div class="stat"><div class="num">6</div><div class="label">Extra Curriculars</div></div>
+  <div class="stat"><div class="num">4</div><div class="label">India Activities</div></div>
+  <div class="stat"><div class="num">3</div><div class="label">Upcoming Deadlines</div></div>
+</div>
+<div class="note" style="margin:8px 32px;">[MOCK] Stats pulled dynamically from data. Numbers are placeholders.</div>
+
+<h2 class="section-title">Explore by Category</h2>
+<div class="cards">
+  <a class="card" href="summer-programs.html">
+    <div class="icon">☀️</div>
+    <h3>Summer Programs</h3>
+    <p>Research institutes, pre-college, STEM camps, and leadership academies.</p>
+    <span class="count">12 Programs</span>
+  </a>
+  <a class="card" href="internships.html">
+    <div class="icon">💼</div>
+    <h3>Internships</h3>
+    <p>Paid and unpaid opportunities — local, remote, and abroad.</p>
+    <span class="count">8 Internships</span>
+  </a>
+  <a class="card" href="extracurriculars.html">
+    <div class="icon">🏆</div>
+    <h3>Extra Curriculars</h3>
+    <p>Clubs, competitions, volunteering, and community leadership.</p>
+    <span class="count">6 Activities</span>
+  </a>
+  <a class="card" href="india-activities.html">
+    <div class="icon">🇮🇳</div>
+    <h3>India Activities</h3>
+    <p>Cultural programs, heritage camps, volunteer work, and diaspora networks.</p>
+    <span class="count">4 Activities</span>
+  </a>
+  <a class="card" href="ideas.html">
+    <div class="icon">💡</div>
+    <h3>Ideas Board</h3>
+    <p>Scratchpad for opportunities, essay topics, and follow-ups.</p>
+    <span class="count">9 Notes</span>
+  </a>
+</div>
+
+<div class="deadlines-wrap">
+  <div class="deadlines-section">
+    <h2>Upcoming Deadlines</h2>
+    <div class="deadline-row">
+      <div><span class="name">RSI (Research Science Institute)</span><span class="type">MIT</span></div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="badge badge-summer">Summer</span>
+        <span class="date">Dec 15</span>
+      </div>
+    </div>
+    <div class="deadline-row">
+      <div><span class="name">Google CSSI</span><span class="type">Remote / In-person</span></div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="badge badge-intern">Internship</span>
+        <span class="date">Jan 31</span>
+      </div>
+    </div>
+    <div class="deadline-row">
+      <div><span class="name">Model UN — Regional</span><span class="type">Local Chapter</span></div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span class="badge badge-ec">EC</span>
+        <span class="date">Feb 10</span>
+      </div>
+    </div>
+    <div class="note">[MOCK] Auto-sorted by nearest deadline across all categories. Filter chips (Summer / Internship / EC) will sit above this table.</div>
+  </div>
+</div>
+
+<div class="ideas-teaser">
+  <h3>💡 Latest Idea</h3>
+  <p>"Look into science fair partnerships with local university labs — could double as a research EC and summer program."</p>
+  <p class="quick-note">Added 2 days ago · Tagged: Research, EC, Summer</p>
+  <div class="note">[MOCK] Shows most recent idea card. Clicking goes to the full Ideas Board.</div>
+</div>
+
+<footer>
+  CollegeReady &mdash; Personal Use &mdash; Not affiliated with any institution
+</footer>
+
+</body>
+</html>

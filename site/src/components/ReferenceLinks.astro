@@ -1,0 +1,13 @@
+---
+import programData from '../data/programs.json';
+const { referenceLinks } = programData as any;
+---
+
+<div class="ref-list">
+  {referenceLinks.map((ref: { label: string; url: string }) => (
+    <a class="ref-item" href={ref.url} target="_blank" rel="noopener">
+      <span class="ref-item__icon">🔗</span>
+      <span>{ref.label}</span>
+    </a>
+  ))}
+</div>

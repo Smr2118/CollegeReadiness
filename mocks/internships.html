@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>[MOCK] Internships — College Readiness Hub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background: #f4f6f9; color: #1a1a2e; }
+
+    .note {
+      background: #fff9c4;
+      border-left: 4px solid #f0c400;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #555;
+      margin-top: 6px;
+      border-radius: 2px;
+    }
+
+    nav {
+      background: #1a1a2e;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 32px;
+    }
+    nav .logo { font-size: 20px; font-weight: 700; }
+    nav .links a { color: #ccc; text-decoration: none; margin-left: 24px; font-size: 14px; }
+    nav .links a.active { color: white; font-weight: 600; border-bottom: 2px solid #e94560; padding-bottom: 2px; }
+
+    .page-header {
+      background: linear-gradient(135deg, #1b5e20, #388e3c);
+      color: white;
+      padding: 40px 32px 32px;
+    }
+    .page-header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .page-header p { font-size: 15px; opacity: 0.85; max-width: 560px; }
+
+    .toolbar {
+      background: white;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 16px 32px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .search-box {
+      flex: 1; min-width: 200px;
+      padding: 9px 14px;
+      border: 1px solid #d0d0d0;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #999;
+    }
+    .chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; border: 1px solid #d0d0d0; background: white; color: #555; }
+    .chip.active { background: #2e7d32; color: white; border-color: #2e7d32; }
+    .toggle-group { display: flex; border: 1px solid #d0d0d0; border-radius: 6px; overflow: hidden; }
+    .toggle-btn { padding: 7px 14px; font-size: 13px; background: white; color: #555; border: none; cursor: pointer; }
+    .toggle-btn.active { background: #2e7d32; color: white; }
+
+    .content { display: flex; gap: 24px; max-width: 1200px; margin: 32px auto; padding: 0 32px; }
+
+    .sidebar { width: 240px; flex-shrink: 0; }
+    .filter-box { background: white; border-radius: 10px; border: 1px solid #e4e8f0; padding: 20px; margin-bottom: 20px; }
+    .filter-box h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 12px; }
+    .filter-item { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 8px; color: #444; }
+    .filter-item input[type=checkbox] { accent-color: #2e7d32; }
+    .filter-item .count-badge { margin-left: auto; background: #f4f6f9; color: #888; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+
+    .internships { flex: 1; }
+    .results-meta { font-size: 13px; color: #888; margin-bottom: 16px; }
+
+    /* Kanban Pipeline View */
+    .pipeline-note {
+      background: #e8f5e9;
+      border: 1px solid #a5d6a7;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #2e7d32;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .view-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
+    .view-btn { padding: 6px 14px; border-radius: 6px; font-size: 13px; border: 1px solid #d0d0d0; background: white; color: #555; cursor: pointer; }
+    .view-btn.active { background: #2e7d32; color: white; border-color: #2e7d32; }
+
+    .intern-card {
+      background: white;
+      border-radius: 10px;
+      border: 1px solid #e4e8f0;
+      border-left: 4px solid #2e7d32;
+      padding: 22px 24px;
+      margin-bottom: 16px;
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .intern-card.paid { border-left-color: #f9a825; }
+    .intern-card.unpaid { border-left-color: #90a4ae; }
+
+    .intern-card .logo-box {
+      width: 52px; height: 52px;
+      border-radius: 8px;
+      background: #e8f5e9;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; flex-shrink: 0;
+    }
+    .intern-card .info { flex: 1; }
+    .intern-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
+    .intern-card .company { font-size: 13px; color: #555; font-weight: 600; margin-bottom: 8px; }
+    .intern-card .meta { display: flex; gap: 16px; font-size: 13px; color: #666; flex-wrap: wrap; margin-bottom: 10px; }
+    .intern-card .tags { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .tag-tech { background: #e3f2fd; color: #1565c0; }
+    .tag-bio { background: #e8f5e9; color: #2e7d32; }
+    .tag-biz { background: #fff8e1; color: #f57f17; }
+    .tag-remote { background: #f3e5f5; color: #6a1b9a; }
+    .tag-paid { background: #fff9c4; color: #827717; }
+    .tag-unpaid { background: #f5f5f5; color: #757575; }
+
+    .intern-card .right { text-align: right; flex-shrink: 0; min-width: 150px; }
+    .deadline-badge { display: inline-block; background: #e8f5e9; color: #2e7d32; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px; margin-bottom: 10px; }
+    .deadline-badge.urgent { background: #fdecea; color: #c62828; }
+    .status-select { width: 100%; padding: 7px 10px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 13px; color: #555; margin-bottom: 8px; }
+    .contacts { font-size: 12px; color: #888; margin-bottom: 8px; }
+    .btn-detail { display: block; text-align: center; background: #2e7d32; color: white; padding: 8px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; }
+
+    .add-card { border: 2px dashed #d0d0d0; border-radius: 10px; padding: 24px; text-align: center; color: #aaa; font-size: 15px; cursor: pointer; margin-bottom: 16px; }
+    .add-card:hover { border-color: #2e7d32; color: #2e7d32; }
+
+    /* Pipeline (Kanban) view toggle — hidden in default list view */
+    .kanban-preview {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      margin-bottom: 24px;
+    }
+    .kanban-col { min-width: 170px; background: #f4f6f9; border-radius: 8px; padding: 12px; }
+    .kanban-col h4 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 10px; }
+    .kanban-item { background: white; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px; border: 1px solid #e4e8f0; }
+    .kanban-item .co { font-size: 11px; color: #888; }
+
+    footer { background: #1a1a2e; color: #888; text-align: center; padding: 20px; font-size: 12px; margin-top: 48px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">CollegeReady</div>
+  <div class="links">
+    <a href="landing.html">Home</a>
+    <a href="summer-programs.html">Summer Programs</a>
+    <a href="internships.html" class="active">Internships</a>
+    <a href="extracurriculars.html">Extra Curriculars</a>
+    <a href="india-activities.html">India Activities</a>
+    <a href="ideas.html">Ideas</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <h1>💼 Internships</h1>
+  <p>Track paid and unpaid opportunities across industries. Monitor application status, contacts, and deadlines in one place.</p>
+</div>
+
+<div class="toolbar">
+  <input class="search-box" type="text" placeholder="Search by role, company, or industry..." />
+  <div class="chip-group">
+    <div class="chip active">All</div>
+    <div class="chip">Tech / CS</div>
+    <div class="chip">Bio / Health</div>
+    <div class="chip">Business</div>
+    <div class="chip">Policy / Law</div>
+    <div class="chip">Research</div>
+  </div>
+  <div class="toggle-group">
+    <button class="toggle-btn active">All</button>
+    <button class="toggle-btn">Remote</button>
+    <button class="toggle-btn">In-Person</button>
+  </div>
+</div>
+<div class="note" style="margin:8px 32px;">[MOCK] Industry chips + Remote/In-person toggle narrow the list simultaneously.</div>
+
+<div class="content">
+
+  <aside class="sidebar">
+    <div class="filter-box">
+      <h4>App Status</h4>
+      <label class="filter-item"><input type="checkbox" checked /> Exploring <span class="count-badge">4</span></label>
+      <label class="filter-item"><input type="checkbox" /> Applied <span class="count-badge">2</span></label>
+      <label class="filter-item"><input type="checkbox" /> Interviewing <span class="count-badge">1</span></label>
+      <label class="filter-item"><input type="checkbox" /> Offer <span class="count-badge">0</span></label>
+      <label class="filter-item"><input type="checkbox" /> Rejected <span class="count-badge">1</span></label>
+    </div>
+    <div class="filter-box">
+      <h4>Compensation</h4>
+      <label class="filter-item"><input type="checkbox" /> Paid</label>
+      <label class="filter-item"><input type="checkbox" /> Unpaid / Volunteer</label>
+      <label class="filter-item"><input type="checkbox" /> Stipend</label>
+    </div>
+    <div class="filter-box">
+      <h4>Duration</h4>
+      <label class="filter-item"><input type="checkbox" /> Summer (8-12 wks)</label>
+      <label class="filter-item"><input type="checkbox" /> Part-time / School Year</label>
+      <label class="filter-item"><input type="checkbox" /> Winter / Spring Break</label>
+    </div>
+    <div class="filter-box">
+      <h4>Grade Eligible</h4>
+      <label class="filter-item"><input type="checkbox" /> 9th</label>
+      <label class="filter-item"><input type="checkbox" /> 10th</label>
+      <label class="filter-item"><input type="checkbox" /> 11th</label>
+      <label class="filter-item"><input type="checkbox" /> 12th</label>
+    </div>
+  </aside>
+
+  <div class="internships">
+
+    <!-- View toggle: List vs Pipeline -->
+    <div class="view-toggle">
+      <button class="view-btn active">List View</button>
+      <button class="view-btn">Pipeline View</button>
+    </div>
+    <div class="note" style="margin-bottom:12px;">[MOCK] Pipeline View = Kanban-style columns: Exploring → Applied → Interviewing → Offer / Rejected. Shown partially below as a preview.</div>
+
+    <!-- Kanban preview (collapsed/secondary) -->
+    <div class="kanban-preview">
+      <div class="kanban-col">
+        <h4>Exploring (4)</h4>
+        <div class="kanban-item">Google STEP<div class="co">Google</div></div>
+        <div class="kanban-item">Microsoft TEALS<div class="co">Microsoft</div></div>
+      </div>
+      <div class="kanban-col">
+        <h4>Applied (2)</h4>
+        <div class="kanban-item">Meta University<div class="co">Meta</div></div>
+      </div>
+      <div class="kanban-col">
+        <h4>Interviewing (1)</h4>
+        <div class="kanban-item">NIH STEP<div class="co">NIH</div></div>
+      </div>
+      <div class="kanban-col">
+        <h4>Offer (0)</h4>
+      </div>
+      <div class="kanban-col">
+        <h4>Rejected (1)</h4>
+        <div class="kanban-item">NASA STEM<div class="co">NASA</div></div>
+      </div>
+    </div>
+
+    <div class="results-meta">Showing 8 internships</div>
+
+    <!-- Card 1 -->
+    <div class="intern-card paid">
+      <div class="logo-box">🌐</div>
+      <div class="info">
+        <h3>Google STEP Intern Program</h3>
+        <div class="company">Google</div>
+        <div class="meta">
+          <span>📍 Remote / Mountain View, CA</span>
+          <span>📅 12 weeks (Summer)</span>
+          <span>💵 Paid (~$25/hr)</span>
+          <span>🎓 Rising Freshman/Sophomores</span>
+        </div>
+        <div class="tags">
+          <span class="tag tag-tech">Tech / CS</span>
+          <span class="tag tag-paid">Paid</span>
+          <span class="tag tag-remote">Remote Option</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="deadline-badge urgent">Deadline: Jan 31</div>
+        <div class="contacts">Contact: recruiting@google.com</div>
+        <select class="status-select">
+          <option>Exploring</option>
+          <option>Applied</option>
+          <option>Interviewing</option>
+          <option>Offer</option>
+          <option>Rejected</option>
+        </select>
+        <a class="btn-detail" href="#">View Details</a>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="intern-card paid">
+      <div class="logo-box">🧫</div>
+      <div class="info">
+        <h3>NIH High School Summer Internship (HSSiP)</h3>
+        <div class="company">National Institutes of Health</div>
+        <div class="meta">
+          <span>📍 Bethesda, MD (In-Person)</span>
+          <span>📅 8 weeks (June–August)</span>
+          <span>💵 Paid Stipend</span>
+          <span>🎓 Rising 11th/12th</span>
+        </div>
+        <div class="tags">
+          <span class="tag tag-bio">Bio / Health</span>
+          <span class="tag tag-paid">Stipend</span>
+          <span class="tag">Research</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="deadline-badge">Deadline: Mar 1</div>
+        <select class="status-select"><option>Exploring</option></select>
+        <a class="btn-detail" href="#">View Details</a>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="intern-card unpaid">
+      <div class="logo-box">🏥</div>
+      <div class="info">
+        <h3>Hospital Volunteer / Shadow Program</h3>
+        <div class="company">Local Hospital (TBD)</div>
+        <div class="meta">
+          <span>📍 Local (In-Person)</span>
+          <span>📅 Ongoing / Part-time</span>
+          <span>💰 Unpaid / Volunteer</span>
+          <span>🎓 Any grade</span>
+        </div>
+        <div class="tags">
+          <span class="tag tag-bio">Bio / Health</span>
+          <span class="tag tag-unpaid">Unpaid</span>
+          <span class="tag">Volunteer</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="deadline-badge">Rolling</div>
+        <div class="contacts">Contact: volunteer dept.</div>
+        <select class="status-select"><option>Exploring</option></select>
+        <a class="btn-detail" href="#">View Details</a>
+      </div>
+    </div>
+
+    <div class="add-card">+ Add New Internship</div>
+    <div class="note">[MOCK] Add form fields: Role title, Company, Industry, Remote/In-person, Paid/Unpaid, Deadline, Grade req, Contact, Notes, Link, Status.</div>
+  </div>
+</div>
+
+<footer>CollegeReady &mdash; Personal Use</footer>
+</body>
+</html>

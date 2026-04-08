@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>[MOCK] India Activities — College Readiness Hub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background: #f4f6f9; color: #1a1a2e; }
+
+    .note {
+      background: #fff9c4;
+      border-left: 4px solid #f0c400;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #555;
+      margin-top: 6px;
+      border-radius: 2px;
+    }
+
+    nav {
+      background: #1a1a2e;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 32px;
+    }
+    nav .logo { font-size: 20px; font-weight: 700; }
+    nav .links a { color: #ccc; text-decoration: none; margin-left: 24px; font-size: 14px; }
+    nav .links a.active { color: white; font-weight: 600; border-bottom: 2px solid #e94560; padding-bottom: 2px; }
+
+    .page-header {
+      background: linear-gradient(135deg, #b71c1c, #f57c00);
+      color: white;
+      padding: 40px 32px 32px;
+    }
+    .page-header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+    .page-header p { font-size: 15px; opacity: 0.85; max-width: 640px; }
+
+    /* ── TABS ── */
+    .tabs {
+      background: white;
+      border-bottom: 2px solid #e0e0e0;
+      display: flex;
+      padding: 0 32px;
+      gap: 0;
+    }
+    .tab {
+      padding: 14px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+    }
+    .tab.active { color: #b71c1c; border-bottom-color: #b71c1c; }
+    .tab:hover { color: #333; }
+
+    .content { max-width: 1100px; margin: 32px auto; padding: 0 32px; }
+
+    /* ── INTRO CALLOUT ── */
+    .callout {
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-size: 14px;
+      color: #5d4037;
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+    .callout strong { color: #bf360c; }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .section-header h2 { font-size: 20px; font-weight: 700; }
+    .btn-add { background: #b71c1c; color: white; border: none; padding: 9px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+    /* ── ACTIVITY CARD ── */
+    .activity-card {
+      background: white;
+      border-radius: 10px;
+      border: 1px solid #e4e8f0;
+      border-left: 5px solid #b71c1c;
+      padding: 22px 24px;
+      margin-bottom: 16px;
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .activity-card.orange  { border-left-color: #f57c00; }
+    .activity-card.saffron { border-left-color: #ff8f00; }
+    .activity-card.green   { border-left-color: #2e7d32; }
+
+    .activity-card .icon-box {
+      width: 52px; height: 52px;
+      border-radius: 10px;
+      background: #fbe9e7;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; flex-shrink: 0;
+    }
+    .activity-card .info { flex: 1; }
+    .activity-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .activity-card .org { font-size: 13px; color: #888; margin-bottom: 8px; }
+    .activity-card .desc { font-size: 13px; color: #555; line-height: 1.6; margin-bottom: 10px; }
+    .activity-card .meta { display: flex; gap: 16px; font-size: 13px; color: #666; flex-wrap: wrap; margin-bottom: 10px; }
+    .activity-card .tags { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .tag-cultural  { background: #fce4ec; color: #880e4f; }
+    .tag-language  { background: #fff3e0; color: #e65100; }
+    .tag-volunteer { background: #e8f5e9; color: #2e7d32; }
+    .tag-heritage  { background: #fbe9e7; color: #b71c1c; }
+    .tag-arts      { background: #f3e5f5; color: #6a1b9a; }
+    .tag-summer    { background: #fff9c4; color: #827717; }
+    .tag-diaspora  { background: #e3f2fd; color: #1565c0; }
+
+    .activity-card .right { text-align: right; flex-shrink: 0; min-width: 160px; }
+    .status-pill { display: inline-block; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+    .status-active   { background: #e8f5e9; color: #2e7d32; }
+    .status-planned  { background: #fff3e0; color: #e65100; }
+    .status-exploring{ background: #f3e5f5; color: #6a1b9a; }
+    .status-completed{ background: #f5f5f5; color: #757575; }
+
+    .hours-tracker { font-size: 12px; color: #888; margin-bottom: 8px; }
+    .hours-bar-wrap { background: #eee; border-radius: 4px; height: 6px; margin-bottom: 10px; }
+    .hours-bar { background: #b71c1c; border-radius: 4px; height: 6px; }
+    .btn-log { display: block; text-align: center; background: #b71c1c; color: white; padding: 8px; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; border: none; width: 100%; }
+
+    /* ── LOG TABLE ── */
+    .log-section { background: white; border-radius: 10px; border: 1px solid #e4e8f0; padding: 24px; margin-bottom: 28px; }
+    .log-section h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #888; padding: 8px 12px; border-bottom: 2px solid #f0f0f0; }
+    td { padding: 10px 12px; border-bottom: 1px solid #f5f5f5; color: #444; }
+    td:last-child { color: #b71c1c; font-weight: 600; }
+
+    /* ── TIPS ── */
+    .tip-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .tip-card { background: white; border-radius: 8px; border: 1px solid #e4e8f0; padding: 18px; }
+    .tip-card .tip-icon { font-size: 24px; margin-bottom: 8px; }
+    .tip-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: #1a1a2e; }
+    .tip-card p { font-size: 13px; color: #666; line-height: 1.5; }
+
+    .add-card { border: 2px dashed #d0d0d0; border-radius: 10px; padding: 24px; text-align: center; color: #aaa; font-size: 15px; cursor: pointer; margin-bottom: 16px; }
+    .add-card:hover { border-color: #b71c1c; color: #b71c1c; }
+
+    footer { background: #1a1a2e; color: #888; text-align: center; padding: 20px; font-size: 12px; margin-top: 48px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">CollegeReady</div>
+  <div class="links">
+    <a href="landing.html">Home</a>
+    <a href="summer-programs.html">Summer Programs</a>
+    <a href="internships.html">Internships</a>
+    <a href="extracurriculars.html">Extra Curriculars</a>
+    <a href="india-activities.html" class="active">India Activities</a>
+    <a href="ideas.html">Ideas</a>
+  </div>
+</nav>
+
+<div class="page-header">
+  <h1>🇮🇳 India Activities</h1>
+  <p>Track cultural engagement, language learning, heritage programs, volunteering in India, and diaspora community involvement. These experiences often provide compelling application context and personal essays.</p>
+</div>
+
+<!-- ── TABS ── -->
+<div class="tabs">
+  <div class="tab active">All Activities</div>
+  <div class="tab">Cultural & Heritage</div>
+  <div class="tab">Language</div>
+  <div class="tab">Volunteer / Service</div>
+  <div class="tab">Programs in India</div>
+  <div class="tab">Diaspora Networks</div>
+  <div class="tab">Hours Log</div>
+</div>
+<div class="note" style="margin:8px 32px;">[MOCK] Tabs filter the activity list below by category. "Hours Log" shows a table of all logged time entries.</div>
+
+<div class="content">
+
+  <div class="callout">
+    <strong>Why track this separately?</strong> India-connected experiences — language, culture, service — often stand out on college apps because they show depth of identity, global awareness, and genuine engagement with heritage. Keep notes that can be woven into essays.
+  </div>
+
+  <div class="section-header">
+    <h2>Active & Planned Activities</h2>
+    <button class="btn-add">+ Add Activity</button>
+  </div>
+
+  <!-- Card 1: Classical Dance -->
+  <div class="activity-card">
+    <div class="icon-box">💃</div>
+    <div class="info">
+      <h3>Bharatanatyam Classes</h3>
+      <div class="org">Local Dance Academy</div>
+      <div class="desc">Classical Indian dance training. Working toward Arangetram (debut performance). Approximately 2 sessions/week for 3 years.</div>
+      <div class="meta">
+        <span>📍 Local (In-Person)</span>
+        <span>📅 Ongoing — 3 years</span>
+        <span>⏱ ~6 hrs/month</span>
+      </div>
+      <div class="tags">
+        <span class="tag tag-arts">Arts</span>
+        <span class="tag tag-cultural">Cultural</span>
+        <span class="tag tag-heritage">Heritage</span>
+      </div>
+    </div>
+    <div class="right">
+      <div class="status-pill status-active">Active</div>
+      <div class="hours-tracker">72 hrs logged / 100 hr goal</div>
+      <div class="hours-bar-wrap"><div class="hours-bar" style="width:72%"></div></div>
+      <button class="btn-log">Log Hours</button>
+    </div>
+  </div>
+
+  <!-- Card 2: Language -->
+  <div class="activity-card orange">
+    <div class="icon-box">🗣️</div>
+    <div class="info">
+      <h3>Tamil Language Learning</h3>
+      <div class="org">Self-study + Heritage Language School</div>
+      <div class="desc">Reading, writing, and conversational Tamil. Attending Saturday heritage school classes. Goal: conversational fluency and ability to read literary Tamil.</div>
+      <div class="meta">
+        <span>📍 Local + Remote</span>
+        <span>📅 Ongoing — 2 years</span>
+        <span>⏱ ~4 hrs/week</span>
+      </div>
+      <div class="tags">
+        <span class="tag tag-language">Language</span>
+        <span class="tag tag-cultural">Cultural</span>
+      </div>
+      <div class="note">[MOCK] Could add a proficiency level selector: Beginner / Conversational / Fluent / Native.</div>
+    </div>
+    <div class="right">
+      <div class="status-pill status-active">Active</div>
+      <div class="hours-tracker">88 hrs logged</div>
+      <div class="hours-bar-wrap"><div class="hours-bar" style="width:60%; background:#f57c00;"></div></div>
+      <button class="btn-log" style="background:#f57c00;">Log Hours</button>
+    </div>
+  </div>
+
+  <!-- Card 3: Service Trip -->
+  <div class="activity-card green">
+    <div class="icon-box">🤝</div>
+    <div class="info">
+      <h3>Summer Volunteer Trip — Chennai</h3>
+      <div class="org">NGO / Family-organized (TBD)</div>
+      <div class="desc">Planned volunteer service at an NGO in Chennai during summer. Potential areas: education support, community health, or environmental project. Needs to be finalized.</div>
+      <div class="meta">
+        <span>📍 Chennai, India</span>
+        <span>📅 Summer (2–4 weeks)</span>
+        <span>⏱ Full-time during trip</span>
+      </div>
+      <div class="tags">
+        <span class="tag tag-volunteer">Volunteer</span>
+        <span class="tag tag-summer">Summer</span>
+        <span class="tag tag-heritage">India Trip</span>
+      </div>
+    </div>
+    <div class="right">
+      <div class="status-pill status-planned">Planned</div>
+      <div class="hours-tracker">0 hrs logged</div>
+      <div class="hours-bar-wrap"><div class="hours-bar" style="width:0%; background:#2e7d32;"></div></div>
+      <button class="btn-log" style="background:#2e7d32;">Log Hours</button>
+    </div>
+  </div>
+
+  <!-- Card 4: Diaspora org -->
+  <div class="activity-card saffron">
+    <div class="icon-box">🏛️</div>
+    <div class="info">
+      <h3>Indian Cultural Association Events</h3>
+      <div class="org">Local Indian-American Cultural Association</div>
+      <div class="desc">Volunteering at Diwali, Pongal, and other community events. Helping with youth programming and logistics. Building leadership within the diaspora community.</div>
+      <div class="meta">
+        <span>📍 Local (Events)</span>
+        <span>📅 3–5 events/year</span>
+        <span>⏱ ~20 hrs/year</span>
+      </div>
+      <div class="tags">
+        <span class="tag tag-cultural">Cultural</span>
+        <span class="tag tag-volunteer">Volunteer</span>
+        <span class="tag tag-diaspora">Diaspora</span>
+      </div>
+    </div>
+    <div class="right">
+      <div class="status-pill status-active">Active</div>
+      <div class="hours-tracker">22 hrs logged</div>
+      <div class="hours-bar-wrap"><div class="hours-bar" style="width:44%; background:#ff8f00;"></div></div>
+      <button class="btn-log" style="background:#ff8f00;">Log Hours</button>
+    </div>
+  </div>
+
+  <div class="add-card">+ Add India Activity</div>
+  <div class="note">[MOCK] Add form: Name, Org, Type (Cultural/Language/Volunteer/Program/Diaspora), Location (US/India), Status, Dates, Notes, Link, Hours goal.</div>
+
+  <!-- ── HOURS LOG ── -->
+  <div class="log-section" style="margin-top:32px;">
+    <h3>Hours Log — All India Activities</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Activity</th>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Hours</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Bharatanatyam</td><td>Apr 2, 2026</td><td>Weekly class + practice</td><td>3.0</td></tr>
+        <tr><td>Tamil Language School</td><td>Apr 5, 2026</td><td>Saturday class</td><td>2.0</td></tr>
+        <tr><td>ICA Volunteer</td><td>Mar 28, 2026</td><td>Ugadi event setup and hosting</td><td>5.5</td></tr>
+        <tr><td>Tamil Language School</td><td>Mar 29, 2026</td><td>Saturday class + homework</td><td>3.0</td></tr>
+      </tbody>
+    </table>
+    <div class="note" style="margin-top:12px;">[MOCK] Log entries are sortable by date or activity. "Add Log Entry" button at top right of table. Could export to PDF for college counselor review.</div>
+  </div>
+
+  <!-- ── TIPS / IDEAS FOR THIS SECTION ── -->
+  <h2 style="font-size:18px; font-weight:700; margin-bottom:16px;">Ideas to Explore</h2>
+  <div class="tip-grid">
+    <div class="tip-card">
+      <div class="tip-icon">🎓</div>
+      <h4>India Study Abroad Programs</h4>
+      <p>Summer language immersion programs in India (Tamil Nadu, Delhi, etc.) offered through US universities or nonprofit orgs.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">🧘</div>
+      <h4>Yoga / Classical Music Certification</h4>
+      <p>Structured certification in carnatic music or yoga can show depth of cultural engagement beyond surface participation.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">📚</div>
+      <h4>Indian-American Youth Organizations</h4>
+      <p>Organizations like BAPS Swaminarayan, Hindu Students Council (college chapter), or TiE Young Entrepreneurs.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-icon">🌿</div>
+      <h4>NGO Partnerships for Service</h4>
+      <p>Akshaya Patra, Teach for India, or Isha Foundation all have structured teen volunteer opportunities in India.</p>
+    </div>
+  </div>
+  <div class="note">[MOCK] These tips are static suggestions — eventually could be user-editable or linked to the Ideas Board.</div>
+
+</div>
+
+<footer>CollegeReady &mdash; Personal Use</footer>
+</body>
+</html>

@@ -1,0 +1,107 @@
+---
+export interface Props {
+  program: {
+    name: string;
+    org: string;
+    category: string;
+    status: string;
+    tier: number;
+    rating: number;
+    selectivity: string;
+    selectivityLabel: string;
+    collegeImpact: number;
+    collegeImpactLabel: string;
+    format: string;
+    cost: string;
+    duration: string;
+    grades: string;
+    url: string;
+    deadline: string;
+    desc: string;
+    note: string | null;
+    noteType: string | null;
+    tags: string[];
+  };
+}
+
+const { program } = Astro.props;
+
+const statusLabel: Record<string, string> = {
+  open: 'Open',
+  closed: 'Closed',
+  nextyear: 'Apply Next Year',
+  conflict: 'Conflict',
+};
+
+const tierLabel: Record<number, string> = {
+  1: 'T1 – Elite',
+  2: 'T2 – Highly Selective',
+  3: 'T3 – Moderate',
+  4: 'T4 – Accessible',
+};
+
+const stars = '★'.repeat(Math.round(program.rating)) + '☆'.repeat(5 - Math.round(program.rating));
+
+const costKey = program.cost.toLowerCase().replace('/', '').replace(' ', '') as string;
+---
+
+<div
+  class="program-card"
+  data-tier={program.tier}
+  data-category={program.category}
+  data-status={program.status}
+  data-cost={program.cost}
+  data-format={program.format}
+  data-name={program.name.toLowerCase()}
+  data-tags={program.tags.join(' ').toLowerCase()}
+  data-org={program.org.toLowerCase()}
+>
+  <!-- Header -->
+  <div class="program-card__header">
+    <div style="flex:1">
+      <p class="program-card__name">{program.name}</p>
+      <p class="program-card__org">{program.org}</p>
+    </div>
+    <span class={`badge badge--${program.status}`}>{statusLabel[program.status] ?? program.status}</span>
+  </div>
+
+  <!-- Meta badges -->
+  <div class="program-card__meta">
+    <span class={`badge badge--tier${program.tier}`}>{tierLabel[program.tier]}</span>
+    <span class={`badge badge--${costKey}`}>{program.cost}</span>
+    <span class="badge badge--format">{program.format}</span>
+    <span class="badge badge--format">📅 {program.duration}</span>
+    <span class="badge badge--format">🎓 {program.grades}</span>
+  </div>
+
+  <!-- Stars + selectivity -->
+  <div style="display:flex; align-items:center; gap:0.75rem; font-size:0.78rem; color:var(--sl-color-gray-2)">
+    <span class="stars">{stars}</span>
+    <span>Selectivity: {program.selectivityLabel}</span>
+  </div>
+
+  <!-- Description -->
+  <p class="program-card__desc">{program.desc}</p>
+
+  <!-- Note -->
+  {program.note && (
+    <div class={`program-card__note program-card__note--${program.noteType ?? 'info'}`}>
+      {program.note}
+    </div>
+  )}
+
+  <!-- Tags -->
+  <div class="program-card__tags">
+    {program.tags.map(tag => (
+      <span class="badge badge--tag">{tag}</span>
+    ))}
+  </div>
+
+  <!-- Footer: deadline + link -->
+  <div class="program-card__footer">
+    <div class="program-card__deadline">⏰ {program.deadline}</div>
+    {program.url && program.url.startsWith('http') && (
+      <a class="btn-link" href={program.url} target="_blank" rel="noopener">Apply →</a>
+    )}
+  </div>
+</div>
