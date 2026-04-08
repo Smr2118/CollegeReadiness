@@ -4,6 +4,8 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
+	site: 'https://smr2118.github.io',
+	base: '/CollegeReadiness',
 	integrations: [
 		starlight({
 			title: 'College Readiness Hub',
