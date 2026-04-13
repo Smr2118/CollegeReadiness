@@ -20,8 +20,7 @@ const { programs } = programData as any;
     const grid = document.getElementById('pg-grid');
     const countEl = document.getElementById('pg-count');
     const emptyEl = document.getElementById('pg-empty');
-    const searchEl = document.getElementById('pg-search');
-    if (!grid || !countEl || !emptyEl || !searchEl) return;
+    if (!grid || !countEl || !emptyEl) return;
 
     const active = {
       status: 'open',
@@ -100,34 +99,35 @@ const { programs } = programData as any;
     // Apply on load
     refresh();
 
-    // Filter chip handlers (status, tier, cost, format, category, interest)
-    document.querySelectorAll('.filter-chip[data-filter]').forEach(chip => {
-      chip.addEventListener('click', () => {
-        const filter = chip.dataset.filter;
-        const value = chip.dataset.value;
-        active[filter] = value;
-        document.querySelectorAll(`.filter-chip[data-filter="${filter}"]`).forEach(c => {
-          c.classList.toggle('active', c.dataset.value === value);
-        });
-        applyFilters();
+    // Filter chips — event delegation on document
+    document.addEventListener('click', (e) => {
+      const chip = (e.target as HTMLElement).closest('.filter-chip[data-filter]');
+      if (!chip) return;
+      const filter = (chip as HTMLElement).dataset.filter;
+      const value = (chip as HTMLElement).dataset.value;
+      if (!filter || !value) return;
+      active[filter] = value;
+      document.querySelectorAll(`.filter-chip[data-filter="${filter}"]`).forEach(c => {
+        (c as HTMLElement).classList.toggle('active', (c as HTMLElement).dataset.value === value);
       });
+      applyFilters();
     });
 
-    // Sort dropdown handler
-    const sortSelect = document.getElementById('pg-sort') as HTMLSelectElement;
-    if (sortSelect) {
-      sortSelect.addEventListener('change', () => {
-        sortBy = sortSelect.value;
-        refresh();
-      });
-    }
+    // Sort dropdown — event delegation
+    document.addEventListener('change', (e) => {
+      const sel = (e.target as HTMLElement);
+      if (sel.id !== 'pg-sort') return;
+      sortBy = (sel as HTMLSelectElement).value;
+      refresh();
+    });
 
-    // Search handler (debounced)
+    // Search handler — event delegation (debounced)
     let debounceTimer;
-    searchEl.addEventListener('input', () => {
+    document.addEventListener('input', (e) => {
+      if ((e.target as HTMLElement).id !== 'pg-search') return;
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        query = searchEl.value.toLowerCase().trim();
+        query = (e.target as HTMLInputElement).value.toLowerCase().trim();
         applyFilters();
       }, 200);
     });
