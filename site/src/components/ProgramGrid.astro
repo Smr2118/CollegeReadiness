@@ -2,95 +2,18 @@
 import ProgramCard from './ProgramCard.astro';
 import programData from '../data/programs.json';
 
-const { programs, meta } = programData as any;
+const { programs } = programData as any;
 ---
 
-<div class="pg-layout">
+<p class="results-count" id="pg-count">{programs.length} programs</p>
 
-  <!-- Left: results -->
-  <div class="pg-main">
-    <p class="results-count" id="pg-count">{programs.length} programs</p>
-
-    <div class="program-grid" id="pg-grid">
-      {programs.map((p: any) => <ProgramCard program={p} />)}
-    </div>
-
-    <p id="pg-empty" style="display:none; color:var(--sl-color-gray-2); margin-top:2rem;">
-      No programs match your filters. Try broadening your search.
-    </p>
-  </div>
-
-  <!-- Right: filter sidebar -->
-  <aside class="pg-sidebar">
-    <div class="filter-panel">
-
-      <div class="filter-panel__section">
-        <span class="filter-panel__label">Search</span>
-        <input
-          class="filter-search"
-          type="text"
-          id="pg-search"
-          placeholder="Search by name, org, or tag…"
-          autocomplete="off"
-        />
-      </div>
-
-      <div class="filter-panel__section">
-        <span class="filter-panel__label">Status</span>
-        <div class="filter-panel__chips">
-          <button class="filter-chip" data-filter="status" data-value="all">All</button>
-          <button class="filter-chip active" data-filter="status" data-value="open">Open</button>
-          <button class="filter-chip" data-filter="status" data-value="closed">Closed</button>
-          <button class="filter-chip" data-filter="status" data-value="nextyear">Apply Next Year</button>
-          <button class="filter-chip" data-filter="status" data-value="conflict">Conflict</button>
-        </div>
-      </div>
-
-      <div class="filter-panel__section">
-        <span class="filter-panel__label">Tier</span>
-        <div class="filter-panel__chips">
-          <button class="filter-chip active" data-filter="tier" data-value="all">All</button>
-          <button class="filter-chip" data-filter="tier" data-value="1">T1 Elite</button>
-          <button class="filter-chip" data-filter="tier" data-value="2">T2 Highly Selective</button>
-          <button class="filter-chip" data-filter="tier" data-value="3">T3 Moderate</button>
-          <button class="filter-chip" data-filter="tier" data-value="4">T4 Accessible</button>
-        </div>
-      </div>
-
-      <div class="filter-panel__section">
-        <span class="filter-panel__label">Cost</span>
-        <div class="filter-panel__chips">
-          <button class="filter-chip active" data-filter="cost" data-value="all">All</button>
-          <button class="filter-chip" data-filter="cost" data-value="Free">Free</button>
-          <button class="filter-chip" data-filter="cost" data-value="Stipend">Stipend</button>
-          <button class="filter-chip" data-filter="cost" data-value="Paid">Paid (tuition)</button>
-        </div>
-      </div>
-
-      <div class="filter-panel__section">
-        <span class="filter-panel__label">Format</span>
-        <div class="filter-panel__chips">
-          <button class="filter-chip active" data-filter="format" data-value="all">All</button>
-          {meta.formats.map((f: string) => (
-            <button class="filter-chip" data-filter="format" data-value={f}>{f}</button>
-          ))}
-        </div>
-      </div>
-
-      <div class="filter-panel__section">
-        <span class="filter-panel__label">Category</span>
-        <div class="filter-panel__chips">
-          <button class="filter-chip active" data-filter="category" data-value="all">All</button>
-          {meta.categories.map((c: string) => (
-            <button class="filter-chip" data-filter="category" data-value={c}>{c}</button>
-          ))}
-        </div>
-      </div>
-
-    </div>
-  </aside>
-
+<div class="program-grid" id="pg-grid">
+  {programs.map((p: any) => <ProgramCard program={p} />)}
 </div>
+
+<p id="pg-empty" style="display:none; color:var(--sl-color-gray-2); margin-top:2rem;">
+  No programs match your filters. Try broadening your search.
+</p>
 
 <script is:inline>
   (function () {

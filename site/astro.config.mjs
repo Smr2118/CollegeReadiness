@@ -11,6 +11,9 @@ export default defineConfig({
 			title: 'College Readiness Hub',
 			description: 'Track summer programs, internships, extra curriculars, and more.',
 			customCss: ['./src/styles/custom.css'],
+			components: {
+				TableOfContents: './src/components/CustomTableOfContents.astro',
+			},
 			sidebar: [
 				{ label: 'Home', link: '/' },
 				{

@@ -1,7 +1,7 @@
 /* ── Program cards ── */
 .program-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.25rem;
   margin-top: 0.75rem;
 }
@@ -172,24 +172,7 @@
 
 .badge--tag       { background: var(--sl-color-gray-6); color: var(--sl-color-gray-1); font-size: 0.68rem; }
 
-/* ── Layout: grid + sidebar ── */
-.pg-layout {
-  display: grid;
-  grid-template-columns: 1fr 220px;
-  gap: 1.5rem;
-  align-items: start;
-}
-
-.pg-main {
-  min-width: 0;
-}
-
-.pg-sidebar {
-  position: sticky;
-  top: 4rem;
-}
-
-/* ── Filter panel ── */
+/* ── Filter panel (Starlight right sidebar) ── */
 .filter-panel {
   display: flex;
   flex-direction: column;
@@ -220,15 +203,6 @@
   gap: 0.35rem;
 }
 
-@media (max-width: 768px) {
-  .pg-layout {
-    grid-template-columns: 1fr;
-  }
-  .pg-sidebar {
-    position: static;
-    order: -1;
-  }
-}
 
 .filter-chip {
   padding: 0.25rem 0.75rem;
