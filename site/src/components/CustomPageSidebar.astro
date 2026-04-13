@@ -89,11 +89,11 @@ const { meta } = programData as any;
 
         <div class="filter-panel__section">
           <span class="filter-panel__label">Sort By</span>
-          <div class="filter-panel__chips">
-            <button class="sort-chip active" data-sort="default">Default</button>
-            <button class="sort-chip" data-sort="deadline">⏰ Deadline</button>
-            <button class="sort-chip" data-sort="interest">⭐ Interest</button>
-          </div>
+          <select id="pg-sort" class="sort-select">
+            <option value="default">Default</option>
+            <option value="deadline">⏰ Deadline (earliest first)</option>
+            <option value="interest">⭐ Interest (applying first)</option>
+          </select>
         </div>
 
       </div>

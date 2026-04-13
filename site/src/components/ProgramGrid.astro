@@ -113,16 +113,14 @@ const { programs } = programData as any;
       });
     });
 
-    // Sort chip handlers
-    document.querySelectorAll('.sort-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        sortBy = chip.dataset.sort;
-        document.querySelectorAll('.sort-chip').forEach(c => {
-          c.classList.toggle('active', c.dataset.sort === sortBy);
-        });
+    // Sort dropdown handler
+    const sortSelect = document.getElementById('pg-sort') as HTMLSelectElement;
+    if (sortSelect) {
+      sortSelect.addEventListener('change', () => {
+        sortBy = sortSelect.value;
         refresh();
       });
-    });
+    }
 
     // Search handler (debounced)
     let debounceTimer;
