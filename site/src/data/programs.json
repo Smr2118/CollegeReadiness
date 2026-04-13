@@ -1004,6 +1004,28 @@
       "tags": ["Rutgers", "New Jersey", "Molecular Biology", "Bioinformatics", "GenBank Publication", "DNA Research", "Paid", "Rolling Admissions"]
     },
     {
+      "name": "BMES High School Poster Expo",
+      "org": "Biomedical Engineering Society (BMES)",
+      "category": "Life Sciences",
+      "status": "open",
+      "tier": 3,
+      "rating": 3.5,
+      "selectivity": "moderate",
+      "selectivityLabel": "Open to Juniors & Seniors (no lab required)",
+      "collegeImpact": 3,
+      "collegeImpactLabel": "High",
+      "format": "In-Person",
+      "cost": "Paid",
+      "duration": "4 days — Oct 21–24, 2026",
+      "grades": "Rising Juniors & Seniors (by fall 2026)",
+      "url": "https://www.bmes.org/2026/annualmeeting/high-school-poster-expo",
+      "deadline": "Application deadline coming soon — Conference: Oct 21–24, 2026 (Orlando, FL)",
+      "desc": "Present a biomedical engineering poster at the BMES 2026 Annual Meeting alongside graduate students, researchers, and industry professionals. No prior lab experience required — any BME-related topic accepted. Students receive expert feedback, networking access, and entry to scientific sessions at one of the nation's premier BME conferences.",
+      "note": "$100 registration fee per student + $100 per chaperone (required if under 18). Travel and housing not covered. Especially encouraged for Orlando-area students, BMES chapter members, and underrepresented students.",
+      "noteType": "info",
+      "tags": ["BMES", "Biomedical Engineering", "Conference", "Poster Presentation", "Networking", "Orlando", "No Lab Required", "Oct 2026"]
+    },
+    {
       "name": "AMS Young Scholars Program (Epsilon Fund)",
       "org": "American Mathematical Society",
       "category": "Math & Physics",
