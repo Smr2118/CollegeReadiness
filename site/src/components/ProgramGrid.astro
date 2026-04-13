@@ -23,20 +23,54 @@ const { programs } = programData as any;
     const searchEl = document.getElementById('pg-search');
     if (!grid || !countEl || !emptyEl || !searchEl) return;
 
-    const cards = Array.from(grid.querySelectorAll('.program-card'));
-
     const active = {
       status: 'open',
       tier: 'all',
       cost: 'all',
       format: 'all',
       category: 'all',
+      interest: 'all',
     };
     let query = '';
+    let sortBy = 'default';
+
+    // Original DOM order for reset
+    const originalOrder = Array.from(grid.querySelectorAll('.program-card'));
+
+    function parseDeadline(text) {
+      if (!text) return Infinity;
+      // Extract first date-like string e.g. "April 27, 2026" or "May 31, 2026"
+      const m = text.match(/([A-Z][a-z]+ \d{1,2},?\s*\d{4})/);
+      if (m) {
+        const d = new Date(m[1]);
+        if (!isNaN(d)) return d.getTime();
+      }
+      return Infinity; // passed/unknown go to end
+    }
+
+    const interestOrder = { applying: 0, researching: 1, maybe: 2, '': 3, skip: 4 };
+
+    function sortCards() {
+      const cards = Array.from(grid.querySelectorAll('.program-card'));
+      if (sortBy === 'default') {
+        originalOrder.forEach(c => grid.appendChild(c));
+        return;
+      }
+      if (sortBy === 'deadline') {
+        cards.sort((a, b) => parseDeadline(a.dataset.deadline) - parseDeadline(b.dataset.deadline));
+      } else if (sortBy === 'interest') {
+        cards.sort((a, b) => {
+          const ia = interestOrder[a.dataset.interest || ''] ?? 3;
+          const ib = interestOrder[b.dataset.interest || ''] ?? 3;
+          return ia - ib;
+        });
+      }
+      cards.forEach(c => grid.appendChild(c));
+    }
 
     function applyFilters() {
       let visible = 0;
-      cards.forEach(card => {
+      grid.querySelectorAll('.program-card').forEach(card => {
         const el = card;
         const matches =
           (active.status === 'all' || el.dataset.status === active.status) &&
@@ -44,6 +78,7 @@ const { programs } = programData as any;
           (active.cost === 'all' || el.dataset.cost === active.cost) &&
           (active.format === 'all' || el.dataset.format === active.format) &&
           (active.category === 'all' || el.dataset.category === active.category) &&
+          (active.interest === 'all' || el.dataset.interest === active.interest) &&
           (query === '' ||
             el.dataset.name.includes(query) ||
             el.dataset.org.includes(query) ||
@@ -57,21 +92,35 @@ const { programs } = programData as any;
       emptyEl.style.display = visible === 0 ? '' : 'none';
     }
 
-    // Apply on load
-    applyFilters();
+    function refresh() {
+      sortCards();
+      applyFilters();
+    }
 
-    // Chip click handlers
+    // Apply on load
+    refresh();
+
+    // Filter chip handlers (status, tier, cost, format, category, interest)
     document.querySelectorAll('.filter-chip[data-filter]').forEach(chip => {
       chip.addEventListener('click', () => {
         const filter = chip.dataset.filter;
         const value = chip.dataset.value;
         active[filter] = value;
-
         document.querySelectorAll(`.filter-chip[data-filter="${filter}"]`).forEach(c => {
           c.classList.toggle('active', c.dataset.value === value);
         });
-
         applyFilters();
+      });
+    });
+
+    // Sort chip handlers
+    document.querySelectorAll('.sort-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        sortBy = chip.dataset.sort;
+        document.querySelectorAll('.sort-chip').forEach(c => {
+          c.classList.toggle('active', c.dataset.sort === sortBy);
+        });
+        refresh();
       });
     });
 
@@ -84,5 +133,8 @@ const { programs } = programData as any;
         applyFilters();
       }, 200);
     });
+
+    // Re-filter when any card's interest changes
+    document.addEventListener('interest-changed', applyFilters);
   })();
 </script>

@@ -76,6 +76,26 @@ const { meta } = programData as any;
           </div>
         </div>
 
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">My Interest</span>
+          <div class="filter-panel__chips">
+            <button class="filter-chip active" data-filter="interest" data-value="all">All</button>
+            <button class="filter-chip" data-filter="interest" data-value="applying">🔥 Applying</button>
+            <button class="filter-chip" data-filter="interest" data-value="researching">👀 Researching</button>
+            <button class="filter-chip" data-filter="interest" data-value="maybe">🤔 Maybe</button>
+            <button class="filter-chip" data-filter="interest" data-value="skip">❌ Skip</button>
+          </div>
+        </div>
+
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Sort By</span>
+          <div class="filter-panel__chips">
+            <button class="sort-chip active" data-sort="default">Default</button>
+            <button class="sort-chip" data-sort="deadline">⏰ Deadline</button>
+            <button class="sort-chip" data-sort="interest">⭐ Interest</button>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

@@ -249,6 +249,72 @@
   margin-bottom: 0.5rem;
 }
 
+/* ── Interest selector ── */
+.program-card__interest-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding-top: 0.4rem;
+}
+
+.program-card__interest-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sl-color-gray-3);
+  margin-right: 0.1rem;
+}
+
+.interest-chip {
+  padding: 0.18rem 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid var(--sl-color-gray-5);
+  background: var(--sl-color-bg);
+  color: var(--sl-color-gray-2);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.1s;
+  user-select: none;
+}
+
+.interest-chip:hover {
+  border-color: var(--sl-color-accent);
+  color: var(--sl-color-accent);
+}
+
+.interest-chip.active {
+  background: var(--sl-color-accent);
+  border-color: var(--sl-color-accent);
+  color: var(--sl-color-white);
+}
+
+/* ── Sort chips (same style as filter chips) ── */
+.sort-chip {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid var(--sl-color-gray-4);
+  background: var(--sl-color-bg);
+  color: var(--sl-color-gray-2);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.1s;
+  user-select: none;
+}
+
+.sort-chip:hover {
+  border-color: var(--sl-color-accent);
+  color: var(--sl-color-accent);
+}
+
+.sort-chip.active {
+  background: var(--sl-color-accent);
+  border-color: var(--sl-color-accent);
+  color: var(--sl-color-white);
+}
+
 /* ── Personal notes textarea ── */
 .program-card__notes-section {
   display: flex;

@@ -63,6 +63,35 @@ const costKey = program.cost.toLowerCase().replace('/', '').replace(' ', '') as 
     if (saved) ta.value = saved;
     ta.addEventListener('input', () => localStorage.setItem(key, ta.value));
   });
+
+  // Interest selector
+  document.querySelectorAll<HTMLElement>('.program-card__interest-row').forEach(row => {
+    const card = row.closest<HTMLElement>('.program-card');
+    if (!card) return;
+    const key = card.dataset.interestKey!;
+
+    // Load saved interest
+    const saved = localStorage.getItem(key) ?? '';
+    card.dataset.interest = saved;
+    row.querySelectorAll<HTMLButtonElement>('.interest-chip').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.iv === saved);
+    });
+
+    // Handle clicks (stop propagation so card doesn't toggle)
+    row.addEventListener('click', e => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.interest-chip');
+      if (!btn) return;
+      e.stopPropagation();
+      const val = btn.dataset.iv!;
+      card.dataset.interest = val;
+      localStorage.setItem(key, val);
+      row.querySelectorAll<HTMLButtonElement>('.interest-chip').forEach(b => {
+        b.classList.toggle('active', b.dataset.iv === val);
+      });
+      // Notify ProgramGrid to re-filter/sort
+      document.dispatchEvent(new CustomEvent('interest-changed'));
+    });
+  });
 </script>
 
 <div
@@ -75,6 +104,9 @@ const costKey = program.cost.toLowerCase().replace('/', '').replace(' ', '') as 
   data-name={program.name.toLowerCase()}
   data-tags={program.tags.join(' ').toLowerCase()}
   data-org={program.org.toLowerCase()}
+  data-deadline={program.deadline}
+  data-interest=""
+  data-interest-key={`pc-interest-${program.name}`}
 >
   <!-- Collapsed header (always visible, clickable) -->
   <button class="program-card__toggle" aria-expanded="false">
@@ -87,6 +119,16 @@ const costKey = program.cost.toLowerCase().replace('/', '').replace(' ', '') as 
       <span class="program-card__chevron">›</span>
     </div>
   </button>
+
+  <!-- Interest selector (always visible, outside toggle) -->
+  <div class="program-card__interest-row">
+    <span class="program-card__interest-label">Interest:</span>
+    <button class="interest-chip active" data-iv="">—</button>
+    <button class="interest-chip" data-iv="applying">🔥 Applying</button>
+    <button class="interest-chip" data-iv="researching">👀 Researching</button>
+    <button class="interest-chip" data-iv="maybe">🤔 Maybe</button>
+    <button class="interest-chip" data-iv="skip">❌ Skip</button>
+  </div>
 
   <!-- Expandable body -->
   <div class="program-card__body">
