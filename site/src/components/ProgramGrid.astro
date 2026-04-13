@@ -5,81 +5,92 @@ import programData from '../data/programs.json';
 const { programs, meta } = programData as any;
 ---
 
-<!-- Filter Toolbar -->
-<div class="filter-toolbar">
-  <div class="filter-toolbar__top">
-    <div class="filter-toolbar__row" style="flex:1">
-      <span class="filter-toolbar__label">Search</span>
-      <input
-        class="filter-search"
-        type="text"
-        id="pg-search"
-        placeholder="Search by name, org, or tag…"
-        autocomplete="off"
-      />
+<div class="pg-layout">
+
+  <!-- Left: results -->
+  <div class="pg-main">
+    <p class="results-count" id="pg-count">{programs.length} programs</p>
+
+    <div class="program-grid" id="pg-grid">
+      {programs.map((p: any) => <ProgramCard program={p} />)}
     </div>
-    <button class="filter-toggle" id="pg-filter-toggle" aria-expanded="false">
-      Filters <span class="filter-toggle__arrow">▼</span>
-    </button>
+
+    <p id="pg-empty" style="display:none; color:var(--sl-color-gray-2); margin-top:2rem;">
+      No programs match your filters. Try broadening your search.
+    </p>
   </div>
 
-  <!-- Status always visible -->
-  <div class="filter-toolbar__row">
-    <span class="filter-toolbar__label">Status</span>
-    <button class="filter-chip" data-filter="status" data-value="all">All</button>
-    <button class="filter-chip active" data-filter="status" data-value="open">Open</button>
-    <button class="filter-chip" data-filter="status" data-value="closed">Closed</button>
-    <button class="filter-chip" data-filter="status" data-value="nextyear">Apply Next Year</button>
-    <button class="filter-chip" data-filter="status" data-value="conflict">Conflict</button>
-  </div>
+  <!-- Right: filter sidebar -->
+  <aside class="pg-sidebar">
+    <div class="filter-panel">
 
-  <div class="filter-toolbar__collapsible" id="pg-filter-collapsible">
+      <div class="filter-panel__section">
+        <span class="filter-panel__label">Search</span>
+        <input
+          class="filter-search"
+          type="text"
+          id="pg-search"
+          placeholder="Search by name, org, or tag…"
+          autocomplete="off"
+        />
+      </div>
 
-  <div class="filter-toolbar__row">
-    <span class="filter-toolbar__label">Tier</span>
-    <button class="filter-chip active" data-filter="tier" data-value="all">All</button>
-    <button class="filter-chip" data-filter="tier" data-value="1">T1 Elite</button>
-    <button class="filter-chip" data-filter="tier" data-value="2">T2 Highly Selective</button>
-    <button class="filter-chip" data-filter="tier" data-value="3">T3 Moderate</button>
-    <button class="filter-chip" data-filter="tier" data-value="4">T4 Accessible</button>
-  </div>
+      <div class="filter-panel__section">
+        <span class="filter-panel__label">Status</span>
+        <div class="filter-panel__chips">
+          <button class="filter-chip" data-filter="status" data-value="all">All</button>
+          <button class="filter-chip active" data-filter="status" data-value="open">Open</button>
+          <button class="filter-chip" data-filter="status" data-value="closed">Closed</button>
+          <button class="filter-chip" data-filter="status" data-value="nextyear">Apply Next Year</button>
+          <button class="filter-chip" data-filter="status" data-value="conflict">Conflict</button>
+        </div>
+      </div>
 
-  <div class="filter-toolbar__row">
-    <span class="filter-toolbar__label">Cost</span>
-    <button class="filter-chip active" data-filter="cost" data-value="all">All</button>
-    <button class="filter-chip" data-filter="cost" data-value="Free">Free</button>
-    <button class="filter-chip" data-filter="cost" data-value="Stipend">Stipend</button>
-    <button class="filter-chip" data-filter="cost" data-value="Paid">Paid (tuition)</button>
-  </div>
+      <div class="filter-panel__section">
+        <span class="filter-panel__label">Tier</span>
+        <div class="filter-panel__chips">
+          <button class="filter-chip active" data-filter="tier" data-value="all">All</button>
+          <button class="filter-chip" data-filter="tier" data-value="1">T1 Elite</button>
+          <button class="filter-chip" data-filter="tier" data-value="2">T2 Highly Selective</button>
+          <button class="filter-chip" data-filter="tier" data-value="3">T3 Moderate</button>
+          <button class="filter-chip" data-filter="tier" data-value="4">T4 Accessible</button>
+        </div>
+      </div>
 
-  <div class="filter-toolbar__row">
-    <span class="filter-toolbar__label">Format</span>
-    <button class="filter-chip active" data-filter="format" data-value="all">All</button>
-    {meta.formats.map((f: string) => (
-      <button class="filter-chip" data-filter="format" data-value={f}>{f}</button>
-    ))}
-  </div>
+      <div class="filter-panel__section">
+        <span class="filter-panel__label">Cost</span>
+        <div class="filter-panel__chips">
+          <button class="filter-chip active" data-filter="cost" data-value="all">All</button>
+          <button class="filter-chip" data-filter="cost" data-value="Free">Free</button>
+          <button class="filter-chip" data-filter="cost" data-value="Stipend">Stipend</button>
+          <button class="filter-chip" data-filter="cost" data-value="Paid">Paid (tuition)</button>
+        </div>
+      </div>
 
-  <div class="filter-toolbar__row">
-    <span class="filter-toolbar__label">Category</span>
-    <button class="filter-chip active" data-filter="category" data-value="all">All</button>
-    {meta.categories.map((c: string) => (
-      <button class="filter-chip" data-filter="category" data-value={c}>{c}</button>
-    ))}
-  </div>
-  </div><!-- end collapsible -->
+      <div class="filter-panel__section">
+        <span class="filter-panel__label">Format</span>
+        <div class="filter-panel__chips">
+          <button class="filter-chip active" data-filter="format" data-value="all">All</button>
+          {meta.formats.map((f: string) => (
+            <button class="filter-chip" data-filter="format" data-value={f}>{f}</button>
+          ))}
+        </div>
+      </div>
+
+      <div class="filter-panel__section">
+        <span class="filter-panel__label">Category</span>
+        <div class="filter-panel__chips">
+          <button class="filter-chip active" data-filter="category" data-value="all">All</button>
+          {meta.categories.map((c: string) => (
+            <button class="filter-chip" data-filter="category" data-value={c}>{c}</button>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
 </div>
-
-<p class="results-count" id="pg-count">{programs.length} programs</p>
-
-<!-- Program Grid -->
-<div class="program-grid" id="pg-grid">
-  {programs.map((p: any) => <ProgramCard program={p} />)}
-</div>
-
-<p id="pg-empty" style="display:none; color:var(--sl-color-gray-2); margin-top:2rem;">
-  No programs match your filters. Try broadening your search.
-</p>
 
 <script is:inline>
   (function () {
@@ -91,7 +102,6 @@ const { programs, meta } = programData as any;
 
     const cards = Array.from(grid.querySelectorAll('.program-card'));
 
-    // Active filter state — default status to 'open'
     const active = {
       status: 'open',
       tier: 'all',
@@ -100,9 +110,6 @@ const { programs, meta } = programData as any;
       category: 'all',
     };
     let query = '';
-
-    // Apply on load
-    applyFilters();
 
     function applyFilters() {
       let visible = 0;
@@ -127,6 +134,9 @@ const { programs, meta } = programData as any;
       emptyEl.style.display = visible === 0 ? '' : 'none';
     }
 
+    // Apply on load
+    applyFilters();
+
     // Chip click handlers
     document.querySelectorAll('.filter-chip[data-filter]').forEach(chip => {
       chip.addEventListener('click', () => {
@@ -134,7 +144,6 @@ const { programs, meta } = programData as any;
         const value = chip.dataset.value;
         active[filter] = value;
 
-        // Update active class within this filter group
         document.querySelectorAll(`.filter-chip[data-filter="${filter}"]`).forEach(c => {
           c.classList.toggle('active', c.dataset.value === value);
         });
@@ -152,18 +161,5 @@ const { programs, meta } = programData as any;
         applyFilters();
       }, 200);
     });
-
-    // Collapsible filter toggle
-    const toggleBtn = document.getElementById('pg-filter-toggle');
-    const collapsible = document.getElementById('pg-filter-collapsible');
-    if (toggleBtn && collapsible) {
-      toggleBtn.addEventListener('click', () => {
-        const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
-        toggleBtn.setAttribute('aria-expanded', String(!expanded));
-        collapsible.classList.toggle('is-open', !expanded);
-        const arrow = toggleBtn.querySelector('.filter-toggle__arrow');
-        if (arrow) arrow.textContent = !expanded ? '▲' : '▼';
-      });
-    }
   })();
 </script>
