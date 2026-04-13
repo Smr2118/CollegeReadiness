@@ -101,33 +101,33 @@ const { programs } = programData as any;
 
     // Filter chips — event delegation on document
     document.addEventListener('click', (e) => {
-      const chip = (e.target as HTMLElement).closest('.filter-chip[data-filter]');
+      const chip = e.target.closest('.filter-chip[data-filter]');
       if (!chip) return;
-      const filter = (chip as HTMLElement).dataset.filter;
-      const value = (chip as HTMLElement).dataset.value;
+      const filter = chip.dataset.filter;
+      const value = chip.dataset.value;
       if (!filter || !value) return;
       active[filter] = value;
       document.querySelectorAll(`.filter-chip[data-filter="${filter}"]`).forEach(c => {
-        (c as HTMLElement).classList.toggle('active', (c as HTMLElement).dataset.value === value);
+        c.classList.toggle('active', c.dataset.value === value);
       });
       applyFilters();
     });
 
     // Sort dropdown — event delegation
     document.addEventListener('change', (e) => {
-      const sel = (e.target as HTMLElement);
+      const sel = e.target;
       if (sel.id !== 'pg-sort') return;
-      sortBy = (sel as HTMLSelectElement).value;
+      sortBy = sel.value;
       refresh();
     });
 
     // Search handler — event delegation (debounced)
     let debounceTimer;
     document.addEventListener('input', (e) => {
-      if ((e.target as HTMLElement).id !== 'pg-search') return;
+      if (e.target.id !== 'pg-search') return;
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        query = (e.target as HTMLInputElement).value.toLowerCase().trim();
+        query = e.target.value.toLowerCase().trim();
         applyFilters();
       }, 200);
     });
