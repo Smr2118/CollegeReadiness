@@ -1,0 +1,104 @@
+---
+import MobileTableOfContents from 'virtual:starlight/components/MobileTableOfContents';
+import TableOfContents from 'virtual:starlight/components/TableOfContents';
+import programData from '../data/programs.json';
+
+const isProgramsPage = Astro.url.pathname.includes('/programs');
+const { toc } = Astro.locals.starlightRoute;
+const { meta } = programData as any;
+---
+
+{isProgramsPage ? (
+  <div class="right-sidebar-panel sl-hidden lg:sl-block">
+    <div class="sl-container">
+      <div class="filter-panel">
+
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Search</span>
+          <input
+            class="filter-search"
+            type="text"
+            id="pg-search"
+            placeholder="Search…"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Status</span>
+          <div class="filter-panel__chips">
+            <button class="filter-chip" data-filter="status" data-value="all">All</button>
+            <button class="filter-chip active" data-filter="status" data-value="open">Open</button>
+            <button class="filter-chip" data-filter="status" data-value="closed">Closed</button>
+            <button class="filter-chip" data-filter="status" data-value="nextyear">Next Year</button>
+            <button class="filter-chip" data-filter="status" data-value="conflict">Conflict</button>
+          </div>
+        </div>
+
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Tier</span>
+          <div class="filter-panel__chips">
+            <button class="filter-chip active" data-filter="tier" data-value="all">All</button>
+            <button class="filter-chip" data-filter="tier" data-value="1">T1 Elite</button>
+            <button class="filter-chip" data-filter="tier" data-value="2">T2 Selective</button>
+            <button class="filter-chip" data-filter="tier" data-value="3">T3 Moderate</button>
+            <button class="filter-chip" data-filter="tier" data-value="4">T4 Accessible</button>
+          </div>
+        </div>
+
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Cost</span>
+          <div class="filter-panel__chips">
+            <button class="filter-chip active" data-filter="cost" data-value="all">All</button>
+            <button class="filter-chip" data-filter="cost" data-value="Free">Free</button>
+            <button class="filter-chip" data-filter="cost" data-value="Stipend">Stipend</button>
+            <button class="filter-chip" data-filter="cost" data-value="Paid">Paid</button>
+          </div>
+        </div>
+
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Format</span>
+          <div class="filter-panel__chips">
+            <button class="filter-chip active" data-filter="format" data-value="all">All</button>
+            {meta.formats.map((f: string) => (
+              <button class="filter-chip" data-filter="format" data-value={f}>{f}</button>
+            ))}
+          </div>
+        </div>
+
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Category</span>
+          <div class="filter-panel__chips">
+            <button class="filter-chip active" data-filter="category" data-value="all">All</button>
+            {meta.categories.map((c: string) => (
+              <button class="filter-chip" data-filter="category" data-value={c}>{c}</button>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+) : (
+  toc && (
+    <>
+      <div class="lg:sl-hidden">
+        <MobileTableOfContents />
+      </div>
+      <div class="right-sidebar-panel sl-hidden lg:sl-block">
+        <div class="sl-container">
+          <TableOfContents />
+        </div>
+      </div>
+    </>
+  )
+)}
+
+<style>
+  .right-sidebar-panel {
+    padding: 1rem var(--sl-sidebar-pad-x);
+  }
+  .sl-container {
+    width: calc(var(--sl-sidebar-width) - 2 * var(--sl-sidebar-pad-x));
+  }
+</style>
