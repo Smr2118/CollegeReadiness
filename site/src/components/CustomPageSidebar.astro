@@ -8,6 +8,30 @@ const { toc } = Astro.locals.starlightRoute;
 const { meta } = programData as any;
 ---
 
+<!-- Sidebar toggle button — injected once, works on all pages -->
+<button id="sidebar-toggle" class="sidebar-toggle" title="Collapse/expand navigation" aria-label="Toggle sidebar">
+  <span class="sidebar-toggle__icon">‹</span>
+</button>
+
+<script is:inline>
+  (function () {
+    const btn = document.getElementById('sidebar-toggle');
+    if (!btn) return;
+
+    const STORAGE_KEY = 'sidebar-collapsed';
+
+    // Restore persisted state immediately to avoid layout flash
+    if (localStorage.getItem(STORAGE_KEY) === 'true') {
+      document.documentElement.classList.add('sidebar-collapsed');
+    }
+
+    btn.addEventListener('click', () => {
+      const isNowCollapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+      localStorage.setItem(STORAGE_KEY, String(isNowCollapsed));
+    });
+  })();
+</script>
+
 {isProgramsPage ? (
   <div class="right-sidebar-panel sl-hidden lg:sl-block">
     <div class="sl-container">
