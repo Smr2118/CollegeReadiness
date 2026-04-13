@@ -25,6 +25,15 @@ const { meta } = programData as any;
         </div>
 
         <div class="filter-panel__section">
+          <span class="filter-panel__label">Sort By</span>
+          <select id="pg-sort" class="sort-select">
+            <option value="default">Default</option>
+            <option value="deadline">⏰ Deadline (earliest first)</option>
+            <option value="interest">⭐ Interest (applying first)</option>
+          </select>
+        </div>
+
+        <div class="filter-panel__section">
           <span class="filter-panel__label">Status</span>
           <div class="filter-panel__chips">
             <button class="filter-chip" data-filter="status" data-value="all">All</button>
@@ -87,14 +96,6 @@ const { meta } = programData as any;
           </div>
         </div>
 
-        <div class="filter-panel__section">
-          <span class="filter-panel__label">Sort By</span>
-          <select id="pg-sort" class="sort-select">
-            <option value="default">Default</option>
-            <option value="deadline">⏰ Deadline (earliest first)</option>
-            <option value="interest">⭐ Interest (applying first)</option>
-          </select>
-        </div>
 
       </div>
     </div>
