@@ -144,6 +144,8 @@ const { meta } = programData as any;
     padding: 1rem var(--sl-sidebar-pad-x);
   }
   .sl-container {
-    width: calc(var(--sl-sidebar-width) - 2 * var(--sl-sidebar-pad-x));
+    /* Use the Starlight default (18.75rem) directly so this doesn't shrink
+       when --sl-sidebar-width is zeroed out for the left sidebar collapse. */
+    width: calc(18.75rem - 2 * var(--sl-sidebar-pad-x));
   }
 </style>
