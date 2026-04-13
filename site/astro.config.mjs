@@ -32,6 +32,12 @@ export default defineConfig({
 						{ label: '🔗 Reference Links', link: '/references/' },
 					],
 				},
+				{
+					label: 'Admin',
+					items: [
+						{ label: '⚙️ Admin Panel', link: '/admin/' },
+					],
+				},
 			],
 		}),
 	],

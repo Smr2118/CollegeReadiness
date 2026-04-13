@@ -5,14 +5,13 @@
 <div id="sb-modal" class="sb-modal" style="display:none">
   <div class="sb-modal__box">
     <h2 class="sb-modal__title">College Readiness Hub</h2>
-    <p class="sb-modal__subtitle">Sign in to sync notes and interest selections with your family.</p>
+    <p class="sb-modal__subtitle">Sign in to access the College Readiness Hub.</p>
     <form id="sb-login-form" class="sb-form">
       <input class="sb-input" type="email" id="sb-email" placeholder="Email" required autocomplete="email" />
       <input class="sb-input" type="password" id="sb-password" placeholder="Password" required autocomplete="current-password" />
       <button class="sb-btn" type="submit" id="sb-submit">Sign In</button>
       <p id="sb-error" class="sb-error" style="display:none"></p>
     </form>
-    <button id="sb-skip" class="sb-btn" style="background:transparent;color:var(--sl-color-gray-2);border:1px solid var(--sl-color-gray-4);margin-top:0.25rem;">Browse without signing in</button>
   </div>
 </div>
 
@@ -29,7 +28,6 @@
   const form      = document.getElementById('sb-login-form')!;
   const errorEl   = document.getElementById('sb-error')!;
   const submitBtn = document.getElementById('sb-submit') as HTMLButtonElement;
-  const skipBtn   = document.getElementById('sb-skip') as HTMLButtonElement;
   const userBar   = document.getElementById('sb-user-bar')!;
   const familyBadge = document.getElementById('sb-family-badge')!;
   const signoutBtn  = document.getElementById('sb-signout') as HTMLButtonElement;
@@ -101,24 +99,23 @@
     );
   }
 
-  /* ── Skip (browse without signing in) ── */
-  skipBtn.addEventListener('click', () => {
-    modal.style.display = 'none';
-    document.body.style.overflow = '';
-    userBar.style.display = 'none';
-  });
-
   /* ── Init ── */
   async function init() {
     const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      familyId    = session.user.user_metadata?.family_id    ?? '';
-      displayName = session.user.user_metadata?.display_name ?? session.user.email ?? '';
-      hideModal(displayName, familyId);
-      await loadData();
-    } else {
-      showModal();
-    }
+    if (!session) { showModal(); return; }
+
+    // user_profiles is the authoritative source; metadata is the fallback
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('family_id, display_name')
+      .eq('user_id', session.user.id)
+      .single();
+
+    familyId    = profile?.family_id    ?? session.user.user_metadata?.family_id    ?? '';
+    displayName = profile?.display_name ?? session.user.user_metadata?.display_name ?? session.user.email ?? '';
+
+    hideModal(displayName, familyId);
+    await loadData();
   }
 
   /* ── Login form ── */
@@ -152,7 +149,6 @@
     await supabase.auth.signOut();
     familyId    = '';
     displayName = '';
-    skipBtn.style.display = 'inline-block';
     showModal();
   });
 
