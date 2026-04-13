@@ -134,7 +134,8 @@ const { programs } = programData as any;
       }, 200);
     });
 
-    // Re-filter when any card's interest changes
+    // Re-filter when interest changes or Supabase data loads
     document.addEventListener('interest-changed', applyFilters);
+    document.addEventListener('data-loaded', refresh);
   })();
 </script>

@@ -88,8 +88,10 @@ const costKey = program.cost.toLowerCase().replace('/', '').replace(' ', '') as 
       row.querySelectorAll<HTMLButtonElement>('.interest-chip').forEach(b => {
         b.classList.toggle('active', b.dataset.iv === val);
       });
-      // Notify ProgramGrid to re-filter/sort
-      document.dispatchEvent(new CustomEvent('interest-changed'));
+      // Notify ProgramGrid to re-filter/sort, include details for Supabase sync
+      document.dispatchEvent(new CustomEvent('interest-changed', {
+        detail: { programName: key.replace('pc-interest-', ''), interest: val }
+      }));
     });
   });
 </script>
