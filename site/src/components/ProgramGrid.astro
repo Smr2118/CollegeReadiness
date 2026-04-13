@@ -7,17 +7,23 @@ const { programs, meta } = programData as any;
 
 <!-- Filter Toolbar -->
 <div class="filter-toolbar">
-  <div class="filter-toolbar__row">
-    <span class="filter-toolbar__label">Search</span>
-    <input
-      class="filter-search"
-      type="text"
-      id="pg-search"
-      placeholder="Search by name, org, or tag…"
-      autocomplete="off"
-    />
+  <div class="filter-toolbar__top">
+    <div class="filter-toolbar__row" style="flex:1">
+      <span class="filter-toolbar__label">Search</span>
+      <input
+        class="filter-search"
+        type="text"
+        id="pg-search"
+        placeholder="Search by name, org, or tag…"
+        autocomplete="off"
+      />
+    </div>
+    <button class="filter-toggle" id="pg-filter-toggle" aria-expanded="false">
+      Filters <span class="filter-toggle__arrow">▼</span>
+    </button>
   </div>
 
+  <div class="filter-toolbar__collapsible" id="pg-filter-collapsible">
   <div class="filter-toolbar__row">
     <span class="filter-toolbar__label">Status</span>
     <button class="filter-chip active" data-filter="status" data-value="all">All</button>
@@ -59,6 +65,7 @@ const { programs, meta } = programData as any;
       <button class="filter-chip" data-filter="category" data-value={c}>{c}</button>
     ))}
   </div>
+  </div><!-- end collapsible -->
 </div>
 
 <p class="results-count" id="pg-count">{programs.length} programs</p>
@@ -140,5 +147,18 @@ const { programs, meta } = programData as any;
         applyFilters();
       }, 200);
     });
+
+    // Collapsible filter toggle
+    const toggleBtn = document.getElementById('pg-filter-toggle');
+    const collapsible = document.getElementById('pg-filter-collapsible');
+    if (toggleBtn && collapsible) {
+      toggleBtn.addEventListener('click', () => {
+        const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+        toggleBtn.setAttribute('aria-expanded', String(!expanded));
+        collapsible.classList.toggle('is-open', !expanded);
+        const arrow = toggleBtn.querySelector('.filter-toggle__arrow');
+        if (arrow) arrow.textContent = !expanded ? '▲' : '▼';
+      });
+    }
   })();
 </script>
