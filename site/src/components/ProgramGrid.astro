@@ -23,15 +23,17 @@ const { programs, meta } = programData as any;
     </button>
   </div>
 
-  <div class="filter-toolbar__collapsible" id="pg-filter-collapsible">
+  <!-- Status always visible -->
   <div class="filter-toolbar__row">
     <span class="filter-toolbar__label">Status</span>
-    <button class="filter-chip active" data-filter="status" data-value="all">All</button>
-    <button class="filter-chip" data-filter="status" data-value="open">Open</button>
+    <button class="filter-chip" data-filter="status" data-value="all">All</button>
+    <button class="filter-chip active" data-filter="status" data-value="open">Open</button>
     <button class="filter-chip" data-filter="status" data-value="closed">Closed</button>
     <button class="filter-chip" data-filter="status" data-value="nextyear">Apply Next Year</button>
     <button class="filter-chip" data-filter="status" data-value="conflict">Conflict</button>
   </div>
+
+  <div class="filter-toolbar__collapsible" id="pg-filter-collapsible">
 
   <div class="filter-toolbar__row">
     <span class="filter-toolbar__label">Tier</span>
@@ -89,15 +91,18 @@ const { programs, meta } = programData as any;
 
     const cards = Array.from(grid.querySelectorAll('.program-card'));
 
-    // Active filter state
+    // Active filter state — default status to 'open'
     const active = {
-      status: 'all',
+      status: 'open',
       tier: 'all',
       cost: 'all',
       format: 'all',
       category: 'all',
     };
     let query = '';
+
+    // Apply on load
+    applyFilters();
 
     function applyFilters() {
       let visible = 0;
