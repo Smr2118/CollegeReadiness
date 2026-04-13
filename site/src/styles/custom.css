@@ -393,23 +393,40 @@
   margin: 0;
 }
 
-.sb-signout {
+.sb-user-bar {
   position: fixed;
   bottom: 1.25rem;
   right: 1.25rem;
   z-index: 999;
-  padding: 0.35rem 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--sl-color-bg-nav);
+  border: 1px solid var(--sl-color-gray-4);
+  border-radius: 9999px;
+  padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+  font-size: 0.78rem;
+}
+
+.sb-family-badge {
+  font-weight: 600;
+  color: var(--sl-color-text);
+  white-space: nowrap;
+}
+
+.sb-signout-btn {
+  padding: 0.2rem 0.65rem;
   border-radius: 9999px;
   border: 1px solid var(--sl-color-gray-4);
-  background: var(--sl-color-bg-nav);
+  background: transparent;
   color: var(--sl-color-gray-2);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.1s;
 }
 
-.sb-signout:hover {
+.sb-signout-btn:hover {
   border-color: #ef4444;
   color: #ef4444;
 }

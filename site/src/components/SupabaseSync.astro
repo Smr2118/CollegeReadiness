@@ -5,7 +5,7 @@
 <div id="sb-modal" class="sb-modal" style="display:none">
   <div class="sb-modal__box">
     <h2 class="sb-modal__title">College Readiness Hub</h2>
-    <p class="sb-modal__subtitle">Sign in to save your notes and interest selections across devices.</p>
+    <p class="sb-modal__subtitle">Sign in to sync notes and interest selections with your family.</p>
     <form id="sb-login-form" class="sb-form">
       <input class="sb-input" type="email" id="sb-email" placeholder="Email" required autocomplete="email" />
       <input class="sb-input" type="password" id="sb-password" placeholder="Password" required autocomplete="current-password" />
@@ -16,35 +16,49 @@
   </div>
 </div>
 
-<!-- Sign out button (top-right of page) -->
-<button id="sb-signout" class="sb-signout" style="display:none" title="Sign out">Sign Out</button>
+<!-- Family + sign-out indicator (bottom-right) -->
+<div id="sb-user-bar" class="sb-user-bar" style="display:none">
+  <span id="sb-family-badge" class="sb-family-badge"></span>
+  <button id="sb-signout" class="sb-signout-btn" title="Sign out">Sign Out</button>
+</div>
 
 <script>
   import { supabase } from '../lib/supabase';
 
-  const modal    = document.getElementById('sb-modal')!;
-  const form     = document.getElementById('sb-login-form')!;
-  const errorEl  = document.getElementById('sb-error')!;
+  const modal     = document.getElementById('sb-modal')!;
+  const form      = document.getElementById('sb-login-form')!;
+  const errorEl   = document.getElementById('sb-error')!;
   const submitBtn = document.getElementById('sb-submit') as HTMLButtonElement;
-  const signoutBtn = document.getElementById('sb-signout') as HTMLButtonElement;
-  const skipBtn  = document.getElementById('sb-skip') as HTMLButtonElement;
+  const skipBtn   = document.getElementById('sb-skip') as HTMLButtonElement;
+  const userBar   = document.getElementById('sb-user-bar')!;
+  const familyBadge = document.getElementById('sb-family-badge')!;
+  const signoutBtn  = document.getElementById('sb-signout') as HTMLButtonElement;
+
+  // Resolved after sign-in
+  let familyId    = '';
+  let displayName = '';
 
   /* ── Auth helpers ── */
   function showModal() {
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
-    signoutBtn.style.display = 'none';
+    userBar.style.display = 'none';
   }
 
-  function hideModal() {
+  function hideModal(name: string, fid: string) {
     modal.style.display = 'none';
     document.body.style.overflow = '';
-    signoutBtn.style.display = 'block';
+    familyBadge.textContent = name ? `👤 ${name}` : '';
+    userBar.style.display = 'flex';
   }
 
-  /* ── Load all saved data from Supabase and apply to cards ── */
+  /* ── Load all saved data for this family from Supabase ── */
   async function loadData() {
-    const { data, error } = await supabase.from('program_data').select('*');
+    if (!familyId) return;
+    const { data, error } = await supabase
+      .from('program_data')
+      .select('*')
+      .eq('family_id', familyId);
     if (error || !data) return;
 
     data.forEach((row: any) => {
@@ -70,28 +84,37 @@
       }
     });
 
-    // Trigger filter/sort refresh
     document.dispatchEvent(new CustomEvent('data-loaded'));
   }
 
   /* ── Upsert a single field for a program ── */
   async function upsert(programName: string, field: 'note' | 'interest', value: string) {
+    if (!familyId) return;   // not signed in — skip sync
     await supabase.from('program_data').upsert(
-      { program_name: programName, [field]: value, updated_at: new Date().toISOString() },
-      { onConflict: 'program_name' }
+      {
+        program_name: programName,
+        family_id: familyId,
+        [field]: value,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'family_id,program_name' }
     );
   }
 
   /* ── Skip (browse without signing in) ── */
   skipBtn.addEventListener('click', () => {
-    hideModal();
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    userBar.style.display = 'none';
   });
 
   /* ── Init ── */
   async function init() {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
-      hideModal();
+      familyId    = session.user.user_metadata?.family_id    ?? '';
+      displayName = session.user.user_metadata?.display_name ?? session.user.email ?? '';
+      hideModal(displayName, familyId);
       await loadData();
     } else {
       showModal();
@@ -108,7 +131,7 @@
     const email    = (document.getElementById('sb-email') as HTMLInputElement).value;
     const password = (document.getElementById('sb-password') as HTMLInputElement).value;
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     submitBtn.textContent = 'Sign In';
     submitBtn.disabled = false;
@@ -117,7 +140,9 @@
       errorEl.textContent = error.message;
       errorEl.style.display = 'block';
     } else {
-      hideModal();
+      familyId    = data.session?.user.user_metadata?.family_id    ?? '';
+      displayName = data.session?.user.user_metadata?.display_name ?? data.session?.user.email ?? '';
+      hideModal(displayName, familyId);
       await loadData();
     }
   });
@@ -125,9 +150,10 @@
   /* ── Sign out ── */
   signoutBtn.addEventListener('click', async () => {
     await supabase.auth.signOut();
+    familyId    = '';
+    displayName = '';
+    skipBtn.style.display = 'inline-block';
     showModal();
-    // After explicit sign-out, hide the skip button so user must sign in
-    skipBtn.style.display = 'none';
   });
 
   /* ── Sync note changes to Supabase (debounced 1s) ── */
