@@ -46,6 +46,16 @@ const costKey = program.cost.toLowerCase().replace('/', '').replace(' ', '') as 
 ---
 
 <script>
+  // Collapsible cards
+  document.querySelectorAll<HTMLButtonElement>('.program-card__toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!expanded));
+      btn.closest('.program-card')?.classList.toggle('is-expanded', !expanded);
+    });
+  });
+
+  // localStorage notes
   document.querySelectorAll<HTMLTextAreaElement>('.program-card__user-note').forEach(ta => {
     const key = ta.dataset.key;
     if (!key) return;
@@ -66,63 +76,69 @@ const costKey = program.cost.toLowerCase().replace('/', '').replace(' ', '') as 
   data-tags={program.tags.join(' ').toLowerCase()}
   data-org={program.org.toLowerCase()}
 >
-  <!-- Header -->
-  <div class="program-card__header">
-    <div style="flex:1">
+  <!-- Collapsed header (always visible, clickable) -->
+  <button class="program-card__toggle" aria-expanded="false">
+    <div class="program-card__toggle-left">
       <p class="program-card__name">{program.name}</p>
       <p class="program-card__org">{program.org}</p>
     </div>
-    <span class={`badge badge--${program.status}`}>{statusLabel[program.status] ?? program.status}</span>
-  </div>
-
-  <!-- Meta badges -->
-  <div class="program-card__meta">
-    <span class={`badge badge--tier${program.tier}`}>{tierLabel[program.tier]}</span>
-    <span class={`badge badge--${costKey}`}>{program.cost}</span>
-    <span class="badge badge--format">{program.format}</span>
-    <span class="badge badge--format">📅 {program.duration}</span>
-    <span class="badge badge--format">🎓 {program.grades}</span>
-  </div>
-
-  <!-- Stars + selectivity -->
-  <div style="display:flex; align-items:center; gap:0.75rem; font-size:0.78rem; color:var(--sl-color-gray-2)">
-    <span class="stars">{stars}</span>
-    <span>Selectivity: {program.selectivityLabel}</span>
-  </div>
-
-  <!-- Description -->
-  <p class="program-card__desc">{program.desc}</p>
-
-  <!-- Note -->
-  {program.note && (
-    <div class={`program-card__note program-card__note--${program.noteType ?? 'info'}`}>
-      {program.note}
+    <div class="program-card__toggle-right">
+      <span class={`badge badge--${program.status}`}>{statusLabel[program.status] ?? program.status}</span>
+      <span class="program-card__chevron">›</span>
     </div>
-  )}
+  </button>
 
-  <!-- Tags -->
-  <div class="program-card__tags">
-    {program.tags.map(tag => (
-      <span class="badge badge--tag">{tag}</span>
-    ))}
-  </div>
+  <!-- Expandable body -->
+  <div class="program-card__body">
+    <!-- Meta badges -->
+    <div class="program-card__meta">
+      <span class={`badge badge--tier${program.tier}`}>{tierLabel[program.tier]}</span>
+      <span class={`badge badge--${costKey}`}>{program.cost}</span>
+      <span class="badge badge--format">{program.format}</span>
+      <span class="badge badge--format">📅 {program.duration}</span>
+      <span class="badge badge--format">🎓 {program.grades}</span>
+    </div>
 
-  <!-- Personal Notes -->
-  <div class="program-card__notes-section">
-    <label class="program-card__notes-label">My Notes</label>
-    <textarea
-      class="program-card__user-note"
-      data-key={`pc-note-${program.name}`}
-      placeholder="Add your personal notes, reminders, or application status…"
-      rows="2"
-    ></textarea>
-  </div>
+    <!-- Stars + selectivity -->
+    <div style="display:flex; align-items:center; gap:0.75rem; font-size:0.78rem; color:var(--sl-color-gray-2)">
+      <span class="stars">{stars}</span>
+      <span>Selectivity: {program.selectivityLabel}</span>
+    </div>
 
-  <!-- Footer: deadline + link -->
-  <div class="program-card__footer">
-    <div class="program-card__deadline">⏰ {program.deadline}</div>
-    {program.url && program.url.startsWith('http') && (
-      <a class="btn-link" href={program.url} target="_blank" rel="noopener">Apply →</a>
+    <!-- Description -->
+    <p class="program-card__desc">{program.desc}</p>
+
+    <!-- Note -->
+    {program.note && (
+      <div class={`program-card__note program-card__note--${program.noteType ?? 'info'}`}>
+        {program.note}
+      </div>
     )}
+
+    <!-- Tags -->
+    <div class="program-card__tags">
+      {program.tags.map(tag => (
+        <span class="badge badge--tag">{tag}</span>
+      ))}
+    </div>
+
+    <!-- Personal Notes -->
+    <div class="program-card__notes-section">
+      <label class="program-card__notes-label">My Notes</label>
+      <textarea
+        class="program-card__user-note"
+        data-key={`pc-note-${program.name}`}
+        placeholder="Add your personal notes, reminders, or application status…"
+        rows="2"
+      ></textarea>
+    </div>
+
+    <!-- Footer: deadline + link -->
+    <div class="program-card__footer">
+      <div class="program-card__deadline">⏰ {program.deadline}</div>
+      {program.url && program.url.startsWith('http') && (
+        <a class="btn-link" href={program.url} target="_blank" rel="noopener">Apply →</a>
+      )}
+    </div>
   </div>
 </div>
