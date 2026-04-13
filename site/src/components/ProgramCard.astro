@@ -45,6 +45,16 @@ const stars = '★'.repeat(Math.round(program.rating)) + '☆'.repeat(5 - Math.r
 const costKey = program.cost.toLowerCase().replace('/', '').replace(' ', '') as string;
 ---
 
+<script>
+  document.querySelectorAll<HTMLTextAreaElement>('.program-card__user-note').forEach(ta => {
+    const key = ta.dataset.key;
+    if (!key) return;
+    const saved = localStorage.getItem(key);
+    if (saved) ta.value = saved;
+    ta.addEventListener('input', () => localStorage.setItem(key, ta.value));
+  });
+</script>
+
 <div
   class="program-card"
   data-tier={program.tier}
@@ -95,6 +105,17 @@ const costKey = program.cost.toLowerCase().replace('/', '').replace(' ', '') as 
     {program.tags.map(tag => (
       <span class="badge badge--tag">{tag}</span>
     ))}
+  </div>
+
+  <!-- Personal Notes -->
+  <div class="program-card__notes-section">
+    <label class="program-card__notes-label">My Notes</label>
+    <textarea
+      class="program-card__user-note"
+      data-key={`pc-note-${program.name}`}
+      placeholder="Add your personal notes, reminders, or application status…"
+      rows="2"
+    ></textarea>
   </div>
 
   <!-- Footer: deadline + link -->

@@ -200,6 +200,45 @@
   margin-bottom: 0.5rem;
 }
 
+/* ── Personal notes textarea ── */
+.program-card__notes-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.program-card__notes-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sl-color-gray-3);
+}
+
+.program-card__user-note {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.375rem;
+  background: var(--sl-color-bg);
+  color: var(--sl-color-text);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.1s;
+  box-sizing: border-box;
+}
+
+.program-card__user-note:focus {
+  outline: 2px solid var(--sl-color-accent);
+  border-color: var(--sl-color-accent);
+}
+
+.program-card__user-note::placeholder {
+  color: var(--sl-color-gray-4);
+}
+
 /* ── Link button ── */
 .btn-link {
   display: inline-block;
