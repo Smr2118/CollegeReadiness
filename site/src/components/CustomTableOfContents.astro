@@ -1,0 +1,87 @@
+---
+import TableOfContentsList from '@astrojs/starlight/components-internals/TableOfContents/TableOfContentsList.astro';
+import programData from '../data/programs.json';
+
+const { toc } = Astro.locals.starlightRoute;
+const isProgramsPage = Astro.url.pathname.includes('/programs');
+const { meta } = programData as any;
+---
+
+{isProgramsPage ? (
+  <div class="filter-panel">
+
+    <div class="filter-panel__section">
+      <span class="filter-panel__label">Search</span>
+      <input
+        class="filter-search"
+        type="text"
+        id="pg-search"
+        placeholder="Search…"
+        autocomplete="off"
+      />
+    </div>
+
+    <div class="filter-panel__section">
+      <span class="filter-panel__label">Status</span>
+      <div class="filter-panel__chips">
+        <button class="filter-chip" data-filter="status" data-value="all">All</button>
+        <button class="filter-chip active" data-filter="status" data-value="open">Open</button>
+        <button class="filter-chip" data-filter="status" data-value="closed">Closed</button>
+        <button class="filter-chip" data-filter="status" data-value="nextyear">Next Year</button>
+        <button class="filter-chip" data-filter="status" data-value="conflict">Conflict</button>
+      </div>
+    </div>
+
+    <div class="filter-panel__section">
+      <span class="filter-panel__label">Tier</span>
+      <div class="filter-panel__chips">
+        <button class="filter-chip active" data-filter="tier" data-value="all">All</button>
+        <button class="filter-chip" data-filter="tier" data-value="1">T1 Elite</button>
+        <button class="filter-chip" data-filter="tier" data-value="2">T2 Selective</button>
+        <button class="filter-chip" data-filter="tier" data-value="3">T3 Moderate</button>
+        <button class="filter-chip" data-filter="tier" data-value="4">T4 Accessible</button>
+      </div>
+    </div>
+
+    <div class="filter-panel__section">
+      <span class="filter-panel__label">Cost</span>
+      <div class="filter-panel__chips">
+        <button class="filter-chip active" data-filter="cost" data-value="all">All</button>
+        <button class="filter-chip" data-filter="cost" data-value="Free">Free</button>
+        <button class="filter-chip" data-filter="cost" data-value="Stipend">Stipend</button>
+        <button class="filter-chip" data-filter="cost" data-value="Paid">Paid</button>
+      </div>
+    </div>
+
+    <div class="filter-panel__section">
+      <span class="filter-panel__label">Format</span>
+      <div class="filter-panel__chips">
+        <button class="filter-chip active" data-filter="format" data-value="all">All</button>
+        {meta.formats.map((f: string) => (
+          <button class="filter-chip" data-filter="format" data-value={f}>{f}</button>
+        ))}
+      </div>
+    </div>
+
+    <div class="filter-panel__section">
+      <span class="filter-panel__label">Category</span>
+      <div class="filter-panel__chips">
+        <button class="filter-chip active" data-filter="category" data-value="all">All</button>
+        {meta.categories.map((c: string) => (
+          <button class="filter-chip" data-filter="category" data-value={c}>{c}</button>
+        ))}
+      </div>
+    </div>
+
+  </div>
+) : (
+  toc && (
+    <starlight-toc data-min-h={toc.minHeadingLevel} data-max-h={toc.maxHeadingLevel}>
+      <nav aria-labelledby="starlight__on-this-page">
+        <h2 id="starlight__on-this-page">{Astro.locals.t('tableOfContents.onThisPage')}</h2>
+        <TableOfContentsList toc={toc.items} />
+      </nav>
+    </starlight-toc>
+    <script src="@astrojs/starlight/components-internals/TableOfContents/starlight-toc"></script>
+  )
+)}
