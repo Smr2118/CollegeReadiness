@@ -118,7 +118,8 @@
 
     familyId    = profile?.family_id    ?? session.user.user_metadata?.family_id    ?? '';
     displayName = profile?.display_name ?? session.user.user_metadata?.display_name ?? session.user.email ?? '';
-    const role  = profile?.role ?? session.user.user_metadata?.role ?? 'member';
+    const isAdmin = profile?.role === 'admin' || session.user.user_metadata?.role === 'admin';
+    const role  = isAdmin ? 'admin' : 'member';
 
     // Show admin nav link only for admins
     if (role === 'admin') {
