@@ -400,16 +400,13 @@ li:has(a[href$="/admin/"]) {
 
 .sb-user-bar {
   position: fixed;
-  bottom: 1.25rem;
-  right: 1.25rem;
-  z-index: 999;
+  top: 0;
+  right: 1rem;
+  height: var(--sl-nav-height);
+  z-index: var(--sl-z-index-navbar);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: var(--sl-color-bg-nav);
-  border: 1px solid var(--sl-color-gray-4);
-  border-radius: 9999px;
-  padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+  gap: 0.6rem;
   font-size: 0.78rem;
 }
 
@@ -420,7 +417,7 @@ li:has(a[href$="/admin/"]) {
 }
 
 .sb-signout-btn {
-  padding: 0.2rem 0.65rem;
+  padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   border: 1px solid var(--sl-color-gray-4);
   background: transparent;
@@ -429,6 +426,7 @@ li:has(a[href$="/admin/"]) {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.1s;
+  white-space: nowrap;
 }
 
 .sb-signout-btn:hover {
