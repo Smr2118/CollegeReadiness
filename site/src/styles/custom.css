@@ -401,7 +401,8 @@ li:has(a[href$="/admin/"]) {
 .sb-user-bar {
   position: fixed;
   top: 0;
-  right: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
   height: var(--sl-nav-height);
   z-index: calc(var(--sl-z-index-navbar) + 10);
   display: flex;
