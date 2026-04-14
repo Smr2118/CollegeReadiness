@@ -66,7 +66,16 @@
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { window.location.href = '../programs/'; return; }
 
-    if (session.user.user_metadata?.role !== 'admin') {
+    // Check user_profiles (authoritative) then fall back to JWT metadata
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('user_id', session.user.id)
+      .single();
+
+    const isAdmin = profile?.role === 'admin' || session.user.user_metadata?.role === 'admin';
+
+    if (!isAdmin) {
       show('admin-check', false); show('admin-denied', true); return;
     }
 
