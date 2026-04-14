@@ -32,6 +32,11 @@
   const familyBadge = document.getElementById('sb-family-badge')!;
   const signoutBtn  = document.getElementById('sb-signout') as HTMLButtonElement;
 
+  // Move both elements to <body> so position:fixed is relative to the viewport,
+  // not to the right-sidebar's fixed containing block.
+  document.body.appendChild(modal);
+  document.body.appendChild(userBar);
+
   // Resolved after sign-in
   let familyId    = '';
   let displayName = '';

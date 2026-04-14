@@ -403,7 +403,7 @@ li:has(a[href$="/admin/"]) {
   top: 0;
   right: 1rem;
   height: var(--sl-nav-height);
-  z-index: var(--sl-z-index-navbar);
+  z-index: calc(var(--sl-z-index-navbar) + 10);
   display: flex;
   align-items: center;
   gap: 0.6rem;
