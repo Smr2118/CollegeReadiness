@@ -615,6 +615,194 @@ li:has(a[href$="/admin/"]) {
   letter-spacing: 0.05em;
 }
 
+/* ── Todo list ── */
+.todo-status {
+  color: var(--sl-color-gray-2);
+  font-size: 0.9rem;
+  padding: 0.5rem 0;
+}
+
+.todo-add-form {
+  margin-bottom: 1.5rem;
+}
+
+.todo-add-form__row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.todo-add-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--sl-color-gray-4);
+  border-radius: 0.375rem;
+  background: var(--sl-color-bg);
+  color: var(--sl-color-text);
+  font-size: 0.9rem;
+}
+
+.todo-add-input:focus {
+  outline: 2px solid var(--sl-color-accent);
+  border-color: var(--sl-color-accent);
+}
+
+.todo-assignee-select {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--sl-color-gray-4);
+  border-radius: 0.375rem;
+  background: var(--sl-color-bg);
+  color: var(--sl-color-text);
+  font-size: 0.85rem;
+  min-width: 130px;
+}
+
+.todo-assignee-select:focus {
+  outline: 2px solid var(--sl-color-accent);
+  border-color: var(--sl-color-accent);
+}
+
+.todo-add-btn {
+  padding: 0.5rem 1.1rem;
+  border-radius: 0.375rem;
+  background: var(--sl-color-accent);
+  color: var(--sl-color-white);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.1s;
+  white-space: nowrap;
+}
+
+.todo-add-btn:hover { opacity: 0.85; }
+
+.todo-form-error {
+  font-size: 0.8rem;
+  color: #ef4444;
+  margin: 0.35rem 0 0;
+}
+
+.todo-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.todo-empty {
+  color: var(--sl-color-gray-3);
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0;
+}
+
+.todo-group {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--sl-color-bg-nav);
+}
+
+.todo-group__header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--sl-color-gray-7, var(--sl-color-bg));
+  border-bottom: 1px solid var(--sl-color-gray-5);
+}
+
+.todo-group__avatar {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: var(--sl-color-accent);
+  color: var(--sl-color-white);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.todo-group__name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--sl-color-text);
+}
+
+.todo-group__count {
+  margin-left: auto;
+  font-size: 0.72rem;
+  color: var(--sl-color-gray-3);
+}
+
+.todo-group__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid var(--sl-color-gray-6);
+}
+
+.todo-item:last-child {
+  border-bottom: none;
+}
+
+.todo-item--done .todo-item__title {
+  text-decoration: line-through;
+  color: var(--sl-color-gray-3);
+}
+
+.todo-item__label {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 1;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.todo-checkbox {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+  accent-color: var(--sl-color-accent);
+  flex-shrink: 0;
+}
+
+.todo-item__title {
+  font-size: 0.875rem;
+  color: var(--sl-color-text);
+  word-break: break-word;
+}
+
+.todo-delete-btn {
+  background: none;
+  border: none;
+  color: var(--sl-color-gray-4);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+  border-radius: 0.25rem;
+  flex-shrink: 0;
+  transition: color 0.1s;
+  line-height: 1;
+}
+
+.todo-delete-btn:hover {
+  color: #ef4444;
+}
+
 /* ── Admin panel ── */
 .admin-status {
   padding: 1rem;
