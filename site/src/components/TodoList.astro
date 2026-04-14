@@ -1,0 +1,227 @@
+---
+---
+
+<div id="todo-loading" class="todo-status">Loading…</div>
+<div id="todo-denied" class="todo-status" style="display:none">Please sign in to view todos.</div>
+
+<div id="todo-ui" style="display:none">
+
+  <!-- Add todo form -->
+  <form id="add-todo-form" class="todo-add-form">
+    <div class="todo-add-form__row">
+      <input
+        id="todo-title"
+        class="todo-add-input"
+        type="text"
+        placeholder="Add a task…"
+        required
+        autocomplete="off"
+      />
+      <select id="todo-assignee" class="todo-assignee-select">
+        <option value="">Everyone</option>
+      </select>
+      <button class="todo-add-btn" type="submit">Add</button>
+    </div>
+    <p id="todo-error" class="todo-form-error" style="display:none"></p>
+  </form>
+
+  <!-- Todo list grouped by assignee -->
+  <div id="todo-list" class="todo-list-wrap"></div>
+
+</div>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  interface Todo {
+    id: string;
+    title: string;
+    done: boolean;
+    assigned_to: string | null;
+    created_by: string;
+    created_at: string;
+  }
+
+  interface Member {
+    user_id: string;
+    display_name: string;
+  }
+
+  let myUserId = '';
+  let myFamilyId = '';
+  let members: Member[] = [];
+
+  /* ── Init ── */
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      show('todo-loading', false);
+      show('todo-denied', true);
+      return;
+    }
+
+    myUserId = session.user.id;
+
+    // Get family info
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('family_id')
+      .eq('user_id', myUserId)
+      .single();
+
+    myFamilyId = profile?.family_id ?? session.user.user_metadata?.family_id ?? '';
+
+    // Load family members for the assignee dropdown
+    const { data: memberData } = await supabase
+      .from('user_profiles')
+      .select('user_id, display_name')
+      .eq('family_id', myFamilyId)
+      .order('display_name');
+
+    members = memberData ?? [];
+
+    // Populate assignee dropdown
+    const sel = document.getElementById('todo-assignee') as HTMLSelectElement;
+    members.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.user_id;
+      opt.textContent = m.user_id === myUserId ? `${m.display_name} (me)` : m.display_name;
+      sel.appendChild(opt);
+    });
+
+    show('todo-loading', false);
+    show('todo-ui', true);
+    await loadTodos();
+  }
+
+  /* ── Load & render todos ── */
+  async function loadTodos() {
+    const { data, error } = await supabase
+      .from('todos')
+      .select('*')
+      .eq('family_id', myFamilyId)
+      .order('done', { ascending: true })
+      .order('created_at', { ascending: false });
+
+    const wrap = document.getElementById('todo-list')!;
+
+    if (error) { wrap.textContent = `Error: ${error.message}`; return; }
+    if (!data?.length) { wrap.innerHTML = '<p class="todo-empty">No tasks yet. Add one above!</p>'; return; }
+
+    // Group by assigned_to
+    const groups: Record<string, Todo[]> = {};
+    const everyoneKey = '__everyone__';
+
+    data.forEach((t: Todo) => {
+      const key = t.assigned_to ?? everyoneKey;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(t);
+    });
+
+    // Order: current user first, then others alphabetically, then "everyone"
+    const memberOrder = [myUserId, ...members.map(m => m.user_id).filter(id => id !== myUserId), everyoneKey];
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+      const ai = memberOrder.indexOf(a);
+      const bi = memberOrder.indexOf(b);
+      return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
+
+    wrap.innerHTML = sortedKeys.map(key => {
+      const todos = groups[key];
+      const label = key === everyoneKey
+        ? 'Everyone'
+        : key === myUserId
+          ? `${memberName(key)} (me)`
+          : memberName(key);
+
+      const items = todos.map(t => todoItemHtml(t)).join('');
+      return `
+        <div class="todo-group">
+          <div class="todo-group__header">
+            <span class="todo-group__avatar">${label[0]}</span>
+            <span class="todo-group__name">${label}</span>
+            <span class="todo-group__count">${todos.filter(t => !t.done).length} open</span>
+          </div>
+          <ul class="todo-group__list">${items}</ul>
+        </div>`;
+    }).join('');
+
+    // Attach event listeners
+    wrap.querySelectorAll<HTMLInputElement>('.todo-checkbox').forEach(cb => {
+      cb.addEventListener('change', () => toggleDone(cb.dataset.id!, cb.checked));
+    });
+    wrap.querySelectorAll<HTMLButtonElement>('.todo-delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => deleteTodo(btn.dataset.id!));
+    });
+  }
+
+  function todoItemHtml(t: Todo) {
+    const canDelete = t.created_by === myUserId;
+    return `
+      <li class="todo-item ${t.done ? 'todo-item--done' : ''}">
+        <label class="todo-item__label">
+          <input class="todo-checkbox" type="checkbox" data-id="${t.id}" ${t.done ? 'checked' : ''} />
+          <span class="todo-item__title">${escHtml(t.title)}</span>
+        </label>
+        ${canDelete
+          ? `<button class="todo-delete-btn" data-id="${t.id}" title="Delete">✕</button>`
+          : ''}
+      </li>`;
+  }
+
+  /* ── Add todo ── */
+  document.getElementById('add-todo-form')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const titleEl   = document.getElementById('todo-title') as HTMLInputElement;
+    const assignSel = document.getElementById('todo-assignee') as HTMLSelectElement;
+    const errEl     = document.getElementById('todo-error')!;
+    errEl.style.display = 'none';
+
+    const title       = titleEl.value.trim();
+    const assigned_to = assignSel.value || null;
+
+    const { error } = await supabase.from('todos').insert({
+      family_id:   myFamilyId,
+      created_by:  myUserId,
+      assigned_to,
+      title,
+      done:        false,
+    });
+
+    if (error) {
+      errEl.textContent = error.message;
+      errEl.style.display = 'block';
+    } else {
+      titleEl.value = '';
+      assignSel.value = '';
+      await loadTodos();
+    }
+  });
+
+  /* ── Toggle done ── */
+  async function toggleDone(id: string, done: boolean) {
+    await supabase.from('todos').update({ done, updated_at: new Date().toISOString() }).eq('id', id);
+    await loadTodos();
+  }
+
+  /* ── Delete ── */
+  async function deleteTodo(id: string) {
+    await supabase.from('todos').delete().eq('id', id);
+    await loadTodos();
+  }
+
+  /* ── Helpers ── */
+  function memberName(userId: string) {
+    return members.find(m => m.user_id === userId)?.display_name ?? 'Unknown';
+  }
+
+  function show(id: string, visible: boolean) {
+    (document.getElementById(id) as HTMLElement).style.display = visible ? '' : 'none';
+  }
+
+  function escHtml(str: string) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  init();
+</script>
