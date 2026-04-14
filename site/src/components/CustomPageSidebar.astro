@@ -2,14 +2,11 @@
 import MobileTableOfContents from 'virtual:starlight/components/MobileTableOfContents';
 import TableOfContents from 'virtual:starlight/components/TableOfContents';
 import programData from '../data/programs.json';
-import SupabaseSync from './SupabaseSync.astro';
 
 const isProgramsPage = Astro.url.pathname.includes('/programs');
 const { toc } = Astro.locals.starlightRoute;
 const { meta } = programData as any;
 ---
-
-<SupabaseSync />
 
 <!-- Sidebar toggle button — injected once, works on all pages -->
 <button id="sidebar-toggle" class="sidebar-toggle" title="Collapse/expand navigation" aria-label="Toggle sidebar">

@@ -12,6 +12,7 @@ export default defineConfig({
 			description: 'Track summer programs, internships, extra curriculars, and more.',
 			customCss: ['./src/styles/custom.css'],
 			components: {
+				Header: './src/components/CustomHeader.astro',
 				PageSidebar: './src/components/CustomPageSidebar.astro',
 			},
 			sidebar: [
