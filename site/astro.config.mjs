@@ -20,6 +20,7 @@ export default defineConfig({
 				{
 					label: 'Opportunities',
 					items: [
+						{ label: '📅 Deadline Calendar', link: '/calendar/' },
 						{ label: '☀️ Summer Programs', link: '/programs/' },
 						{ label: '💼 Internships', link: '/internships/' },
 						{ label: '🏆 Extra Curriculars', link: '/extracurriculars/' },
