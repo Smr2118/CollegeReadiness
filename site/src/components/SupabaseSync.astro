@@ -107,12 +107,20 @@
     // user_profiles is the authoritative source; metadata is the fallback
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('family_id, display_name')
+      .select('family_id, display_name, role')
       .eq('user_id', session.user.id)
       .single();
 
     familyId    = profile?.family_id    ?? session.user.user_metadata?.family_id    ?? '';
     displayName = profile?.display_name ?? session.user.user_metadata?.display_name ?? session.user.email ?? '';
+    const role  = profile?.role ?? session.user.user_metadata?.role ?? 'member';
+
+    // Show admin nav link only for admins
+    if (role === 'admin') {
+      document.querySelectorAll<HTMLElement>('li:has(a[href$="/admin/"])').forEach(el => {
+        el.style.display = '';
+      });
+    }
 
     hideModal(displayName, familyId);
     await loadData();

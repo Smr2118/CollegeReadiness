@@ -1,3 +1,8 @@
+/* ── Hide admin nav link until JS confirms admin role ── */
+li:has(a[href$="/admin/"]) {
+  display: none;
+}
+
 /* ── Left sidebar toggle ── */
 
 /* Only show on desktop */

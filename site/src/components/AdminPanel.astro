@@ -113,22 +113,37 @@
             <td>
               <select class="admin-select assign-sel" data-uid="${u.user_id}" data-current="${u.family_id ?? ''}"></select>
             </td>
-            <td>${u.role}</td>
-            <td><button class="admin-btn admin-btn--sm assign-btn" data-uid="${u.user_id}">Save</button></td>
+            <td>
+              <select class="admin-select role-sel" data-uid="${u.user_id}">
+                <option value="member" ${u.role === 'member' ? 'selected' : ''}>Member</option>
+                <option value="admin"  ${u.role === 'admin'  ? 'selected' : ''}>Admin</option>
+              </select>
+            </td>
+            <td><button class="admin-btn admin-btn--sm save-user-btn" data-uid="${u.user_id}">Save</button></td>
           </tr>`).join('')}
       </tbody></table>`;
 
     populateFamilySelects();
 
-    document.querySelectorAll<HTMLButtonElement>('.assign-btn').forEach(btn => {
+    document.querySelectorAll<HTMLButtonElement>('.save-user-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const uid = btn.dataset.uid!;
-        const sel = document.querySelector<HTMLSelectElement>(`.assign-sel[data-uid="${uid}"]`)!;
-        btn.textContent = '…'; btn.disabled = true;
-        const { error } = await supabase.from('user_profiles')
-          .update({ family_id: sel.value })
+        const uid        = btn.dataset.uid!;
+        const familySel  = document.querySelector<HTMLSelectElement>(`.assign-sel[data-uid="${uid}"]`)!;
+        const roleSel    = document.querySelector<HTMLSelectElement>(`.role-sel[data-uid="${uid}"]`)!;
+        btn.textContent  = '…'; btn.disabled = true;
+
+        // Update family in user_profiles
+        const { error: famErr } = await supabase.from('user_profiles')
+          .update({ family_id: familySel.value })
           .eq('user_id', uid);
-        btn.textContent = error ? 'Error' : '✓ Saved';
+
+        // Update role via edge function (updates both auth metadata + user_profiles)
+        const { data: roleData, error: roleErr } = await supabase.functions.invoke('set-user-role', {
+          body: { user_id: uid, role: roleSel.value },
+        });
+        const err = famErr?.message ?? roleErr?.message ?? roleData?.error;
+
+        btn.textContent = err ? 'Error' : '✓ Saved';
         setTimeout(() => { btn.textContent = 'Save'; btn.disabled = false; }, 2000);
       });
     });
