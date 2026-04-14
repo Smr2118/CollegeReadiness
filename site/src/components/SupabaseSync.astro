@@ -122,9 +122,9 @@
     const role  = isAdmin ? 'admin' : 'member';
 
     // Show admin nav link only for admins
-    if (role === 'admin') {
+    if (isAdmin) {
       document.querySelectorAll<HTMLElement>('li:has(a[href$="/admin/"])').forEach(el => {
-        el.style.display = '';
+        el.style.display = 'list-item';
       });
     }
 
