@@ -1,0 +1,192 @@
+---
+---
+
+<div id="admin-check" class="admin-status">Verifying access…</div>
+<div id="admin-denied" class="admin-status" style="display:none">⛔ Admin access required.</div>
+
+<div id="admin-ui" style="display:none">
+
+  <!-- ── Family Groups ── -->
+  <section class="admin-section">
+    <h2 class="admin-section__title">Family Groups</h2>
+    <div id="families-list" class="admin-table-wrap">Loading…</div>
+
+    <form id="create-family-form" class="admin-form">
+      <h3 class="admin-form__subtitle">Create Family Group</h3>
+      <div class="admin-form__row">
+        <label class="admin-label">ID <span class="admin-hint">(slug, e.g. "sant")</span></label>
+        <input id="fam-id" class="admin-input" type="text" placeholder="sant" required />
+      </div>
+      <div class="admin-form__row">
+        <label class="admin-label">Display Name</label>
+        <input id="fam-name" class="admin-input" type="text" placeholder="Sant Family" required />
+      </div>
+      <button class="admin-btn" type="submit">Create Family</button>
+      <p id="fam-msg" class="admin-msg" style="display:none"></p>
+    </form>
+  </section>
+
+  <!-- ── Users ── -->
+  <section class="admin-section">
+    <h2 class="admin-section__title">Users</h2>
+    <div id="users-list" class="admin-table-wrap">Loading…</div>
+
+    <form id="create-user-form" class="admin-form">
+      <h3 class="admin-form__subtitle">Create User</h3>
+      <div class="admin-form__row">
+        <label class="admin-label">Email</label>
+        <input id="new-email" class="admin-input" type="email" required />
+      </div>
+      <div class="admin-form__row">
+        <label class="admin-label">Password</label>
+        <input id="new-password" class="admin-input" type="password" required minlength="8" />
+      </div>
+      <div class="admin-form__row">
+        <label class="admin-label">Display Name</label>
+        <input id="new-display" class="admin-input" type="text" placeholder="Mom" required />
+      </div>
+      <div class="admin-form__row">
+        <label class="admin-label">Family Group</label>
+        <select id="new-family" class="admin-select"></select>
+      </div>
+      <button id="create-user-btn" class="admin-btn" type="submit">Create User</button>
+      <p id="user-msg" class="admin-msg" style="display:none"></p>
+    </form>
+  </section>
+
+</div>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  let families: { id: string; name: string }[] = [];
+
+  /* ── Boot ── */
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = '../programs/'; return; }
+
+    if (session.user.user_metadata?.role !== 'admin') {
+      show('admin-check', false); show('admin-denied', true); return;
+    }
+
+    show('admin-check', false); show('admin-ui', true);
+    await Promise.all([loadFamilies(), loadUsers()]);
+  }
+
+  /* ── Families ── */
+  async function loadFamilies() {
+    const { data, error } = await supabase.from('families').select('*').order('name');
+    const el = document.getElementById('families-list')!;
+    if (error || !data?.length) { el.textContent = error?.message ?? 'No families yet.'; return; }
+
+    families = data;
+    el.innerHTML = tableHtml(
+      ['ID', 'Name', 'Created'],
+      data.map(f => [`<code>${f.id}</code>`, f.name, fmt(f.created_at)])
+    );
+    populateFamilySelects();
+  }
+
+  document.getElementById('create-family-form')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id   = val('fam-id').toLowerCase().replace(/\s+/g, '-');
+    const name = val('fam-name');
+    const { error } = await supabase.from('families').insert({ id, name });
+    setMsg('fam-msg', error ? `Error: ${error.message}` : `Family "${name}" created.`, !error);
+    if (!error) { (e.target as HTMLFormElement).reset(); await loadFamilies(); }
+  });
+
+  /* ── Users ── */
+  async function loadUsers() {
+    const { data, error } = await supabase.from('user_profiles').select('*').order('display_name');
+    const el = document.getElementById('users-list')!;
+    if (error || !data?.length) { el.textContent = error?.message ?? 'No users yet.'; return; }
+
+    el.innerHTML = `<table class="admin-table">
+      <thead><tr><th>Name</th><th>Email</th><th>Family</th><th>Role</th><th></th></tr></thead>
+      <tbody>
+        ${data.map(u => `
+          <tr>
+            <td>${u.display_name ?? '—'}</td>
+            <td>${u.email ?? '—'}</td>
+            <td>
+              <select class="admin-select assign-sel" data-uid="${u.user_id}" data-current="${u.family_id ?? ''}"></select>
+            </td>
+            <td>${u.role}</td>
+            <td><button class="admin-btn admin-btn--sm assign-btn" data-uid="${u.user_id}">Save</button></td>
+          </tr>`).join('')}
+      </tbody></table>`;
+
+    populateFamilySelects();
+
+    document.querySelectorAll<HTMLButtonElement>('.assign-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const uid = btn.dataset.uid!;
+        const sel = document.querySelector<HTMLSelectElement>(`.assign-sel[data-uid="${uid}"]`)!;
+        btn.textContent = '…'; btn.disabled = true;
+        const { error } = await supabase.from('user_profiles')
+          .update({ family_id: sel.value })
+          .eq('user_id', uid);
+        btn.textContent = error ? 'Error' : '✓ Saved';
+        setTimeout(() => { btn.textContent = 'Save'; btn.disabled = false; }, 2000);
+      });
+    });
+  }
+
+  document.getElementById('create-user-form')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('create-user-btn') as HTMLButtonElement;
+    btn.textContent = 'Creating…'; btn.disabled = true;
+
+    const { data, error } = await supabase.functions.invoke('create-user', {
+      body: {
+        email:        val('new-email'),
+        password:     val('new-password'),
+        display_name: val('new-display'),
+        family_id:    (document.getElementById('new-family') as HTMLSelectElement).value,
+      },
+    });
+
+    btn.textContent = 'Create User'; btn.disabled = false;
+    const err = error?.message ?? data?.error;
+    setMsg('user-msg', err ? `Error: ${err}` : `User "${val('new-display')}" created.`, !err);
+    if (!err) { (e.target as HTMLFormElement).reset(); await loadUsers(); }
+  });
+
+  /* ── Helpers ── */
+  function populateFamilySelects() {
+    document.querySelectorAll<HTMLSelectElement>('.assign-sel, #new-family').forEach(sel => {
+      const current = sel.dataset.current ?? '';
+      sel.innerHTML = families.map(f =>
+        `<option value="${f.id}" ${f.id === current ? 'selected' : ''}>${f.name}</option>`
+      ).join('');
+    });
+  }
+
+  function tableHtml(headers: string[], rows: string[][]) {
+    return `<table class="admin-table">
+      <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  function val(id: string) {
+    return (document.getElementById(id) as HTMLInputElement).value.trim();
+  }
+
+  function show(id: string, visible: boolean) {
+    document.getElementById(id)!.style.display = visible ? 'block' : 'none';
+  }
+
+  function setMsg(id: string, text: string, ok: boolean) {
+    const el = document.getElementById(id)!;
+    el.textContent = text;
+    el.className = `admin-msg ${ok ? 'admin-msg--ok' : 'admin-msg--error'}`;
+    el.style.display = 'block';
+  }
+
+  function fmt(iso: string) { return new Date(iso).toLocaleDateString(); }
+
+  init();
+</script>
