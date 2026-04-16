@@ -123,6 +123,7 @@
     }
 
     hideModal(displayName, familyId);
+    resetInactivityTimer();
     await loadData();
   }
 
@@ -158,11 +159,30 @@
 
   /* ── Sign out ── */
   signoutBtn.addEventListener('click', async () => {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
     await supabase.auth.signOut();
     familyId    = '';
     displayName = '';
     showModal();
   });
+
+  /* ── Inactivity timeout (15 min) ── */
+  const INACTIVITY_MS = 15 * 60 * 1000;
+  let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function resetInactivityTimer() {
+    if (!familyId) return;   // not signed in — nothing to do
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(async () => {
+      await supabase.auth.signOut();
+      familyId    = '';
+      displayName = '';
+      showModal();
+    }, INACTIVITY_MS);
+  }
+
+  const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'];
+  activityEvents.forEach(evt => document.addEventListener(evt, resetInactivityTimer, { passive: true }));
 
   /* ── Sync note changes to Supabase (debounced 1s) ── */
   const noteTimers: Record<string, ReturnType<typeof setTimeout>> = {};
