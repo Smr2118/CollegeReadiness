@@ -104,12 +104,8 @@
     );
   }
 
-  /* ── Init ── */
-  async function init() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { showModal(); return; }
-
-    // user_profiles is the authoritative source; metadata is the fallback
+  /* ── Shared post-auth setup (runs after both page-load session and fresh login) ── */
+  async function onAuthenticated(session: any) {
     const { data: profile } = await supabase
       .from('user_profiles')
       .select('family_id, display_name, role')
@@ -119,9 +115,7 @@
     familyId    = profile?.family_id    ?? session.user.user_metadata?.family_id    ?? '';
     displayName = profile?.display_name ?? session.user.user_metadata?.display_name ?? session.user.email ?? '';
     const isAdmin = profile?.role === 'admin' || session.user.user_metadata?.role === 'admin';
-    const role  = isAdmin ? 'admin' : 'member';
 
-    // Show admin nav link only for admins
     if (isAdmin) {
       document.querySelectorAll<HTMLElement>('li:has(a[href$="/admin/"])').forEach(el => {
         el.style.display = 'list-item';
@@ -130,6 +124,13 @@
 
     hideModal(displayName, familyId);
     await loadData();
+  }
+
+  /* ── Init ── */
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { showModal(); return; }
+    await onAuthenticated(session);
   }
 
   /* ── Login form ── */
@@ -151,10 +152,7 @@
       errorEl.textContent = error.message;
       errorEl.style.display = 'block';
     } else {
-      familyId    = data.session?.user.user_metadata?.family_id    ?? '';
-      displayName = data.session?.user.user_metadata?.display_name ?? data.session?.user.email ?? '';
-      hideModal(displayName, familyId);
-      await loadData();
+      await onAuthenticated(data.session!);
     }
   });
 
