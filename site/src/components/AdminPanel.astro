@@ -285,28 +285,39 @@
             <td>${escCell(p.name)}</td>
             <td style="font-size:0.8rem;color:var(--sl-color-gray-2)">${escCell(p.org)}</td>
             <td>T${p.tier}</td>
-            <td>${escCell(p.status)}</td>
+            <td>
+              <select class="admin-select prog-status-sel" data-pid="${p.id}" style="font-size:0.8rem;padding:0.2rem 0.4rem">
+                <option value="open"      ${p.status === 'open'      ? 'selected' : ''}>Open</option>
+                <option value="closed"    ${p.status === 'closed'    ? 'selected' : ''}>Closed</option>
+                <option value="nextyear"  ${p.status === 'nextyear'  ? 'selected' : ''}>Next Year</option>
+                <option value="conflict"  ${p.status === 'conflict'  ? 'selected' : ''}>Conflict</option>
+              </select>
+            </td>
             <td style="white-space:nowrap">
               <select class="admin-select prog-access-sel" data-pid="${p.id}" style="font-size:0.8rem;padding:0.2rem 0.4rem">
                 <option value="public"  ${(p.access_level ?? 'public') === 'public'  ? 'selected' : ''}>🌐 Public</option>
                 <option value="premium" ${p.access_level === 'premium' ? 'selected' : ''}>⭐ Premium</option>
               </select>
             </td>
-            <td style="font-size:0.8rem">${escCell(p.deadline ?? '—')}</td>
+            <td>
+              <input class="admin-input prog-deadline-input" data-pid="${p.id}" type="text" value="${escAttr(p.deadline ?? '')}" placeholder="e.g. April 27, 2026" style="font-size:0.8rem;padding:0.2rem 0.4rem;width:9rem" />
+            </td>
             <td style="white-space:nowrap">
-              <button class="admin-btn admin-btn--sm prog-access-save-btn" data-pid="${p.id}">Save</button>
+              <button class="admin-btn admin-btn--sm prog-inline-save-btn" data-pid="${p.id}">Save</button>
               <button class="admin-btn admin-btn--sm prog-edit-btn" data-pid="${p.id}">Edit</button>
               <button class="admin-btn admin-btn--sm admin-btn--danger prog-del-btn" data-pid="${p.id}" data-pname="${escAttr(p.name)}">Del</button>
             </td>
           </tr>`).join('')}
       </tbody></table>`;
 
-    document.querySelectorAll<HTMLButtonElement>('.prog-access-save-btn').forEach(btn => {
+    document.querySelectorAll<HTMLButtonElement>('.prog-inline-save-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const pid = btn.dataset.pid!;
+        const pid          = btn.dataset.pid!;
         const access_level = document.querySelector<HTMLSelectElement>(`.prog-access-sel[data-pid="${pid}"]`)!.value;
+        const status       = document.querySelector<HTMLSelectElement>(`.prog-status-sel[data-pid="${pid}"]`)!.value;
+        const deadline     = (document.querySelector<HTMLInputElement>(`.prog-deadline-input[data-pid="${pid}"]`)!.value.trim()) || null;
         btn.textContent = '…'; btn.disabled = true;
-        const { error } = await supabase.from('programs').update({ access_level }).eq('id', pid);
+        const { error } = await supabase.from('programs').update({ access_level, status, deadline }).eq('id', pid);
         btn.textContent = error ? 'Error' : '✓';
         setTimeout(() => { btn.textContent = 'Save'; btn.disabled = false; }, 2000);
       });
