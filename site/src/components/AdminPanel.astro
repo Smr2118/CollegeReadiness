@@ -497,7 +497,10 @@
                 <option value="admin"  ${u.role === 'admin'  ? 'selected' : ''}>Admin</option>
               </select>
             </td>
-            <td><button class="admin-btn admin-btn--sm save-user-btn" data-uid="${u.user_id}">Save</button></td>
+            <td style="white-space:nowrap">
+              <button class="admin-btn admin-btn--sm save-user-btn" data-uid="${u.user_id}">Save</button>
+              <button class="admin-btn admin-btn--sm admin-btn--danger del-user-btn" data-uid="${u.user_id}" data-uname="${escAttr(u.display_name ?? u.email ?? '')}">Del</button>
+            </td>
           </tr>`).join('')}
       </tbody></table>`;
 
@@ -521,6 +524,26 @@
 
         btn.textContent = err ? 'Error' : '✓ Saved';
         setTimeout(() => { btn.textContent = 'Save'; btn.disabled = false; }, 2000);
+      });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.del-user-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const uid   = btn.dataset.uid!;
+        const uname = btn.dataset.uname!;
+        if (!confirm(`Delete user "${uname}"? This cannot be undone.`)) return;
+        btn.textContent = '…'; btn.disabled = true;
+        const { data, error } = await supabase.functions.invoke('delete-user', {
+          body: { user_id: uid },
+        });
+        const err = error?.message ?? data?.error;
+        if (err) {
+          btn.textContent = 'Error';
+          setTimeout(() => { btn.textContent = 'Del'; btn.disabled = false; }, 2000);
+          alert('Delete failed: ' + err);
+        } else {
+          await loadUsers();
+        }
       });
     });
   }
