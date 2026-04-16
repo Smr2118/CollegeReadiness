@@ -36,6 +36,8 @@ const { meta } = programData as any;
     // ── Right sidebar (TOC) ──
     const tocBtn = document.getElementById('toc-toggle');
     if (tocBtn) {
+      // Move to <body> so it stays visible when .right-sidebar is display:none
+      document.body.appendChild(tocBtn);
       const TOC_KEY = 'toc-collapsed';
       if (localStorage.getItem(TOC_KEY) === 'true') {
         document.documentElement.classList.add('toc-collapsed');
