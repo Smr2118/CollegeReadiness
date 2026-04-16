@@ -6,206 +6,225 @@
 
 <div id="admin-ui" style="display:none">
 
-  <!-- ── Family Groups ── -->
-  <section class="admin-section">
-    <h2 class="admin-section__title">Family Groups</h2>
-    <div id="families-list" class="admin-table-wrap">Loading…</div>
+  <!-- ── Tab nav ── -->
+  <div class="admin-tabs" role="tablist">
+    <button class="admin-tab active" data-tab="families" role="tab">👨‍👩‍👧 Families</button>
+    <button class="admin-tab" data-tab="users"    role="tab">👤 Users</button>
+    <button class="admin-tab" data-tab="programs" role="tab">📚 Programs</button>
+  </div>
 
-    <form id="create-family-form" class="admin-form">
-      <h3 class="admin-form__subtitle">Create Family Group</h3>
-      <div class="admin-form__row">
-        <label class="admin-label">ID <span class="admin-hint">(slug, e.g. "sant")</span></label>
-        <input id="fam-id" class="admin-input" type="text" placeholder="sant" required />
-      </div>
-      <div class="admin-form__row">
-        <label class="admin-label">Display Name</label>
-        <input id="fam-name" class="admin-input" type="text" placeholder="Sant Family" required />
-      </div>
-      <button class="admin-btn" type="submit">Create Family</button>
-      <p id="fam-msg" class="admin-msg" style="display:none"></p>
-    </form>
-  </section>
+  <!-- ══ Families tab ══════════════════════════════════════════════════════ -->
+  <div id="tab-families" class="admin-tab-panel">
 
-  <!-- ── Programs ── -->
-  <section class="admin-section">
-    <h2 class="admin-section__title">Programs</h2>
-    <div id="programs-list" class="admin-table-wrap">Loading…</div>
+    <section class="admin-section">
+      <h2 class="admin-section__title">Family Groups</h2>
+      <div id="families-list" class="admin-table-wrap">Loading…</div>
 
-    <details class="admin-details" id="program-form-wrap">
-      <summary class="admin-details__summary" id="program-form-title">+ Add New Program</summary>
-      <form id="program-form" class="admin-form" style="margin-top:1rem">
-        <input type="hidden" id="prog-id" />
-
-        <div class="admin-form__grid">
-          <div class="admin-form__row">
-            <label class="admin-label">Name *</label>
-            <input id="prog-name" class="admin-input" type="text" required />
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">Org *</label>
-            <input id="prog-org" class="admin-input" type="text" required />
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">Category *</label>
-            <select id="prog-category" class="admin-select">
-              <option>Math &amp; Physics</option>
-              <option>Computer Science &amp; Engineering</option>
-              <option>Robotics &amp; AI</option>
-              <option>General STEM</option>
-              <option>Life Sciences</option>
-              <option>Quantum Computing</option>
-              <option>Humanities</option>
-              <option>Environmental Science</option>
-              <option>Miscellaneous</option>
-            </select>
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">Status *</label>
-            <select id="prog-status" class="admin-select">
-              <option value="open">Open</option>
-              <option value="closed">Closed</option>
-              <option value="nextyear">Next Year</option>
-              <option value="conflict">Conflict</option>
-            </select>
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">Tier (1–4) *</label>
-            <input id="prog-tier" class="admin-input" type="number" min="1" max="4" required />
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">Rating (0–5)</label>
-            <input id="prog-rating" class="admin-input" type="number" min="0" max="5" step="0.5" />
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">Selectivity</label>
-            <select id="prog-selectivity" class="admin-select">
-              <option value="">—</option>
-              <option value="elite">elite</option>
-              <option value="very">very</option>
-              <option value="competitive">competitive</option>
-              <option value="moderate">moderate</option>
-              <option value="open">open</option>
-            </select>
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">Selectivity Label</label>
-            <input id="prog-selectivity-label" class="admin-input" type="text" placeholder="e.g. Very Competitive (<10%)" />
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">College Impact (1–5)</label>
-            <input id="prog-college-impact" class="admin-input" type="number" min="1" max="5" />
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">College Impact Label</label>
-            <input id="prog-college-impact-label" class="admin-input" type="text" placeholder="e.g. Transformative" />
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">Format</label>
-            <select id="prog-format" class="admin-select">
-              <option value="">—</option>
-              <option value="In-Person">In-Person</option>
-              <option value="Virtual">Virtual</option>
-              <option value="Hybrid">Hybrid</option>
-            </select>
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">Cost</label>
-            <select id="prog-cost" class="admin-select">
-              <option value="">—</option>
-              <option value="Free">Free</option>
-              <option value="Stipend">Stipend</option>
-              <option value="Paid">Paid</option>
-            </select>
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">Duration</label>
-            <input id="prog-duration" class="admin-input" type="text" placeholder="e.g. 6 weeks (residential)" />
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">Grades</label>
-            <input id="prog-grades" class="admin-input" type="text" placeholder="e.g. Rising Juniors/Seniors" />
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">URL</label>
-            <input id="prog-url" class="admin-input" type="url" placeholder="https://…" />
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">Deadline</label>
-            <input id="prog-deadline" class="admin-input" type="text" placeholder="e.g. April 27, 2026" />
-          </div>
-          <div class="admin-form__row" style="grid-column:1/-1">
-            <label class="admin-label">Description</label>
-            <textarea id="prog-description" class="admin-input" rows="3" style="resize:vertical"></textarea>
-          </div>
-          <div class="admin-form__row" style="grid-column:1/-1">
-            <label class="admin-label">Note</label>
-            <textarea id="prog-note" class="admin-input" rows="2" style="resize:vertical"></textarea>
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">Note Type</label>
-            <select id="prog-note-type" class="admin-select">
-              <option value="">—</option>
-              <option value="priority">priority</option>
-              <option value="deadline">deadline</option>
-              <option value="info">info</option>
-              <option value="warning">warning</option>
-              <option value="conflict">conflict</option>
-              <option value="nextyear">nextyear</option>
-            </select>
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">Access Level</label>
-            <select id="prog-access-level" class="admin-select">
-              <option value="public">🌐 Public (all families)</option>
-              <option value="premium">⭐ Premium (premium families only)</option>
-            </select>
-          </div>
-          <div class="admin-form__row">
-            <label class="admin-label">Sort Order</label>
-            <input id="prog-sort-order" class="admin-input" type="number" min="0" value="0" />
-          </div>
-          <div class="admin-form__row" style="grid-column:1/-1">
-            <label class="admin-label">Tags <span class="admin-hint">(comma-separated)</span></label>
-            <input id="prog-tags" class="admin-input" type="text" placeholder="MIT, Research, Residential" />
-          </div>
+      <form id="create-family-form" class="admin-form">
+        <h3 class="admin-form__subtitle">Create Family Group</h3>
+        <div class="admin-form__row">
+          <label class="admin-label">ID <span class="admin-hint">(slug, e.g. "sant")</span></label>
+          <input id="fam-id" class="admin-input" type="text" placeholder="sant" required />
         </div>
-
-        <div style="display:flex;gap:0.75rem;margin-top:1rem;flex-wrap:wrap">
-          <button class="admin-btn" type="submit" id="prog-save-btn">Save Program</button>
-          <button class="admin-btn admin-btn--secondary" type="button" id="prog-cancel-btn">Cancel</button>
+        <div class="admin-form__row">
+          <label class="admin-label">Display Name</label>
+          <input id="fam-name" class="admin-input" type="text" placeholder="Sant Family" required />
         </div>
-        <p id="prog-msg" class="admin-msg" style="display:none"></p>
+        <button class="admin-btn" type="submit">Create Family</button>
+        <p id="fam-msg" class="admin-msg" style="display:none"></p>
       </form>
-    </details>
-  </section>
+    </section>
 
-  <!-- ── Users ── -->
-  <section class="admin-section">
-    <h2 class="admin-section__title">Users</h2>
-    <div id="users-list" class="admin-table-wrap">Loading…</div>
+  </div>
 
-    <form id="create-user-form" class="admin-form">
-      <h3 class="admin-form__subtitle">Create User</h3>
-      <div class="admin-form__row">
-        <label class="admin-label">Email</label>
-        <input id="new-email" class="admin-input" type="email" required />
-      </div>
-      <div class="admin-form__row">
-        <label class="admin-label">Password</label>
-        <input id="new-password" class="admin-input" type="password" required minlength="8" />
-      </div>
-      <div class="admin-form__row">
-        <label class="admin-label">Display Name</label>
-        <input id="new-display" class="admin-input" type="text" placeholder="Mom" required />
-      </div>
-      <div class="admin-form__row">
-        <label class="admin-label">Family Group</label>
-        <select id="new-family" class="admin-select"></select>
-      </div>
-      <button id="create-user-btn" class="admin-btn" type="submit">Create User</button>
-      <p id="user-msg" class="admin-msg" style="display:none"></p>
-    </form>
-  </section>
+  <!-- ══ Users tab ═════════════════════════════════════════════════════════ -->
+  <div id="tab-users" class="admin-tab-panel" style="display:none">
+
+    <section class="admin-section">
+      <h2 class="admin-section__title">Users</h2>
+      <div id="users-list" class="admin-table-wrap">Loading…</div>
+
+      <form id="create-user-form" class="admin-form">
+        <h3 class="admin-form__subtitle">Create User</h3>
+        <div class="admin-form__row">
+          <label class="admin-label">Email</label>
+          <input id="new-email" class="admin-input" type="email" required />
+        </div>
+        <div class="admin-form__row">
+          <label class="admin-label">Password</label>
+          <input id="new-password" class="admin-input" type="password" required minlength="8" />
+        </div>
+        <div class="admin-form__row">
+          <label class="admin-label">Display Name</label>
+          <input id="new-display" class="admin-input" type="text" placeholder="Mom" required />
+        </div>
+        <div class="admin-form__row">
+          <label class="admin-label">Family Group</label>
+          <select id="new-family" class="admin-select"></select>
+        </div>
+        <button id="create-user-btn" class="admin-btn" type="submit">Create User</button>
+        <p id="user-msg" class="admin-msg" style="display:none"></p>
+      </form>
+    </section>
+
+  </div>
+
+  <!-- ══ Programs tab ══════════════════════════════════════════════════════ -->
+  <div id="tab-programs" class="admin-tab-panel" style="display:none">
+
+    <section class="admin-section">
+      <h2 class="admin-section__title">Programs</h2>
+      <div id="programs-list" class="admin-table-wrap">Loading…</div>
+
+      <details class="admin-details" id="program-form-wrap">
+        <summary class="admin-details__summary" id="program-form-title">+ Add New Program</summary>
+        <form id="program-form" class="admin-form" style="margin-top:1rem">
+          <input type="hidden" id="prog-id" />
+
+          <div class="admin-form__grid">
+            <div class="admin-form__row">
+              <label class="admin-label">Name *</label>
+              <input id="prog-name" class="admin-input" type="text" required />
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Org *</label>
+              <input id="prog-org" class="admin-input" type="text" required />
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Category *</label>
+              <select id="prog-category" class="admin-select">
+                <option>Math &amp; Physics</option>
+                <option>Computer Science &amp; Engineering</option>
+                <option>Robotics &amp; AI</option>
+                <option>General STEM</option>
+                <option>Life Sciences</option>
+                <option>Quantum Computing</option>
+                <option>Humanities</option>
+                <option>Environmental Science</option>
+                <option>Miscellaneous</option>
+              </select>
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Status *</label>
+              <select id="prog-status" class="admin-select">
+                <option value="open">Open</option>
+                <option value="closed">Closed</option>
+                <option value="nextyear">Next Year</option>
+                <option value="conflict">Conflict</option>
+              </select>
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Tier (1–4) *</label>
+              <input id="prog-tier" class="admin-input" type="number" min="1" max="4" required />
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Rating (0–5)</label>
+              <input id="prog-rating" class="admin-input" type="number" min="0" max="5" step="0.5" />
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Selectivity</label>
+              <select id="prog-selectivity" class="admin-select">
+                <option value="">—</option>
+                <option value="elite">elite</option>
+                <option value="very">very</option>
+                <option value="competitive">competitive</option>
+                <option value="moderate">moderate</option>
+                <option value="open">open</option>
+              </select>
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Selectivity Label</label>
+              <input id="prog-selectivity-label" class="admin-input" type="text" placeholder="e.g. Very Competitive (<10%)" />
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">College Impact (1–5)</label>
+              <input id="prog-college-impact" class="admin-input" type="number" min="1" max="5" />
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">College Impact Label</label>
+              <input id="prog-college-impact-label" class="admin-input" type="text" placeholder="e.g. Transformative" />
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Format</label>
+              <select id="prog-format" class="admin-select">
+                <option value="">—</option>
+                <option value="In-Person">In-Person</option>
+                <option value="Virtual">Virtual</option>
+                <option value="Hybrid">Hybrid</option>
+              </select>
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Cost</label>
+              <select id="prog-cost" class="admin-select">
+                <option value="">—</option>
+                <option value="Free">Free</option>
+                <option value="Stipend">Stipend</option>
+                <option value="Paid">Paid</option>
+              </select>
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Duration</label>
+              <input id="prog-duration" class="admin-input" type="text" placeholder="e.g. 6 weeks (residential)" />
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Grades</label>
+              <input id="prog-grades" class="admin-input" type="text" placeholder="e.g. Rising Juniors/Seniors" />
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">URL</label>
+              <input id="prog-url" class="admin-input" type="url" placeholder="https://…" />
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Deadline</label>
+              <input id="prog-deadline" class="admin-input" type="text" placeholder="e.g. April 27, 2026" />
+            </div>
+            <div class="admin-form__row" style="grid-column:1/-1">
+              <label class="admin-label">Description</label>
+              <textarea id="prog-description" class="admin-input" rows="3" style="resize:vertical"></textarea>
+            </div>
+            <div class="admin-form__row" style="grid-column:1/-1">
+              <label class="admin-label">Note</label>
+              <textarea id="prog-note" class="admin-input" rows="2" style="resize:vertical"></textarea>
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Note Type</label>
+              <select id="prog-note-type" class="admin-select">
+                <option value="">—</option>
+                <option value="priority">priority</option>
+                <option value="deadline">deadline</option>
+                <option value="info">info</option>
+                <option value="warning">warning</option>
+                <option value="conflict">conflict</option>
+                <option value="nextyear">nextyear</option>
+              </select>
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Access Level</label>
+              <select id="prog-access-level" class="admin-select">
+                <option value="public">🌐 Public (all families)</option>
+                <option value="premium">⭐ Premium (premium families only)</option>
+              </select>
+            </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Sort Order</label>
+              <input id="prog-sort-order" class="admin-input" type="number" min="0" value="0" />
+            </div>
+            <div class="admin-form__row" style="grid-column:1/-1">
+              <label class="admin-label">Tags <span class="admin-hint">(comma-separated)</span></label>
+              <input id="prog-tags" class="admin-input" type="text" placeholder="MIT, Research, Residential" />
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0.75rem;margin-top:1rem;flex-wrap:wrap">
+            <button class="admin-btn" type="submit" id="prog-save-btn">Save Program</button>
+            <button class="admin-btn admin-btn--secondary" type="button" id="prog-cancel-btn">Cancel</button>
+          </div>
+          <p id="prog-msg" class="admin-msg" style="display:none"></p>
+        </form>
+      </details>
+    </section>
+
+  </div>
 
 </div>
 
@@ -214,12 +233,25 @@
 
   let families: { id: string; name: string }[] = [];
 
+  /* ── Tabs ── */
+  document.querySelectorAll<HTMLButtonElement>('.admin-tab').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab!));
+  });
+
+  function switchTab(name: string) {
+    document.querySelectorAll<HTMLButtonElement>('.admin-tab').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === name);
+    });
+    document.querySelectorAll<HTMLElement>('.admin-tab-panel').forEach(p => {
+      p.style.display = p.id === `tab-${name}` ? '' : 'none';
+    });
+  }
+
   /* ── Boot ── */
   async function init() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { window.location.href = '../programs/'; return; }
 
-    // Check user_profiles (authoritative) then fall back to JWT metadata
     const { data: profile } = await supabase
       .from('user_profiles')
       .select('role')
@@ -233,7 +265,7 @@
     }
 
     show('admin-check', false); show('admin-ui', true);
-    await Promise.all([loadPrograms(), loadFamilies(), loadUsers()]);
+    await Promise.all([loadFamilies(), loadUsers(), loadPrograms()]);
   }
 
   /* ── Programs ── */
@@ -276,33 +308,36 @@
     if (error || !data) { alert('Failed to load program: ' + (error?.message ?? 'Unknown error')); return; }
 
     (document.getElementById('prog-id') as HTMLInputElement).value = data.id;
-    setInput('prog-name',              data.name ?? '');
-    setInput('prog-org',               data.org ?? '');
-    setSelect('prog-category',         data.category ?? '');
-    setSelect('prog-status',           data.status ?? 'open');
-    setInput('prog-tier',              String(data.tier ?? ''));
-    setInput('prog-rating',            String(data.rating ?? ''));
-    setSelect('prog-selectivity',      data.selectivity ?? '');
-    setInput('prog-selectivity-label', data.selectivity_label ?? '');
-    setInput('prog-college-impact',    String(data.college_impact ?? ''));
+    setInput('prog-name',                 data.name ?? '');
+    setInput('prog-org',                  data.org ?? '');
+    setSelect('prog-category',            data.category ?? '');
+    setSelect('prog-status',              data.status ?? 'open');
+    setInput('prog-tier',                 String(data.tier ?? ''));
+    setInput('prog-rating',               String(data.rating ?? ''));
+    setSelect('prog-selectivity',         data.selectivity ?? '');
+    setInput('prog-selectivity-label',    data.selectivity_label ?? '');
+    setInput('prog-college-impact',       String(data.college_impact ?? ''));
     setInput('prog-college-impact-label', data.college_impact_label ?? '');
-    setSelect('prog-format',           data.format ?? '');
-    setSelect('prog-cost',             data.cost ?? '');
-    setInput('prog-duration',          data.duration ?? '');
-    setInput('prog-grades',            data.grades ?? '');
-    setInput('prog-url',               data.url ?? '');
-    setInput('prog-deadline',          data.deadline ?? '');
-    setTextarea('prog-description',    data.description ?? '');
-    setTextarea('prog-note',           data.note ?? '');
-    setSelect('prog-note-type',        data.note_type ?? '');
-    setSelect('prog-access-level',     data.access_level ?? 'public');
-    setInput('prog-sort-order',        String(data.sort_order ?? 0));
-    setInput('prog-tags',              (data.tags ?? []).join(', '));
+    setSelect('prog-format',              data.format ?? '');
+    setSelect('prog-cost',                data.cost ?? '');
+    setInput('prog-duration',             data.duration ?? '');
+    setInput('prog-grades',               data.grades ?? '');
+    setInput('prog-url',                  data.url ?? '');
+    setInput('prog-deadline',             data.deadline ?? '');
+    setTextarea('prog-description',       data.description ?? '');
+    setTextarea('prog-note',              data.note ?? '');
+    setSelect('prog-note-type',           data.note_type ?? '');
+    setSelect('prog-access-level',        data.access_level ?? 'public');
+    setInput('prog-sort-order',           String(data.sort_order ?? 0));
+    setInput('prog-tags',                 (data.tags ?? []).join(', '));
 
     document.getElementById('program-form-title')!.textContent = `✏️ Edit: ${data.name}`;
     const wrap = document.getElementById('program-form-wrap') as HTMLDetailsElement;
     wrap.open = true;
-    wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Switch to Programs tab and scroll to form
+    switchTab('programs');
+    setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }
 
   async function deleteProgram(id: string, name: string) {
@@ -352,11 +387,7 @@
 
     btn.textContent = 'Save Program'; btn.disabled = false;
     setMsg('prog-msg', error ? `Error: ${error.message}` : `Program "${payload.name}" saved.`, !error);
-
-    if (!error) {
-      resetProgramForm();
-      await loadPrograms();
-    }
+    if (!error) { resetProgramForm(); await loadPrograms(); }
   });
 
   document.getElementById('prog-cancel-btn')!.addEventListener('click', resetProgramForm);
@@ -397,7 +428,7 @@
     document.querySelectorAll<HTMLButtonElement>('.fam-save-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const fid  = btn.dataset.fid!;
-        const plan = (document.querySelector<HTMLSelectElement>(`.fam-plan-sel[data-fid="${fid}"]`))!.value;
+        const plan = document.querySelector<HTMLSelectElement>(`.fam-plan-sel[data-fid="${fid}"]`)!.value;
         btn.textContent = '…'; btn.disabled = true;
         const { error } = await supabase.from('families').update({ plan }).eq('id', fid);
         btn.textContent = error ? 'Error' : '✓';
@@ -447,17 +478,15 @@
 
     document.querySelectorAll<HTMLButtonElement>('.save-user-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const uid        = btn.dataset.uid!;
-        const familySel  = document.querySelector<HTMLSelectElement>(`.assign-sel[data-uid="${uid}"]`)!;
-        const roleSel    = document.querySelector<HTMLSelectElement>(`.role-sel[data-uid="${uid}"]`)!;
-        btn.textContent  = '…'; btn.disabled = true;
+        const uid       = btn.dataset.uid!;
+        const familySel = document.querySelector<HTMLSelectElement>(`.assign-sel[data-uid="${uid}"]`)!;
+        const roleSel   = document.querySelector<HTMLSelectElement>(`.role-sel[data-uid="${uid}"]`)!;
+        btn.textContent = '…'; btn.disabled = true;
 
-        // Update family in user_profiles
         const { error: famErr } = await supabase.from('user_profiles')
           .update({ family_id: familySel.value })
           .eq('user_id', uid);
 
-        // Update role via edge function (updates both auth metadata + user_profiles)
         const { data: roleData, error: roleErr } = await supabase.functions.invoke('set-user-role', {
           body: { user_id: uid, role: roleSel.value },
         });
@@ -490,10 +519,10 @@
   });
 
   /* ── Helpers ── */
-  function escCell(s: string | null | undefined): string {
+  function escCell(s: string | null | undefined) {
     return (s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
-  function escAttr(s: string | null | undefined): string {
+  function escAttr(s: string | null | undefined) {
     return (s ?? '').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
   function setInput(id: string, v: string) {
@@ -507,7 +536,6 @@
   function setTextarea(id: string, v: string) {
     (document.getElementById(id) as HTMLTextAreaElement).value = v;
   }
-
   function populateFamilySelects() {
     document.querySelectorAll<HTMLSelectElement>('.assign-sel, #new-family').forEach(sel => {
       const current = sel.dataset.current ?? '';
@@ -516,29 +544,18 @@
       ).join('');
     });
   }
-
-  function tableHtml(headers: string[], rows: string[][]) {
-    return `<table class="admin-table">
-      <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
-      <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
-    </table>`;
-  }
-
   function val(id: string) {
     return (document.getElementById(id) as HTMLInputElement).value.trim();
   }
-
   function show(id: string, visible: boolean) {
     document.getElementById(id)!.style.display = visible ? 'block' : 'none';
   }
-
   function setMsg(id: string, text: string, ok: boolean) {
     const el = document.getElementById(id)!;
     el.textContent = text;
     el.className = `admin-msg ${ok ? 'admin-msg--ok' : 'admin-msg--error'}`;
     el.style.display = 'block';
   }
-
   function fmt(iso: string) { return new Date(iso).toLocaleDateString(); }
 
   init();

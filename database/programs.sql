@@ -33,6 +33,9 @@ CREATE TABLE IF NOT EXISTS public.programs (
 -- ── RLS ─────────────────────────────────────────────────────────────────────
 ALTER TABLE public.programs ENABLE ROW LEVEL SECURITY;
 
+-- Ensure families.plan column exists before creating the access-aware policy
+ALTER TABLE public.families ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT 'standard';
+
 -- Public programs visible to all; premium programs only to premium families / admins
 CREATE POLICY "programs_read"
   ON public.programs FOR SELECT

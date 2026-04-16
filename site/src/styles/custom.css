@@ -1120,6 +1120,39 @@ li:has(a[href$="/admin/"]) {
   margin-bottom: 2.5rem;
 }
 
+/* ── Admin tabs ── */
+.admin-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 2px solid var(--sl-color-gray-5);
+  margin-bottom: 1.75rem;
+}
+
+.admin-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--sl-color-gray-2);
+  cursor: pointer;
+  border-radius: 4px 4px 0 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.admin-tab:hover {
+  color: var(--sl-color-text);
+  background: var(--sl-color-gray-6);
+}
+
+.admin-tab.active {
+  color: var(--sl-color-accent);
+  border-bottom-color: var(--sl-color-accent);
+  font-weight: 600;
+}
+
 .admin-section__title {
   font-size: 1.1rem;
   font-weight: 700;
