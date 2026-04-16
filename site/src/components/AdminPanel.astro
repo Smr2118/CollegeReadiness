@@ -291,10 +291,10 @@
                 <option value="public"  ${(p.access_level ?? 'public') === 'public'  ? 'selected' : ''}>🌐 Public</option>
                 <option value="premium" ${p.access_level === 'premium' ? 'selected' : ''}>⭐ Premium</option>
               </select>
-              <button class="admin-btn admin-btn--sm prog-access-save-btn" data-pid="${p.id}" style="margin-left:0.25rem">Save</button>
             </td>
             <td style="font-size:0.8rem">${escCell(p.deadline ?? '—')}</td>
             <td style="white-space:nowrap">
+              <button class="admin-btn admin-btn--sm prog-access-save-btn" data-pid="${p.id}">Save</button>
               <button class="admin-btn admin-btn--sm prog-edit-btn" data-pid="${p.id}">Edit</button>
               <button class="admin-btn admin-btn--sm admin-btn--danger prog-del-btn" data-pid="${p.id}" data-pname="${escAttr(p.name)}">Del</button>
             </td>
