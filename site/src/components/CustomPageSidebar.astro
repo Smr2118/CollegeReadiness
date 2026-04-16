@@ -8,27 +8,43 @@ const { toc } = Astro.locals.starlightRoute;
 const { meta } = programData as any;
 ---
 
-<!-- Sidebar toggle button — injected once, works on all pages -->
+<!-- Left sidebar toggle -->
 <button id="sidebar-toggle" class="sidebar-toggle" title="Collapse/expand navigation" aria-label="Toggle sidebar">
   <span class="sidebar-toggle__icon">‹</span>
 </button>
 
+<!-- Right sidebar (TOC) toggle -->
+<button id="toc-toggle" class="toc-toggle" title="Collapse/expand outline" aria-label="Toggle outline">
+  <span class="toc-toggle__icon">›</span>
+</button>
+
 <script is:inline>
   (function () {
-    const btn = document.getElementById('sidebar-toggle');
-    if (!btn) return;
-
-    const STORAGE_KEY = 'sidebar-collapsed';
-
-    // Restore persisted state immediately to avoid layout flash
-    if (localStorage.getItem(STORAGE_KEY) === 'true') {
-      document.documentElement.classList.add('sidebar-collapsed');
+    // ── Left sidebar ──
+    const leftBtn = document.getElementById('sidebar-toggle');
+    if (leftBtn) {
+      const LEFT_KEY = 'sidebar-collapsed';
+      if (localStorage.getItem(LEFT_KEY) === 'true') {
+        document.documentElement.classList.add('sidebar-collapsed');
+      }
+      leftBtn.addEventListener('click', () => {
+        const collapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+        localStorage.setItem(LEFT_KEY, String(collapsed));
+      });
     }
 
-    btn.addEventListener('click', () => {
-      const isNowCollapsed = document.documentElement.classList.toggle('sidebar-collapsed');
-      localStorage.setItem(STORAGE_KEY, String(isNowCollapsed));
-    });
+    // ── Right sidebar (TOC) ──
+    const tocBtn = document.getElementById('toc-toggle');
+    if (tocBtn) {
+      const TOC_KEY = 'toc-collapsed';
+      if (localStorage.getItem(TOC_KEY) === 'true') {
+        document.documentElement.classList.add('toc-collapsed');
+      }
+      tocBtn.addEventListener('click', () => {
+        const collapsed = document.documentElement.classList.toggle('toc-collapsed');
+        localStorage.setItem(TOC_KEY, String(collapsed));
+      });
+    }
   })();
 </script>
 

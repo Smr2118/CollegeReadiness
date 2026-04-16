@@ -69,6 +69,66 @@ li:has(a[href$="/admin/"]) {
   }
 }
 
+/* ── Right sidebar (TOC) toggle ── */
+@media (min-width: 72rem) {
+  .toc-toggle {
+    position: fixed;
+    top: calc(var(--sl-nav-height) + 0.75rem);
+    right: calc(var(--sl-sidebar-width) - 0.9rem);
+    z-index: 200;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    border: 1px solid var(--sl-color-gray-5);
+    background: var(--sl-color-bg-nav);
+    color: var(--sl-color-gray-2);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    transition: right 0.25s ease;
+  }
+
+  .toc-toggle:hover {
+    color: var(--sl-color-accent);
+    border-color: var(--sl-color-accent);
+  }
+
+  .toc-toggle__icon {
+    display: inline-block;
+    transition: transform 0.25s ease;
+    line-height: 1;
+    margin-top: -0.05rem;
+  }
+
+  /* When collapsed: flip chevron and move button to viewport right edge */
+  html.toc-collapsed .toc-toggle {
+    right: 0.3rem;
+  }
+  html.toc-collapsed .toc-toggle__icon {
+    transform: rotate(180deg);
+  }
+
+  /* Hide the fixed TOC panel */
+  html.toc-collapsed .right-sidebar {
+    display: none;
+  }
+
+  /* Collapse the layout spacer and let main content fill the space */
+  html.toc-collapsed .right-sidebar-container {
+    width: 0 !important;
+    min-width: 0 !important;
+    overflow: hidden;
+  }
+  html.toc-collapsed .main-pane {
+    width: 100% !important;
+  }
+}
+
 /* ── Program cards ── */
 .program-grid {
   display: grid;
