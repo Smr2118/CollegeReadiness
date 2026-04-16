@@ -286,7 +286,13 @@
             <td style="font-size:0.8rem;color:var(--sl-color-gray-2)">${escCell(p.org)}</td>
             <td>T${p.tier}</td>
             <td>${escCell(p.status)}</td>
-            <td>${p.access_level === 'premium' ? '⭐ Premium' : '🌐 Public'}</td>
+            <td style="white-space:nowrap">
+              <select class="admin-select prog-access-sel" data-pid="${p.id}" style="font-size:0.8rem;padding:0.2rem 0.4rem">
+                <option value="public"  ${(p.access_level ?? 'public') === 'public'  ? 'selected' : ''}>🌐 Public</option>
+                <option value="premium" ${p.access_level === 'premium' ? 'selected' : ''}>⭐ Premium</option>
+              </select>
+              <button class="admin-btn admin-btn--sm prog-access-save-btn" data-pid="${p.id}" style="margin-left:0.25rem">Save</button>
+            </td>
             <td style="font-size:0.8rem">${escCell(p.deadline ?? '—')}</td>
             <td style="white-space:nowrap">
               <button class="admin-btn admin-btn--sm prog-edit-btn" data-pid="${p.id}">Edit</button>
@@ -295,6 +301,16 @@
           </tr>`).join('')}
       </tbody></table>`;
 
+    document.querySelectorAll<HTMLButtonElement>('.prog-access-save-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const pid = btn.dataset.pid!;
+        const access_level = document.querySelector<HTMLSelectElement>(`.prog-access-sel[data-pid="${pid}"]`)!.value;
+        btn.textContent = '…'; btn.disabled = true;
+        const { error } = await supabase.from('programs').update({ access_level }).eq('id', pid);
+        btn.textContent = error ? 'Error' : '✓';
+        setTimeout(() => { btn.textContent = 'Save'; btn.disabled = false; }, 2000);
+      });
+    });
     document.querySelectorAll<HTMLButtonElement>('.prog-edit-btn').forEach(btn => {
       btn.addEventListener('click', () => openEditProgram(btn.dataset.pid!));
     });
