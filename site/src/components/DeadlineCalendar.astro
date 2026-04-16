@@ -1,40 +1,5 @@
 ---
-import programData from '../data/programs.json';
-
-// Parse only programs with a real date deadline
-interface DeadlineEntry {
-  name: string;
-  org: string;
-  tier: number;
-  status: string;
-  url: string;
-  dateISO: string; // "YYYY-MM-DD"
-}
-
-const entries: DeadlineEntry[] = [];
-
-for (const p of (programData as any).programs) {
-  if (!p.deadline) continue;
-  const d = new Date(p.deadline);
-  if (isNaN(d.getTime())) continue;
-  entries.push({
-    name:    p.name,
-    org:     p.org,
-    tier:    p.tier,
-    status:  p.status,
-    url:     p.url,
-    dateISO: d.toISOString().slice(0, 10),
-  });
-}
-
-// Group by date for the calendar dots
-const byDate: Record<string, DeadlineEntry[]> = {};
-for (const e of entries) {
-  if (!byDate[e.dateISO]) byDate[e.dateISO] = [];
-  byDate[e.dateISO].push(e);
-}
-
-const entriesJSON = JSON.stringify(entries);
+// Deadlines are fetched from Supabase at runtime
 ---
 
 <div id="cal-wrap" class="cal-wrap">
@@ -54,7 +19,9 @@ const entriesJSON = JSON.stringify(entries);
   </div>
 
   <!-- Day grid -->
-  <div id="cal-grid" class="cal-grid"></div>
+  <div id="cal-grid" class="cal-grid">
+    <p id="cal-loading" style="grid-column:1/-1;padding:2rem 0;color:var(--sl-color-gray-2)">Loading…</p>
+  </div>
 
   <!-- Selected day detail -->
   <div id="cal-detail" class="cal-detail" style="display:none">
@@ -73,42 +40,41 @@ const entriesJSON = JSON.stringify(entries);
 
 </div>
 
-<script define:vars={{ entriesJSON }}>
-  const entries = JSON.parse(entriesJSON);
+<script>
+  import { supabase } from '../lib/supabase';
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Group by date string
-  const byDate = {};
-  for (const e of entries) {
-    if (!byDate[e.dateISO]) byDate[e.dateISO] = [];
-    byDate[e.dateISO].push(e);
-  }
-
-  let viewYear  = today.getFullYear();
-  let viewMonth = today.getMonth(); // 0-based
-
   const MONTHS = ['January','February','March','April','May','June',
                   'July','August','September','October','November','December'];
+  const tierColor: Record<number,string> = { 1:'#d4a017', 2:'#3b82f6', 3:'#22c55e', 4:'#9ca3af' };
 
-  const tierColor = { 1: '#d4a017', 2: '#3b82f6', 3: '#22c55e', 4: '#9ca3af' };
-
-  function isoOf(y, m, d) {
+  function isoOf(y: number, m: number, d: number): string {
     return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
   }
 
-  function renderCalendar() {
-    document.getElementById('cal-title').textContent = `${MONTHS[viewMonth]} ${viewYear}`;
+  function escHtml(str: string | null | undefined): string {
+    return (str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
 
-    const grid = document.getElementById('cal-grid');
+  interface DeadlineEntry { name:string; org:string; tier:number; status:string; url:string; dateISO:string; }
+
+  let entries:  DeadlineEntry[] = [];
+  let byDate:   Record<string, DeadlineEntry[]> = {};
+  let viewYear  = today.getFullYear();
+  let viewMonth = today.getMonth();
+
+  // ── Render calendar grid ─────────────────────────────────────────────────
+  function renderCalendar() {
+    document.getElementById('cal-title')!.textContent = `${MONTHS[viewMonth]} ${viewYear}`;
+    const grid = document.getElementById('cal-grid')!;
     grid.innerHTML = '';
 
-    const firstDow = new Date(viewYear, viewMonth, 1).getDay(); // 0=Sun
-    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-    const todayISO = isoOf(today.getFullYear(), today.getMonth(), today.getDate());
+    const firstDow   = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMonth= new Date(viewYear, viewMonth + 1, 0).getDate();
+    const todayISO   = isoOf(today.getFullYear(), today.getMonth(), today.getDate());
 
-    // Blank cells before month start
     for (let i = 0; i < firstDow; i++) {
       const blank = document.createElement('div');
       blank.className = 'cal-cell cal-cell--blank';
@@ -116,35 +82,34 @@ const entriesJSON = JSON.stringify(entries);
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const iso = isoOf(viewYear, viewMonth, day);
-      const events = byDate[iso] || [];
-      const isPast = iso < todayISO;
+      const iso    = isoOf(viewYear, viewMonth, day);
+      const events = byDate[iso] ?? [];
+      const isPast  = iso < todayISO;
       const isToday = iso === todayISO;
 
       const cell = document.createElement('div');
       cell.className = 'cal-cell' +
-        (isToday ? ' cal-cell--today' : '') +
-        (isPast  ? ' cal-cell--past'  : '') +
-        (events.length ? ' cal-cell--has-events' : '');
+        (isToday        ? ' cal-cell--today'      : '') +
+        (isPast         ? ' cal-cell--past'        : '') +
+        (events.length  ? ' cal-cell--has-events'  : '');
 
       const num = document.createElement('span');
-      num.className = 'cal-cell__num';
-      num.textContent = day;
+      num.className  = 'cal-cell__num';
+      num.textContent = String(day);
       cell.appendChild(num);
 
       if (events.length) {
         const dots = document.createElement('div');
         dots.className = 'cal-cell__dots';
-        const shown = events.slice(0, 3);
-        shown.forEach(e => {
+        events.slice(0,3).forEach(e => {
           const dot = document.createElement('span');
-          dot.className = 'cal-dot';
-          dot.style.background = tierColor[e.tier] || '#9ca3af';
+          dot.className  = 'cal-dot';
+          dot.style.background = tierColor[e.tier] ?? '#9ca3af';
           dots.appendChild(dot);
         });
         if (events.length > 3) {
           const more = document.createElement('span');
-          more.className = 'cal-dot-more';
+          more.className  = 'cal-dot-more';
           more.textContent = `+${events.length - 3}`;
           dots.appendChild(more);
         }
@@ -152,24 +117,21 @@ const entriesJSON = JSON.stringify(entries);
         cell.addEventListener('click', () => showDetail(iso, events));
         cell.style.cursor = 'pointer';
       }
-
       grid.appendChild(cell);
     }
   }
 
-  function showDetail(iso, events) {
-    const detail = document.getElementById('cal-detail');
-    const dateEl = document.getElementById('cal-detail-date');
-    const list   = document.getElementById('cal-detail-list');
+  function showDetail(iso: string, events: DeadlineEntry[]) {
+    const detail = document.getElementById('cal-detail')!;
+    document.getElementById('cal-detail-date')!.textContent =
+      new Date(iso + 'T12:00:00').toLocaleDateString('en-US',
+        { weekday:'long', month:'long', day:'numeric', year:'numeric' });
 
-    const d = new Date(iso + 'T12:00:00');
-    dateEl.textContent = d.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
-
-    list.innerHTML = events.map(e => `
+    document.getElementById('cal-detail-list')!.innerHTML = events.map(e => `
       <li class="cal-detail__item">
-        <span class="cal-detail__dot" style="background:${tierColor[e.tier] || '#9ca3af'}"></span>
+        <span class="cal-detail__dot" style="background:${tierColor[e.tier] ?? '#9ca3af'}"></span>
         <div class="cal-detail__info">
-          <a class="cal-detail__name" href="${e.url}" target="_blank" rel="noopener">${escHtml(e.name)}</a>
+          <a class="cal-detail__name" href="${escHtml(e.url)}" target="_blank" rel="noopener">${escHtml(e.name)}</a>
           <span class="cal-detail__org">${escHtml(e.org)}</span>
         </div>
         <span class="cal-badge cal-badge--t${e.tier}">T${e.tier}</span>
@@ -182,21 +144,20 @@ const entriesJSON = JSON.stringify(entries);
     const todayISO = isoOf(today.getFullYear(), today.getMonth(), today.getDate());
     const upcoming = entries
       .filter(e => e.dateISO >= todayISO)
-      .sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+      .sort((a,b) => a.dateISO.localeCompare(b.dateISO));
 
-    const wrap = document.getElementById('cal-upcoming-list');
+    const wrap = document.getElementById('cal-upcoming-list')!;
     if (!upcoming.length) {
       wrap.innerHTML = '<p class="cal-upcoming__empty">No upcoming deadlines found.</p>';
       return;
     }
 
-    // Group by month
-    const groups = {};
+    const groups: Record<string,{ label:string; items:DeadlineEntry[] }> = {};
     for (const e of upcoming) {
       const d = new Date(e.dateISO + 'T12:00:00');
-      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      const key   = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
       const label = d.toLocaleDateString('en-US', { month:'long', year:'numeric' });
-      if (!groups[key]) groups[key] = { label, items: [] };
+      if (!groups[key]) groups[key] = { label, items:[] };
       groups[key].items.push(e);
     }
 
@@ -204,16 +165,16 @@ const entriesJSON = JSON.stringify(entries);
       <div class="cal-upcoming__group">
         <div class="cal-upcoming__month">${g.label}</div>
         ${g.items.map(e => {
-          const d = new Date(e.dateISO + 'T12:00:00');
-          const dayStr = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
-          const daysLeft = Math.round((new Date(e.dateISO + 'T12:00:00') - today) / 86400000);
-          const urgency = daysLeft <= 7 ? 'cal-upcoming__days--urgent'
-                        : daysLeft <= 21 ? 'cal-upcoming__days--soon' : '';
+          const d        = new Date(e.dateISO + 'T12:00:00');
+          const dayStr   = d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+          const daysLeft = Math.round((new Date(e.dateISO + 'T12:00:00').getTime() - today.getTime()) / 86400000);
+          const urgency  = daysLeft <= 7 ? 'cal-upcoming__days--urgent'
+                         : daysLeft <= 21 ? 'cal-upcoming__days--soon' : '';
           return `
             <div class="cal-upcoming__item">
               <span class="cal-upcoming__daystr">${dayStr}</span>
               <div class="cal-upcoming__item-info">
-                <a class="cal-upcoming__name" href="${e.url}" target="_blank" rel="noopener">${escHtml(e.name)}</a>
+                <a class="cal-upcoming__name" href="${escHtml(e.url)}" target="_blank" rel="noopener">${escHtml(e.name)}</a>
               </div>
               <span class="cal-badge cal-badge--t${e.tier}">T${e.tier}</span>
               <span class="cal-upcoming__days ${urgency}">${daysLeft}d</span>
@@ -222,27 +183,61 @@ const entriesJSON = JSON.stringify(entries);
       </div>`).join('');
   }
 
-  // Nav buttons
-  document.getElementById('cal-prev').addEventListener('click', () => {
+  // ── Load from Supabase ───────────────────────────────────────────────────
+  async function init() {
+    const { data, error } = await supabase
+      .from('programs')
+      .select('name, org, tier, status, url, deadline')
+      .not('deadline', 'is', null);
+
+    document.getElementById('cal-loading')?.remove();
+
+    if (error || !data) {
+      document.getElementById('cal-grid')!.innerHTML =
+        '<p style="grid-column:1/-1;color:var(--sl-color-red)">Failed to load deadlines.</p>';
+      return;
+    }
+
+    // Parse dates
+    for (const p of data) {
+      if (!p.deadline) continue;
+      const d = new Date(p.deadline);
+      if (isNaN(d.getTime())) continue;
+      entries.push({
+        name:    p.name,
+        org:     p.org,
+        tier:    p.tier,
+        status:  p.status,
+        url:     p.url ?? '',
+        dateISO: d.toISOString().slice(0,10),
+      });
+    }
+
+    byDate = {};
+    for (const e of entries) {
+      if (!byDate[e.dateISO]) byDate[e.dateISO] = [];
+      byDate[e.dateISO].push(e);
+    }
+
+    renderCalendar();
+    renderUpcoming();
+  }
+
+  // ── Nav buttons ──────────────────────────────────────────────────────────
+  document.getElementById('cal-prev')!.addEventListener('click', () => {
     viewMonth--;
     if (viewMonth < 0) { viewMonth = 11; viewYear--; }
     renderCalendar();
   });
-  document.getElementById('cal-next').addEventListener('click', () => {
+  document.getElementById('cal-next')!.addEventListener('click', () => {
     viewMonth++;
     if (viewMonth > 11) { viewMonth = 0; viewYear++; }
     renderCalendar();
   });
 
-  // Close detail
-  document.getElementById('cal-detail-close').addEventListener('click', () => {
-    document.getElementById('cal-detail').style.display = 'none';
+  document.getElementById('cal-detail-close')!.addEventListener('click', () => {
+    document.getElementById('cal-detail')!.style.display = 'none';
   });
 
-  function escHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  renderCalendar();
-  renderUpcoming();
+  init();
 </script>

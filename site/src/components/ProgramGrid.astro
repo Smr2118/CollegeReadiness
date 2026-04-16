@@ -1,139 +1,270 @@
 ---
-import ProgramCard from './ProgramCard.astro';
-import programData from '../data/programs.json';
-
-const { programs } = programData as any;
+// Programs are now loaded from Supabase at runtime — no build-time import
 ---
 
-<p class="results-count" id="pg-count">{programs.length} programs</p>
+<p class="results-count" id="pg-count">Loading…</p>
 
 <div class="program-grid" id="pg-grid">
-  {programs.map((p: any) => <ProgramCard program={p} />)}
+  <p id="pg-loading" style="color:var(--sl-color-gray-2);padding:2rem 0">Loading programs…</p>
 </div>
 
 <p id="pg-empty" style="display:none; color:var(--sl-color-gray-2); margin-top:2rem;">
   No programs match your filters. Try broadening your search.
 </p>
 
-<script is:inline>
-  (function () {
-    const grid = document.getElementById('pg-grid');
-    const countEl = document.getElementById('pg-count');
-    const emptyEl = document.getElementById('pg-empty');
-    if (!grid || !countEl || !emptyEl) return;
+<script>
+  import { supabase } from '../lib/supabase';
 
-    const active = {
-      status: 'open',
-      tier: 'all',
-      cost: 'all',
-      format: 'all',
-      category: 'all',
-      interest: 'all',
+  // ── Card template ────────────────────────────────────────────────────────
+  function esc(s: string | null | undefined): string {
+    return (s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function makeCard(p: any): string {
+    const statusLabel: Record<string,string> = {
+      open:'Open', closed:'Closed', nextyear:'Apply Next Year', conflict:'Conflict'
     };
-    let query = '';
-    let sortBy = 'default';
+    const tierLabel: Record<number,string> = {
+      1:'T1 – Elite', 2:'T2 – Highly Selective', 3:'T3 – Moderate', 4:'T4 – Accessible'
+    };
+    const r = Math.round(p.rating ?? 0);
+    const stars = '★'.repeat(r) + '☆'.repeat(5 - r);
+    const costKey = (p.cost ?? '').toLowerCase().replace('/','').replace(' ','');
+    const interestKey = `pc-interest-${p.name}`;
+    const noteKey     = `pc-note-${p.name}`;
+    const savedNote   = localStorage.getItem(noteKey) ?? '';
+    const savedInt    = localStorage.getItem(interestKey) ?? '';
 
-    // Original DOM order for reset
-    const originalOrder = Array.from(grid.querySelectorAll('.program-card'));
+    const tagsHtml = (p.tags ?? []).map((t: string) =>
+      `<span class="badge badge--tag">${esc(t)}</span>`).join('');
+    const noteHtml = p.note
+      ? `<div class="program-card__note program-card__note--${esc(p.note_type ?? 'info')}">${esc(p.note)}</div>`
+      : '';
+    const applyBtn = p.url && p.url.startsWith('http')
+      ? `<a class="btn-link" href="${esc(p.url)}" target="_blank" rel="noopener">Apply →</a>`
+      : '';
 
-    function parseDeadline(text) {
-      if (!text) return Infinity;
-      // Extract first date-like string e.g. "April 27, 2026" or "May 31, 2026"
-      const m = text.match(/([A-Z][a-z]+ \d{1,2},?\s*\d{4})/);
-      if (m) {
-        const d = new Date(m[1]);
-        if (!isNaN(d)) return d.getTime();
-      }
-      return Infinity; // passed/unknown go to end
-    }
+    const iv = (v: string) => savedInt === v ? ' active' : '';
 
-    const interestOrder = { applying: 0, researching: 1, maybe: 2, '': 3, skip: 4 };
+    return `<div class="program-card"
+      data-tier="${p.tier}"
+      data-category="${esc(p.category)}"
+      data-status="${esc(p.status)}"
+      data-cost="${esc(p.cost)}"
+      data-format="${esc(p.format)}"
+      data-name="${esc((p.name ?? '').toLowerCase())}"
+      data-tags="${esc((p.tags ?? []).join(' ').toLowerCase())}"
+      data-org="${esc((p.org ?? '').toLowerCase())}"
+      data-deadline="${esc(p.deadline ?? '')}"
+      data-interest="${esc(savedInt)}"
+      data-interest-key="${esc(interestKey)}">
 
-    function sortCards() {
-      const cards = Array.from(grid.querySelectorAll('.program-card'));
-      if (sortBy === 'default') {
-        originalOrder.forEach(c => grid.appendChild(c));
-        return;
-      }
-      if (sortBy === 'deadline') {
-        cards.sort((a, b) => parseDeadline(a.dataset.deadline) - parseDeadline(b.dataset.deadline));
-      } else if (sortBy === 'interest') {
-        cards.sort((a, b) => {
-          const ia = interestOrder[a.dataset.interest || ''] ?? 3;
-          const ib = interestOrder[b.dataset.interest || ''] ?? 3;
-          return ia - ib;
-        });
-      }
-      cards.forEach(c => grid.appendChild(c));
-    }
+      <button class="program-card__toggle" aria-expanded="false">
+        <div class="program-card__toggle-left">
+          <p class="program-card__name">${esc(p.name)}</p>
+          <p class="program-card__org">${esc(p.org)}</p>
+        </div>
+        <div class="program-card__toggle-right">
+          <span class="badge badge--${esc(p.status)}">${esc(statusLabel[p.status] ?? p.status)}</span>
+          <span class="program-card__chevron">›</span>
+        </div>
+      </button>
 
-    function applyFilters() {
-      let visible = 0;
-      grid.querySelectorAll('.program-card').forEach(card => {
-        const el = card;
-        const matches =
-          (active.status === 'all' || el.dataset.status === active.status) &&
-          (active.tier === 'all' || el.dataset.tier === active.tier) &&
-          (active.cost === 'all' || el.dataset.cost === active.cost) &&
-          (active.format === 'all' || el.dataset.format === active.format) &&
-          (active.category === 'all' || el.dataset.category === active.category) &&
-          (active.interest === 'all' || el.dataset.interest === active.interest) &&
-          (query === '' ||
-            el.dataset.name.includes(query) ||
-            el.dataset.org.includes(query) ||
-            el.dataset.tags.includes(query));
+      <div class="program-card__interest-row">
+        <span class="program-card__interest-label">Interest:</span>
+        <button class="interest-chip${iv('')}" data-iv="">—</button>
+        <button class="interest-chip${iv('applying')}" data-iv="applying">🔥 Applying</button>
+        <button class="interest-chip${iv('researching')}" data-iv="researching">👀 Researching</button>
+        <button class="interest-chip${iv('maybe')}" data-iv="maybe">🤔 Maybe</button>
+        <button class="interest-chip${iv('skip')}" data-iv="skip">❌ Skip</button>
+      </div>
 
-        el.style.display = matches ? '' : 'none';
-        if (matches) visible++;
+      <div class="program-card__body">
+        <div class="program-card__meta">
+          <span class="badge badge--tier${p.tier}">${esc(tierLabel[p.tier] ?? '')}</span>
+          <span class="badge badge--${esc(costKey)}">${esc(p.cost)}</span>
+          <span class="badge badge--format">${esc(p.format)}</span>
+          <span class="badge badge--format">📅 ${esc(p.duration)}</span>
+          <span class="badge badge--format">🎓 ${esc(p.grades)}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;font-size:0.78rem;color:var(--sl-color-gray-2)">
+          <span class="stars">${stars}</span>
+          <span>Selectivity: ${esc(p.selectivity_label)}</span>
+        </div>
+        <p class="program-card__desc">${esc(p.description)}</p>
+        ${noteHtml}
+        <div class="program-card__tags">${tagsHtml}</div>
+        <div class="program-card__notes-section">
+          <label class="program-card__notes-label">My Notes</label>
+          <textarea class="program-card__user-note"
+            data-key="${esc(noteKey)}"
+            placeholder="Add your personal notes, reminders, or application status…"
+            rows="2">${esc(savedNote)}</textarea>
+        </div>
+        <div class="program-card__footer">
+          <div class="program-card__deadline">⏰ ${esc(p.deadline)}</div>
+          ${applyBtn}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // ── State ────────────────────────────────────────────────────────────────
+  const active = { status: 'open', tier: 'all', cost: 'all', format: 'all', category: 'all', interest: 'all' };
+  let query   = '';
+  let sortBy  = 'default';
+  let originalOrder: Element[] = [];
+
+  // ── Filter / Sort ────────────────────────────────────────────────────────
+  function parseDeadline(text: string | null | undefined): number {
+    if (!text) return Infinity;
+    const m = text.match(/([A-Z][a-z]+ \d{1,2},?\s*\d{4})/);
+    if (m) { const d = new Date(m[1]); if (!isNaN(d.getTime())) return d.getTime(); }
+    return Infinity;
+  }
+
+  const interestOrder: Record<string,number> = { applying:0, researching:1, maybe:2, '':3, skip:4 };
+
+  function sortCards() {
+    const grid = document.getElementById('pg-grid')!;
+    const cards = Array.from(grid.querySelectorAll('.program-card'));
+    if (sortBy === 'default') { originalOrder.forEach(c => grid.appendChild(c)); return; }
+    if (sortBy === 'deadline') {
+      cards.sort((a,b) => parseDeadline((a as HTMLElement).dataset.deadline) - parseDeadline((b as HTMLElement).dataset.deadline));
+    } else if (sortBy === 'interest') {
+      cards.sort((a,b) => {
+        const ia = interestOrder[(a as HTMLElement).dataset.interest ?? ''] ?? 3;
+        const ib = interestOrder[(b as HTMLElement).dataset.interest ?? ''] ?? 3;
+        return ia - ib;
       });
+    }
+    cards.forEach(c => grid.appendChild(c));
+  }
 
-      countEl.textContent = `${visible} program${visible !== 1 ? 's' : ''}`;
-      emptyEl.style.display = visible === 0 ? '' : 'none';
+  function applyFilters() {
+    const grid     = document.getElementById('pg-grid')!;
+    const countEl  = document.getElementById('pg-count')!;
+    const emptyEl  = document.getElementById('pg-empty')!;
+    let visible = 0;
+    grid.querySelectorAll<HTMLElement>('.program-card').forEach(el => {
+      const matches =
+        (active.status   === 'all' || el.dataset.status   === active.status)  &&
+        (active.tier     === 'all' || el.dataset.tier     === active.tier)     &&
+        (active.cost     === 'all' || el.dataset.cost     === active.cost)     &&
+        (active.format   === 'all' || el.dataset.format   === active.format)   &&
+        (active.category === 'all' || el.dataset.category === active.category) &&
+        (active.interest === 'all' || el.dataset.interest === active.interest) &&
+        (query === '' ||
+          (el.dataset.name  ?? '').includes(query) ||
+          (el.dataset.org   ?? '').includes(query) ||
+          (el.dataset.tags  ?? '').includes(query));
+      el.style.display = matches ? '' : 'none';
+      if (matches) visible++;
+    });
+    countEl.textContent = `${visible} program${visible !== 1 ? 's' : ''}`;
+    emptyEl.style.display = visible === 0 ? '' : 'none';
+  }
+
+  function refresh() { sortCards(); applyFilters(); }
+
+  // ── Load from Supabase ───────────────────────────────────────────────────
+  async function init() {
+    const { data, error } = await supabase
+      .from('programs')
+      .select('*')
+      .order('sort_order', { ascending: true });
+
+    const grid    = document.getElementById('pg-grid')!;
+    const loadMsg = document.getElementById('pg-loading');
+    loadMsg?.remove();
+
+    if (error || !data) {
+      grid.innerHTML = '<p style="color:var(--sl-color-red)">Failed to load programs. Please refresh.</p>';
+      return;
     }
 
-    function refresh() {
-      sortCards();
-      applyFilters();
-    }
+    grid.innerHTML = data.map(makeCard).join('');
+    originalOrder  = Array.from(grid.querySelectorAll('.program-card'));
 
-    // Apply on load
+    document.getElementById('pg-count')!.textContent = `${data.length} programs`;
     refresh();
+    document.dispatchEvent(new Event('data-loaded'));
+  }
 
-    // Filter chips — event delegation on document
-    document.addEventListener('click', (e) => {
-      const chip = e.target.closest('.filter-chip[data-filter]');
-      if (!chip) return;
-      const filter = chip.dataset.filter;
-      const value = chip.dataset.value;
-      if (!filter || !value) return;
-      active[filter] = value;
-      document.querySelectorAll(`.filter-chip[data-filter="${filter}"]`).forEach(c => {
-        c.classList.toggle('active', c.dataset.value === value);
-      });
+  // ── Event delegation ─────────────────────────────────────────────────────
+
+  // Toggle expand / collapse
+  document.addEventListener('click', e => {
+    const btn = (e.target as Element).closest<HTMLButtonElement>('.program-card__toggle');
+    if (!btn) return;
+    const expanded = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', String(!expanded));
+    btn.closest('.program-card')?.classList.toggle('is-expanded', !expanded);
+  });
+
+  // Interest chips
+  document.addEventListener('click', e => {
+    const chip = (e.target as Element).closest<HTMLElement>('.interest-chip');
+    if (!chip) return;
+    const row  = chip.closest('.program-card__interest-row');
+    if (!row) return;
+    const card = chip.closest<HTMLElement>('.program-card');
+    if (!card) return;
+    const val         = chip.dataset.iv ?? '';
+    const interestKey = card.dataset.interestKey!;
+    card.dataset.interest = val;
+    localStorage.setItem(interestKey, val);
+    row.querySelectorAll<HTMLElement>('.interest-chip').forEach(b => {
+      b.classList.toggle('active', b.dataset.iv === val);
+    });
+    document.dispatchEvent(new CustomEvent('interest-changed', {
+      detail: { programName: interestKey.replace('pc-interest-', ''), interest: val }
+    }));
+  });
+
+  // localStorage notes
+  document.addEventListener('input', e => {
+    const ta = e.target as HTMLTextAreaElement;
+    if (!ta.classList.contains('program-card__user-note')) return;
+    if (ta.dataset.key) localStorage.setItem(ta.dataset.key, ta.value);
+  });
+
+  // Filter chips
+  document.addEventListener('click', e => {
+    const chip = (e.target as Element).closest<HTMLElement>('.filter-chip[data-filter]');
+    if (!chip) return;
+    const filter = chip.dataset.filter!;
+    const value  = chip.dataset.value!;
+    (active as any)[filter] = value;
+    document.querySelectorAll<HTMLElement>(`.filter-chip[data-filter="${filter}"]`).forEach(c => {
+      c.classList.toggle('active', c.dataset.value === value);
+    });
+    applyFilters();
+  });
+
+  // Sort dropdown
+  document.addEventListener('change', e => {
+    const sel = e.target as HTMLSelectElement;
+    if (sel.id !== 'pg-sort') return;
+    sortBy = sel.value;
+    refresh();
+  });
+
+  // Search (debounced)
+  let debounceTimer: ReturnType<typeof setTimeout>;
+  document.addEventListener('input', e => {
+    const el = e.target as HTMLInputElement;
+    if (el.id !== 'pg-search') return;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      query = el.value.toLowerCase().trim();
       applyFilters();
-    });
+    }, 200);
+  });
 
-    // Sort dropdown — event delegation
-    document.addEventListener('change', (e) => {
-      const sel = e.target;
-      if (sel.id !== 'pg-sort') return;
-      sortBy = sel.value;
-      refresh();
-    });
+  // Re-filter when Supabase user data loads (interest sync, etc.)
+  document.addEventListener('interest-changed', applyFilters);
+  document.addEventListener('data-loaded', refresh);
 
-    // Search handler — event delegation (debounced)
-    let debounceTimer;
-    document.addEventListener('input', (e) => {
-      if (e.target.id !== 'pg-search') return;
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        query = e.target.value.toLowerCase().trim();
-        applyFilters();
-      }, 200);
-    });
-
-    // Re-filter when interest changes or Supabase data loads
-    document.addEventListener('interest-changed', applyFilters);
-    document.addEventListener('data-loaded', refresh);
-  })();
+  init();
 </script>
