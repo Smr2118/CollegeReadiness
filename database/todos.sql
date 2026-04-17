@@ -24,12 +24,9 @@ CREATE POLICY "todos_select" ON public.todos FOR SELECT TO authenticated
 CREATE POLICY "todos_insert" ON public.todos FOR INSERT TO authenticated
   WITH CHECK (family_id = public.get_my_family_id());
 
--- Creator or assignee can update (mark done, edit)
+-- Any family member can update (toggle done, edit) todos in their family
 CREATE POLICY "todos_update" ON public.todos FOR UPDATE TO authenticated
-  USING (
-    family_id = public.get_my_family_id()
-    AND (created_by = auth.uid() OR assigned_to = auth.uid())
-  )
+  USING  (family_id = public.get_my_family_id())
   WITH CHECK (family_id = public.get_my_family_id());
 
 -- Only creator can delete

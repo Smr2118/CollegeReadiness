@@ -53,8 +53,18 @@
 
   /* ── Init ── */
   async function init() {
-    const { data: { session } } = await supabase.auth.getSession();
+    let { data: { session } } = await supabase.auth.getSession();
+
+    // If no session yet, wait for sign-in (handles race with SupabaseSync login)
     if (!session) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+        if (event === 'SIGNED_IN' && s) {
+          subscription.unsubscribe();
+          show('todo-loading', true);
+          show('todo-denied', false);
+          init();
+        }
+      });
       show('todo-loading', false);
       show('todo-denied', true);
       return;
