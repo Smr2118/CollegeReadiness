@@ -126,6 +126,7 @@ li:has(a[href$="/admin/"]) {
   }
   html.toc-collapsed .main-pane {
     width: 100% !important;
+    --sl-content-margin-inline: auto !important;
   }
 }
 
