@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS public.programs (
   note_type            TEXT,
   tags                 TEXT[] DEFAULT '{}',
   tracks               JSONB,
-  access_level         TEXT NOT NULL DEFAULT 'public', -- 'public' | 'premium'
+  access_level         TEXT NOT NULL DEFAULT 'public', -- 'public' | 'basic' | 'premium'
   sort_order           INTEGER DEFAULT 0,
   created_at           TIMESTAMPTZ DEFAULT NOW(),
   updated_at           TIMESTAMPTZ DEFAULT NOW()
@@ -36,7 +36,7 @@ ALTER TABLE public.programs ENABLE ROW LEVEL SECURITY;
 -- Ensure families.plan column exists before creating the access-aware policy
 ALTER TABLE public.families ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT 'standard';
 
--- Public programs visible to all; premium programs only to premium families / admins
+-- Tiered access: public < basic < premium; admins see everything
 CREATE POLICY "programs_read"
   ON public.programs FOR SELECT
   USING (
@@ -46,7 +46,11 @@ CREATE POLICY "programs_read"
       FROM public.user_profiles up
       LEFT JOIN public.families f ON f.id = up.family_id
       WHERE up.user_id = auth.uid()
-        AND (f.plan = 'premium' OR up.role = 'admin')
+        AND (
+          up.role = 'admin'
+          OR (access_level = 'basic'   AND f.plan IN ('basic', 'premium'))
+          OR (access_level = 'premium' AND f.plan = 'premium')
+        )
     )
   );
 

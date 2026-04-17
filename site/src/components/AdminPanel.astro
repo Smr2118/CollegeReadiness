@@ -57,7 +57,7 @@
         </div>
         <div class="admin-form__row">
           <label class="admin-label">Display Name</label>
-          <input id="new-display" class="admin-input" type="text" placeholder="Mom" required />
+          <input id="new-display" class="admin-input" type="text" placeholder="Mom" required minlength="2" />
         </div>
         <div class="admin-form__row">
           <label class="admin-label">Family Group</label>
@@ -203,6 +203,7 @@
               <label class="admin-label">Access Level</label>
               <select id="prog-access-level" class="admin-select">
                 <option value="public">🌐 Public (all families)</option>
+                <option value="basic">🔹 Basic (basic + premium families)</option>
                 <option value="premium">⭐ Premium (premium families only)</option>
               </select>
             </div>
@@ -327,6 +328,7 @@
             <td style="white-space:nowrap">
               <select class="admin-select prog-access-sel" data-pid="${p.id}" style="font-size:0.8rem;padding:0.2rem 0.4rem">
                 <option value="public"  ${(p.access_level ?? 'public') === 'public'  ? 'selected' : ''}>🌐 Public</option>
+                <option value="basic"   ${p.access_level === 'basic'   ? 'selected' : ''}>🔹 Basic</option>
                 <option value="premium" ${p.access_level === 'premium' ? 'selected' : ''}>⭐ Premium</option>
               </select>
             </td>
@@ -475,7 +477,8 @@
             <td>
               <select class="admin-select fam-plan-sel" data-fid="${f.id}">
                 <option value="standard" ${(f.plan ?? 'standard') === 'standard' ? 'selected' : ''}>Standard</option>
-                <option value="premium"  ${f.plan === 'premium' ? 'selected' : ''}>⭐ Premium</option>
+                <option value="basic"    ${f.plan === 'basic'    ? 'selected' : ''}>🔹 Basic</option>
+                <option value="premium"  ${f.plan === 'premium'  ? 'selected' : ''}>⭐ Premium</option>
               </select>
             </td>
             <td>${fmt(f.created_at)}</td>
