@@ -90,12 +90,14 @@
 
     members = memberData ?? [];
 
-    // Populate assignee dropdown
+    // Populate assignee dropdown (clear first to avoid duplicates on re-init)
     const sel = document.getElementById('todo-assignee') as HTMLSelectElement;
+    sel.innerHTML = '<option value="">Everyone</option>';
     members.forEach(m => {
       const opt = document.createElement('option');
       opt.value = m.user_id;
-      opt.textContent = m.user_id === myUserId ? `${m.display_name} (me)` : m.display_name;
+      const name = m.display_name ?? m.user_id.slice(0, 8);
+      opt.textContent = m.user_id === myUserId ? `${name} (me)` : name;
       sel.appendChild(opt);
     });
 
