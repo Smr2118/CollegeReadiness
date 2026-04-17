@@ -104,6 +104,29 @@
     );
   }
 
+  /* ── Nav access: hide sidebar links below user's plan tier ── */
+  const PLAN_RANK: Record<string, number> = { standard: 0, basic: 1, premium: 2 };
+
+  async function applyNavAccess(familyPlan: string, isAdmin: boolean) {
+    if (isAdmin) return; // admins always see everything
+
+    const { data: rules, error } = await supabase
+      .from('nav_access')
+      .select('path, min_plan');
+    if (error || !rules) return;
+
+    const userRank = PLAN_RANK[familyPlan] ?? 0;
+
+    rules.forEach((rule: { path: string; min_plan: string }) => {
+      const minRank = PLAN_RANK[rule.min_plan] ?? 0;
+      if (userRank < minRank) {
+        document.querySelectorAll<HTMLElement>(`li:has(a[href$="${rule.path}"])`).forEach(el => {
+          el.style.display = 'none';
+        });
+      }
+    });
+  }
+
   /* ── Shared post-auth setup (runs after both page-load session and fresh login) ── */
   async function onAuthenticated(session: any) {
     const { data: profile } = await supabase
@@ -111,7 +134,6 @@
       .select('family_id, display_name, role')
       .eq('user_id', session.user.id)
       .single();
-
     familyId    = profile?.family_id    ?? session.user.user_metadata?.family_id    ?? '';
     displayName = profile?.display_name ?? session.user.user_metadata?.display_name ?? session.user.email ?? '';
     const isAdmin = profile?.role === 'admin' || session.user.user_metadata?.role === 'admin';
@@ -122,9 +144,20 @@
       });
     }
 
+    // Get family plan for nav access
+    let familyPlan = 'standard';
+    if (familyId) {
+      const { data: famData } = await supabase
+        .from('families')
+        .select('plan')
+        .eq('id', familyId)
+        .single();
+      familyPlan = famData?.plan ?? 'standard';
+    }
+
     hideModal(displayName, familyId);
     resetInactivityTimer();
-    await loadData();
+    await Promise.all([loadData(), applyNavAccess(familyPlan, isAdmin)]);
   }
 
   /* ── Init ── */
