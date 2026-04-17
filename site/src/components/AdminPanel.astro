@@ -11,6 +11,7 @@
     <button class="admin-tab active" data-tab="families" role="tab">👨‍👩‍👧 Families</button>
     <button class="admin-tab" data-tab="users"    role="tab">👤 Users</button>
     <button class="admin-tab" data-tab="programs" role="tab">📚 Programs</button>
+    <button class="admin-tab" data-tab="stats"    role="tab">📊 Stats</button>
   </div>
 
   <!-- ══ Families tab ══════════════════════════════════════════════════════ -->
@@ -226,6 +227,36 @@
 
   </div>
 
+  <!-- ══ Stats tab ══════════════════════════════════════════════════════════ -->
+  <div id="tab-stats" class="admin-tab-panel" style="display:none">
+
+    <section class="admin-section">
+      <h2 class="admin-section__title">Login Stats</h2>
+
+      <div style="display:flex;gap:2rem;flex-wrap:wrap;margin-bottom:1.5rem">
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__value" id="stat-total-logins">—</div>
+          <div class="admin-stat-card__label">Total Logins</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__value" id="stat-logins-7d">—</div>
+          <div class="admin-stat-card__label">Last 7 Days</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__value" id="stat-unique-users">—</div>
+          <div class="admin-stat-card__label">Unique Users</div>
+        </div>
+      </div>
+
+      <h3 class="admin-form__subtitle">Per-User Summary</h3>
+      <div id="stats-by-user" class="admin-table-wrap">Loading…</div>
+
+      <h3 class="admin-form__subtitle" style="margin-top:1.5rem">Recent Logins</h3>
+      <div id="stats-recent" class="admin-table-wrap">Loading…</div>
+    </section>
+
+  </div>
+
 </div>
 
 <script>
@@ -265,7 +296,7 @@
     }
 
     show('admin-check', false); show('admin-ui', true);
-    await Promise.all([loadFamilies(), loadUsers(), loadPrograms()]);
+    await Promise.all([loadFamilies(), loadUsers(), loadPrograms(), loadStats()]);
   }
 
   /* ── Programs ── */
@@ -567,6 +598,63 @@
     setMsg('user-msg', err ? `Error: ${err}` : `User "${val('new-display')}" created.`, !err);
     if (!err) { (e.target as HTMLFormElement).reset(); await loadUsers(); }
   });
+
+  /* ── Stats ── */
+  async function loadStats() {
+    const { data, error } = await supabase
+      .from('login_events')
+      .select('user_id, display_name, family_id, logged_in_at')
+      .order('logged_in_at', { ascending: false });
+
+    if (error || !data) {
+      document.getElementById('stats-by-user')!.textContent = error?.message ?? 'No data.';
+      document.getElementById('stats-recent')!.textContent = '';
+      return;
+    }
+
+    // Summary counts
+    const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    document.getElementById('stat-total-logins')!.textContent  = String(data.length);
+    document.getElementById('stat-logins-7d')!.textContent     = String(data.filter(r => r.logged_in_at >= cutoff).length);
+    document.getElementById('stat-unique-users')!.textContent  = String(new Set(data.map(r => r.user_id)).size);
+
+    // Per-user summary
+    const byUser = new Map<string, { name: string; family: string; count: number; last: string }>();
+    for (const r of data) {
+      if (!byUser.has(r.user_id)) {
+        byUser.set(r.user_id, { name: r.display_name ?? '—', family: r.family_id ?? '—', count: 0, last: r.logged_in_at });
+      }
+      byUser.get(r.user_id)!.count++;
+    }
+    const userRows = [...byUser.values()].sort((a, b) => b.count - a.count);
+
+    document.getElementById('stats-by-user')!.innerHTML = userRows.length
+      ? `<table class="admin-table">
+          <thead><tr><th>User</th><th>Family</th><th>Total Logins</th><th>Last Login</th></tr></thead>
+          <tbody>${userRows.map(u => `
+            <tr>
+              <td>${escCell(u.name)}</td>
+              <td>${escCell(u.family)}</td>
+              <td>${u.count}</td>
+              <td>${fmt(u.last)}</td>
+            </tr>`).join('')}
+          </tbody></table>`
+      : 'No login data yet.';
+
+    // Recent 30 logins
+    const recent = data.slice(0, 30);
+    document.getElementById('stats-recent')!.innerHTML = recent.length
+      ? `<table class="admin-table">
+          <thead><tr><th>User</th><th>Family</th><th>Time</th></tr></thead>
+          <tbody>${recent.map(r => `
+            <tr>
+              <td>${escCell(r.display_name ?? '—')}</td>
+              <td>${escCell(r.family_id ?? '—')}</td>
+              <td>${new Date(r.logged_in_at).toLocaleString()}</td>
+            </tr>`).join('')}
+          </tbody></table>`
+      : 'No logins recorded yet.';
+  }
 
   /* ── Helpers ── */
   function escCell(s: string | null | undefined) {

@@ -154,6 +154,12 @@
       errorEl.style.display = 'block';
     } else {
       await onAuthenticated(data.session!);
+      // Log the login event (fire-and-forget)
+      supabase.from('login_events').insert({
+        user_id:      data.session!.user.id,
+        display_name: displayName || null,
+        family_id:    familyId    || null,
+      }).then(() => {});
     }
   });
 

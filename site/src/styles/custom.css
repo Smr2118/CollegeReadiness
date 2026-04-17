@@ -1301,6 +1301,26 @@ li:has(a[href$="/admin/"]) {
   background: #dc2626;
 }
 
+.admin-stat-card {
+  background: var(--sl-color-bg-nav);
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.5rem;
+  padding: 1rem 1.5rem;
+  min-width: 8rem;
+  text-align: center;
+}
+.admin-stat-card__value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--sl-color-accent);
+  line-height: 1;
+}
+.admin-stat-card__label {
+  font-size: 0.8rem;
+  color: var(--sl-color-gray-2);
+  margin-top: 0.35rem;
+}
+
 .admin-details summary.admin-details__summary {
   cursor: pointer;
   font-weight: 600;
