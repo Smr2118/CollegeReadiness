@@ -20,7 +20,6 @@ export default defineConfig({
 				{
 					label: 'Opportunities',
 					items: [
-						{ label: '📅 Deadline Calendar', link: '/calendar/' },
 						{ label: '☀️ Summer Programs', link: '/programs/' },
 						{ label: '💼 Internships', link: '/internships/' },
 						{ label: '🏆 Extra Curriculars', link: '/extracurriculars/' },
@@ -30,9 +29,10 @@ export default defineConfig({
 				{
 					label: 'Resources',
 					items: [
+						{ label: '📅 Deadline Calendar', link: '/calendar/' },
 						{ label: '✅ Family To-Do', link: '/todos/' },
 						{ label: '📓 Notes', link: '/notes/' },
-						{ label: '✍️ Essay Topics', link: '/essay-topics/' },
+						{ label: '✍️ Essay Prep', link: '/essay-topics/' },
 						{ label: '💡 Ideas Board', link: '/ideas/' },
 						{ label: '🔗 Reference Links', link: '/references/' },
 					],
