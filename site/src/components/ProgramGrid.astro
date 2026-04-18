@@ -109,6 +109,9 @@
     </div>`;
   }
 
+  // ── Program data store (populated after Supabase load) ──────────────────
+  let allPrograms: any[] = [];
+
   // ── State ────────────────────────────────────────────────────────────────
   const active: Record<string, Set<string>> = {
     status:   new Set(['open']),
@@ -190,6 +193,7 @@
       return;
     }
 
+    allPrograms    = data;
     grid.innerHTML = data.map(makeCard).join('');
     originalOrder  = Array.from(grid.querySelectorAll('.program-card'));
 
@@ -286,6 +290,54 @@
   // Re-filter when Supabase user data loads (interest sync, etc.)
   document.addEventListener('interest-changed', applyFilters);
   document.addEventListener('data-loaded', refresh);
+
+  // ── CSV Export ───────────────────────────────────────────────────────────
+  function csvCell(val: any): string {
+    const s = (val ?? '').toString().replace(/"/g, '""');
+    return `"${s}"`;
+  }
+
+  document.addEventListener('click', e => {
+    if ((e.target as Element).id !== 'pg-export') return;
+
+    const grid = document.getElementById('pg-grid')!;
+    const visibleNames = new Set(
+      Array.from(grid.querySelectorAll<HTMLElement>('.program-card'))
+        .filter(el => el.style.display !== 'none')
+        .map(el => el.dataset.name ?? '')
+    );
+
+    const tierLabel: Record<number, string> = {
+      1: 'T1 – Elite', 2: 'T2 – Highly Selective', 3: 'T3 – Moderate', 4: 'T4 – Accessible'
+    };
+
+    const rows = allPrograms.filter(p =>
+      visibleNames.has((p.name ?? '').toLowerCase())
+    );
+
+    const headers = ['Name', 'Org', 'Status', 'Tier', 'Cost', 'Format', 'Duration',
+                     'Grades', 'Deadline', 'Category', 'Tags', 'My Interest', 'URL', 'Description'];
+
+    const lines = [
+      headers.map(csvCell).join(','),
+      ...rows.map(p => {
+        const interest = localStorage.getItem(`pc-interest-${p.name}`) ?? '';
+        return [
+          p.name, p.org, p.status, tierLabel[p.tier] ?? p.tier,
+          p.cost, p.format, p.duration, p.grades, p.deadline,
+          p.category, (p.tags ?? []).join('; '), interest, p.url, p.description
+        ].map(csvCell).join(',');
+      })
+    ];
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'summer-programs.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
 
   init();
 </script>
