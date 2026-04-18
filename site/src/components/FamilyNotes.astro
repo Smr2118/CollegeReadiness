@@ -1,0 +1,381 @@
+---
+---
+
+<div id="fn-wrap">
+  <!-- Add note form -->
+  <form id="fn-form" class="fn-form">
+    <div class="fn-form__row">
+      <select id="fn-program" class="fn-select">
+        <option value="">— No program (general note) —</option>
+      </select>
+    </div>
+    <div class="fn-form__row">
+      <textarea
+        id="fn-content"
+        class="fn-textarea"
+        placeholder="Write your note…"
+        rows="3"
+        required
+      ></textarea>
+    </div>
+    <div class="fn-form__row fn-form__actions">
+      <button type="submit" class="fn-btn fn-btn--primary" id="fn-submit">Add Note</button>
+      <span id="fn-error" class="fn-error" style="display:none"></span>
+    </div>
+  </form>
+
+  <!-- Notes list -->
+  <div id="fn-list" class="fn-list">
+    <p id="fn-loading" class="fn-empty">Loading notes…</p>
+  </div>
+</div>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  let familyId = '';
+  let editingId: number | null = null;
+
+  const form      = document.getElementById('fn-form')      as HTMLFormElement;
+  const programSel = document.getElementById('fn-program')  as HTMLSelectElement;
+  const contentEl = document.getElementById('fn-content')   as HTMLTextAreaElement;
+  const submitBtn = document.getElementById('fn-submit')    as HTMLButtonElement;
+  const errorEl   = document.getElementById('fn-error')     as HTMLElement;
+  const listEl    = document.getElementById('fn-list')      as HTMLElement;
+
+  /* ── Helpers ── */
+  function esc(s: string | null | undefined) {
+    return (s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function formatDate(iso: string) {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  /* ── Load programs into dropdown ── */
+  async function loadPrograms() {
+    const { data } = await supabase
+      .from('programs')
+      .select('name')
+      .order('sort_order', { ascending: true });
+    if (!data) return;
+    data.forEach((p: any) => {
+      const opt = document.createElement('option');
+      opt.value = p.name;
+      opt.textContent = p.name;
+      programSel.appendChild(opt);
+    });
+  }
+
+  /* ── Render notes list ── */
+  function renderNotes(notes: any[]) {
+    if (notes.length === 0) {
+      listEl.innerHTML = '<p class="fn-empty">No notes yet. Add one above.</p>';
+      return;
+    }
+    listEl.innerHTML = notes.map(n => `
+      <div class="fn-card" data-id="${n.id}">
+        <div class="fn-card__header">
+          ${n.program_name
+            ? `<span class="fn-card__program">☀️ ${esc(n.program_name)}</span>`
+            : `<span class="fn-card__program fn-card__program--general">📝 General</span>`
+          }
+          <span class="fn-card__date">${formatDate(n.created_at)}</span>
+        </div>
+        <p class="fn-card__content">${esc(n.content)}</p>
+        <div class="fn-card__footer">
+          <button class="fn-action fn-action--edit" data-id="${n.id}">Edit</button>
+          <button class="fn-action fn-action--delete" data-id="${n.id}">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  /* ── Load notes from Supabase ── */
+  async function loadNotes() {
+    if (!familyId) return;
+    const { data, error } = await supabase
+      .from('family_notes')
+      .select('*')
+      .eq('family_id', familyId)
+      .order('created_at', { ascending: false });
+
+    document.getElementById('fn-loading')?.remove();
+
+    if (error) {
+      listEl.innerHTML = '<p class="fn-empty" style="color:var(--sl-color-red)">Failed to load notes.</p>';
+      return;
+    }
+    renderNotes(data ?? []);
+  }
+
+  /* ── Submit (add or update) ── */
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!familyId) return;
+
+    const content     = contentEl.value.trim();
+    const programName = programSel.value || null;
+    if (!content) return;
+
+    errorEl.style.display = 'none';
+    submitBtn.disabled = true;
+
+    if (editingId !== null) {
+      // Update existing note
+      const { error } = await supabase
+        .from('family_notes')
+        .update({ content, program_name: programName, updated_at: new Date().toISOString() })
+        .eq('id', editingId)
+        .eq('family_id', familyId);
+
+      if (error) {
+        errorEl.textContent = error.message;
+        errorEl.style.display = 'inline';
+      } else {
+        resetForm();
+        await loadNotes();
+      }
+    } else {
+      // Insert new note
+      const { error } = await supabase
+        .from('family_notes')
+        .insert({ family_id: familyId, content, program_name: programName });
+
+      if (error) {
+        errorEl.textContent = error.message;
+        errorEl.style.display = 'inline';
+      } else {
+        resetForm();
+        await loadNotes();
+      }
+    }
+
+    submitBtn.disabled = false;
+  });
+
+  function resetForm() {
+    editingId = null;
+    contentEl.value = '';
+    programSel.value = '';
+    submitBtn.textContent = 'Add Note';
+    submitBtn.classList.remove('fn-btn--save');
+  }
+
+  /* ── Edit / Delete via event delegation ── */
+  listEl.addEventListener('click', async (e) => {
+    const target = e.target as HTMLElement;
+
+    if (target.classList.contains('fn-action--delete')) {
+      const id = Number(target.dataset.id);
+      if (!confirm('Delete this note?')) return;
+      await supabase.from('family_notes').delete().eq('id', id).eq('family_id', familyId);
+      await loadNotes();
+    }
+
+    if (target.classList.contains('fn-action--edit')) {
+      const id   = Number(target.dataset.id);
+      const card = target.closest<HTMLElement>('.fn-card');
+      if (!card) return;
+
+      editingId = id;
+      const contentText = card.querySelector('.fn-card__content')?.textContent ?? '';
+      const programText = card.querySelector('.fn-card__program')?.textContent?.replace('☀️ ', '').replace('📝 General', '').trim() ?? '';
+
+      contentEl.value  = contentText;
+      programSel.value = programText;
+      submitBtn.textContent = 'Save Changes';
+      submitBtn.classList.add('fn-btn--save');
+      contentEl.focus();
+      contentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+
+  /* ── Init: wait for auth then load ── */
+  async function init() {
+    // Wait for SupabaseSync to authenticate
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      // Re-try after login
+      document.addEventListener('data-loaded', async () => {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (s) {
+          const { data: profile } = await supabase
+            .from('user_profiles').select('family_id').eq('user_id', s.user.id).single();
+          familyId = profile?.family_id ?? '';
+          await Promise.all([loadPrograms(), loadNotes()]);
+        }
+      }, { once: true });
+      return;
+    }
+    const { data: profile } = await supabase
+      .from('user_profiles').select('family_id').eq('user_id', session.user.id).single();
+    familyId = profile?.family_id ?? '';
+    await Promise.all([loadPrograms(), loadNotes()]);
+  }
+
+  init();
+</script>
+
+<style>
+  #fn-wrap {
+    max-width: 720px;
+  }
+
+  .fn-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    padding: 1.25rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    background: var(--sl-color-bg-nav);
+  }
+
+  .fn-form__row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .fn-form__actions {
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .fn-select,
+  .fn-textarea {
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.375rem;
+    background: var(--sl-color-bg);
+    color: var(--sl-color-text);
+    font-size: 0.875rem;
+    font-family: inherit;
+  }
+
+  .fn-select:focus,
+  .fn-textarea:focus {
+    outline: 2px solid var(--sl-color-accent);
+    border-color: var(--sl-color-accent);
+  }
+
+  .fn-textarea {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  .fn-btn {
+    padding: 0.45rem 1.1rem;
+    border-radius: 0.375rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+
+  .fn-btn--primary {
+    background: var(--sl-color-accent);
+    color: #fff;
+    border-color: var(--sl-color-accent);
+  }
+
+  .fn-btn--primary:hover {
+    opacity: 0.88;
+  }
+
+  .fn-btn--save {
+    background: var(--sl-color-green);
+    border-color: var(--sl-color-green);
+  }
+
+  .fn-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .fn-error {
+    font-size: 0.82rem;
+    color: var(--sl-color-red);
+  }
+
+  /* ── Notes list ── */
+  .fn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .fn-empty {
+    color: var(--sl-color-gray-2);
+    font-size: 0.9rem;
+  }
+
+  .fn-card {
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    background: var(--sl-color-bg-nav);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .fn-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .fn-card__program {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--sl-color-accent);
+  }
+
+  .fn-card__program--general {
+    color: var(--sl-color-gray-2);
+    font-weight: 400;
+  }
+
+  .fn-card__date {
+    font-size: 0.75rem;
+    color: var(--sl-color-gray-3);
+    white-space: nowrap;
+  }
+
+  .fn-card__content {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    margin: 0;
+    white-space: pre-wrap;
+  }
+
+  .fn-card__footer {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 0.25rem;
+  }
+
+  .fn-action {
+    font-size: 0.78rem;
+    background: none;
+    border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    cursor: pointer;
+    color: var(--sl-color-text);
+  }
+
+  .fn-action--delete {
+    color: var(--sl-color-red);
+    border-color: var(--sl-color-red);
+  }
+
+  .fn-action:hover {
+    opacity: 0.75;
+  }
+</style>
