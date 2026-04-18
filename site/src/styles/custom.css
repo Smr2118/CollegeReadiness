@@ -128,6 +128,23 @@ li:has(a[href$="/admin/"]) {
     width: 100% !important;
     --sl-content-margin-inline: auto !important;
   }
+
+  /* ── Filter panel collapse (programs page only — separate from toc-collapsed) ── */
+  html.filter-collapsed .toc-toggle {
+    right: 0.3rem;
+  }
+  html.filter-collapsed .toc-toggle__icon {
+    transform: rotate(180deg);
+  }
+  html.filter-collapsed .right-sidebar-container {
+    width: 0 !important;
+    min-width: 0 !important;
+    overflow: hidden;
+  }
+  html.filter-collapsed .main-pane {
+    width: 100% !important;
+    --sl-content-margin-inline: auto !important;
+  }
 }
 
 /* ── Program cards ── */

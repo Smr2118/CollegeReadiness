@@ -33,19 +33,35 @@ const { meta } = programData as any;
       });
     }
 
-    // ── Right sidebar (TOC) ──
+    // ── Right sidebar (TOC or filter panel) ──
     const tocBtn = document.getElementById('toc-toggle');
     if (tocBtn) {
       // Move to <body> so it stays visible when .right-sidebar is display:none
       document.body.appendChild(tocBtn);
-      const TOC_KEY = 'toc-collapsed';
-      if (localStorage.getItem(TOC_KEY) === 'true') {
-        document.documentElement.classList.add('toc-collapsed');
+
+      const isProgramsPage = window.location.pathname.includes('/programs');
+
+      if (isProgramsPage) {
+        // Programs page: use separate key/class so TOC collapse on other pages
+        // never hides the filter panel.
+        const FILTER_KEY = 'filter-collapsed';
+        if (localStorage.getItem(FILTER_KEY) === 'true') {
+          document.documentElement.classList.add('filter-collapsed');
+        }
+        tocBtn.addEventListener('click', () => {
+          const collapsed = document.documentElement.classList.toggle('filter-collapsed');
+          localStorage.setItem(FILTER_KEY, String(collapsed));
+        });
+      } else {
+        const TOC_KEY = 'toc-collapsed';
+        if (localStorage.getItem(TOC_KEY) === 'true') {
+          document.documentElement.classList.add('toc-collapsed');
+        }
+        tocBtn.addEventListener('click', () => {
+          const collapsed = document.documentElement.classList.toggle('toc-collapsed');
+          localStorage.setItem(TOC_KEY, String(collapsed));
+        });
       }
-      tocBtn.addEventListener('click', () => {
-        const collapsed = document.documentElement.classList.toggle('toc-collapsed');
-        localStorage.setItem(TOC_KEY, String(collapsed));
-      });
     }
   })();
 </script>
