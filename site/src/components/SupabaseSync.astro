@@ -157,7 +157,6 @@
     }
 
     hideModal(displayName, familyId);
-    resetInactivityTimer();
     await Promise.all([loadData(), applyNavAccess(familyPlan, isAdmin)]);
   }
 
@@ -199,30 +198,22 @@
 
   /* ── Sign out ── */
   signoutBtn.addEventListener('click', async () => {
-    if (inactivityTimer) clearTimeout(inactivityTimer);
     await supabase.auth.signOut();
     familyId    = '';
     displayName = '';
     showModal();
   });
 
-  /* ── Inactivity timeout (15 min) ── */
-  const INACTIVITY_MS = 60 * 60 * 1000;
-  let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
-
-  function resetInactivityTimer() {
-    if (!familyId) return;   // not signed in — nothing to do
-    if (inactivityTimer) clearTimeout(inactivityTimer);
-    inactivityTimer = setTimeout(async () => {
-      await supabase.auth.signOut();
+  /* ── Auth state listener — handles token refresh and unexpected sign-outs ── */
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT' || !session) {
       familyId    = '';
       displayName = '';
       showModal();
-    }, INACTIVITY_MS);
-  }
-
-  const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'];
-  activityEvents.forEach(evt => document.addEventListener(evt, resetInactivityTimer, { passive: true }));
+    }
+    // TOKEN_REFRESHED / SIGNED_IN handled by init() on page load;
+    // no need to re-run full onAuthenticated here.
+  });
 
   /* ── Sync note changes to Supabase (debounced 1s) ── */
   const noteTimers: Record<string, ReturnType<typeof setTimeout>> = {};
