@@ -78,7 +78,7 @@
       const card = document.querySelector<HTMLElement>(
         `[data-interest-key="pc-interest-${row.program_name}"]`
       );
-      if (card && row.interest !== undefined) {
+      if (card && row.interest != null) {
         card.dataset.interest = row.interest;
         localStorage.setItem(`pc-interest-${row.program_name}`, row.interest);
         card.querySelectorAll<HTMLButtonElement>('.interest-chip').forEach(btn => {
@@ -93,7 +93,7 @@
   /* ── Upsert a single field for a program ── */
   async function upsert(programName: string, field: 'note' | 'interest', value: string) {
     if (!familyId) return;   // not signed in — skip sync
-    await supabase.from('program_data').upsert(
+    const { error } = await supabase.from('program_data').upsert(
       {
         program_name: programName,
         family_id: familyId,
@@ -102,6 +102,7 @@
       },
       { onConflict: 'family_id,program_name' }
     );
+    if (error) console.error('[sync] upsert failed:', error.message, { programName, field, value });
   }
 
   /* ── Nav access: hide sidebar links below user's plan tier ── */
