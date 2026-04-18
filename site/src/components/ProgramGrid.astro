@@ -110,7 +110,14 @@
   }
 
   // ── State ────────────────────────────────────────────────────────────────
-  const active = { status: 'open', tier: 'all', cost: 'all', format: 'all', category: 'all', interest: 'all' };
+  const active: Record<string, Set<string>> = {
+    status:   new Set(['open']),
+    tier:     new Set(['all']),
+    cost:     new Set(['all']),
+    format:   new Set(['all']),
+    category: new Set(['all']),
+    interest: new Set(['all']),
+  };
   let query   = '';
   let sortBy  = 'default';
   let originalOrder: Element[] = [];
@@ -148,12 +155,12 @@
     let visible = 0;
     grid.querySelectorAll<HTMLElement>('.program-card').forEach(el => {
       const matches =
-        (active.status   === 'all' || el.dataset.status   === active.status)  &&
-        (active.tier     === 'all' || el.dataset.tier     === active.tier)     &&
-        (active.cost     === 'all' || el.dataset.cost     === active.cost)     &&
-        (active.format   === 'all' || el.dataset.format   === active.format)   &&
-        (active.category === 'all' || el.dataset.category === active.category) &&
-        (active.interest === 'all' || el.dataset.interest === active.interest) &&
+        (active.status.has('all')   || active.status.has(el.dataset.status   ?? '')) &&
+        (active.tier.has('all')     || active.tier.has(el.dataset.tier       ?? '')) &&
+        (active.cost.has('all')     || active.cost.has(el.dataset.cost       ?? '')) &&
+        (active.format.has('all')   || active.format.has(el.dataset.format   ?? '')) &&
+        (active.category.has('all') || active.category.has(el.dataset.category ?? '')) &&
+        (active.interest.has('all') || active.interest.has(el.dataset.interest ?? '')) &&
         (query === '' ||
           (el.dataset.name  ?? '').includes(query) ||
           (el.dataset.org   ?? '').includes(query) ||
@@ -229,15 +236,29 @@
     if (ta.dataset.key) localStorage.setItem(ta.dataset.key, ta.value);
   });
 
-  // Filter chips
+  // Filter chips (multi-select; "All" clears others)
   document.addEventListener('click', e => {
     const chip = (e.target as Element).closest<HTMLElement>('.filter-chip[data-filter]');
     if (!chip) return;
     const filter = chip.dataset.filter!;
     const value  = chip.dataset.value!;
-    (active as any)[filter] = value;
+    const current = active[filter];
+
+    if (value === 'all') {
+      current.clear();
+      current.add('all');
+    } else {
+      current.delete('all');
+      if (current.has(value)) {
+        current.delete(value);
+        if (current.size === 0) current.add('all');
+      } else {
+        current.add(value);
+      }
+    }
+
     document.querySelectorAll<HTMLElement>(`.filter-chip[data-filter="${filter}"]`).forEach(c => {
-      c.classList.toggle('active', c.dataset.value === value);
+      c.classList.toggle('active', current.has(c.dataset.value ?? ''));
     });
     applyFilters();
   });
