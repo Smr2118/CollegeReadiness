@@ -32,6 +32,7 @@ export default defineConfig({
 					items: [
 						{ label: '✅ Family To-Do', link: '/todos/' },
 						{ label: '📓 Notes', link: '/notes/' },
+						{ label: '✍️ Essay Topics', link: '/essay-topics/' },
 						{ label: '💡 Ideas Board', link: '/ideas/' },
 						{ label: '🔗 Reference Links', link: '/references/' },
 					],
