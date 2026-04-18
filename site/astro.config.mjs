@@ -18,7 +18,7 @@ export default defineConfig({
 			sidebar: [
 				{ label: 'Home', link: '/' },
 				{
-					label: 'Opportunities',
+					label: 'Programs & Activities',
 					items: [
 						{ label: '☀️ Summer Programs', link: '/programs/' },
 						{ label: '💼 Internships', link: '/internships/' },
