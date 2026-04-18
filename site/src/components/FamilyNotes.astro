@@ -194,6 +194,30 @@
     }
   });
 
+  /* ── Export CSV ── */
+  document.getElementById('fn-export')!.addEventListener('click', () => {
+    if (cachedNotes.length === 0) return;
+
+    const csvCell = (v: any) => `"${(v ?? '').toString().replace(/"/g, '""')}"`;
+    const headers = ['Program', 'Note', 'Date'];
+    const lines = [
+      headers.map(csvCell).join(','),
+      ...cachedNotes.map(n => [
+        n.program_name ?? '',
+        n.content,
+        new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      ].map(csvCell).join(','))
+    ];
+
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'notes.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
   /* ── Init: wait for auth then load ── */
   async function init() {
     // Wait for SupabaseSync to authenticate
@@ -292,6 +316,16 @@
   .fn-btn--save {
     background: var(--sl-color-green);
     border-color: var(--sl-color-green);
+  }
+
+  .fn-btn--export {
+    background: transparent;
+    border: 1px solid var(--sl-color-accent);
+    color: var(--sl-color-accent);
+  }
+  .fn-btn--export:hover {
+    background: var(--sl-color-accent);
+    color: #fff;
   }
 
   .fn-btn:disabled {
