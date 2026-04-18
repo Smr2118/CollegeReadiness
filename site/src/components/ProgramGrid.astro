@@ -73,6 +73,7 @@
       <div class="program-card__interest-row">
         <span class="program-card__interest-label">Interest:</span>
         <button class="interest-chip${iv('')}" data-iv="">—</button>
+        <button class="interest-chip${iv('applied')}" data-iv="applied">✅ Applied</button>
         <button class="interest-chip${iv('applying')}" data-iv="applying">🔥 Applying</button>
         <button class="interest-chip${iv('researching')}" data-iv="researching">👀 Researching</button>
         <button class="interest-chip${iv('maybe')}" data-iv="maybe">🤔 Maybe</button>
@@ -133,7 +134,7 @@
     return Infinity;
   }
 
-  const interestOrder: Record<string,number> = { applying:0, researching:1, maybe:2, '':3, skip:4 };
+  const interestOrder: Record<string,number> = { applied:0, applying:1, researching:2, maybe:3, '':4, skip:5 };
 
   function sortCards() {
     const grid = document.getElementById('pg-grid')!;
