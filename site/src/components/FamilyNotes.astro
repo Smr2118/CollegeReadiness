@@ -20,6 +20,7 @@
     </div>
     <div class="fn-form__row fn-form__actions">
       <button type="submit" class="fn-btn fn-btn--primary" id="fn-submit">Add Note</button>
+      <button type="button" class="fn-btn fn-btn--export" id="fn-export">⬇ Export CSV</button>
       <span id="fn-error" class="fn-error" style="display:none"></span>
     </div>
   </form>
@@ -33,8 +34,9 @@
 <script>
   import { supabase } from '../lib/supabase';
 
-  let familyId = '';
+  let familyId  = '';
   let editingId: number | null = null;
+  let cachedNotes: any[] = [];
 
   const form      = document.getElementById('fn-form')      as HTMLFormElement;
   const programSel = document.getElementById('fn-program')  as HTMLSelectElement;
@@ -106,7 +108,8 @@
       listEl.innerHTML = '<p class="fn-empty" style="color:var(--sl-color-red)">Failed to load notes.</p>';
       return;
     }
-    renderNotes(data ?? []);
+    cachedNotes = data ?? [];
+    renderNotes(cachedNotes);
   }
 
   /* ── Submit (add or update) ── */
