@@ -31,6 +31,7 @@ export default defineConfig({
 					label: 'Resources',
 					items: [
 						{ label: '✅ Family To-Do', link: '/todos/' },
+						{ label: '📓 Notes', link: '/notes/' },
 						{ label: '💡 Ideas Board', link: '/ideas/' },
 						{ label: '🔗 Reference Links', link: '/references/' },
 					],
