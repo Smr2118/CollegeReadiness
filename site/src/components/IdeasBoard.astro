@@ -1,0 +1,612 @@
+---
+---
+
+<div id="ib-wrap">
+
+  <!-- Toolbar: view toggle + add button -->
+  <div class="ib-toolbar">
+    <div class="ib-view-toggle">
+      <button class="ib-view-btn ib-view-btn--active" id="ib-grid-btn" title="Grid view">⊞</button>
+      <button class="ib-view-btn" id="ib-list-btn" title="List view">☰</button>
+    </div>
+    <div class="ib-toolbar-right">
+      <button class="ib-btn ib-btn--export" id="ib-export">⬇ Export CSV</button>
+      <button class="ib-btn ib-btn--primary" id="ib-add-btn">+ Add Idea</button>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="ib-filters">
+    <div class="ib-filter-group">
+      <span class="ib-filter-label">Priority</span>
+      <div class="ib-chips">
+        <button class="ib-chip ib-chip--active" data-filter="priority" data-value="all">All</button>
+        <button class="ib-chip ib-chip--high"   data-filter="priority" data-value="high">🔴 High</button>
+        <button class="ib-chip ib-chip--medium" data-filter="priority" data-value="medium">🟡 Medium</button>
+        <button class="ib-chip ib-chip--low"    data-filter="priority" data-value="low">🟢 Low</button>
+      </div>
+    </div>
+    <div class="ib-filter-group">
+      <span class="ib-filter-label">Tag</span>
+      <div class="ib-chips" id="ib-tag-filters">
+        <button class="ib-chip ib-chip--active" data-filter="tag" data-value="all">All</button>
+        <button class="ib-chip" data-filter="tag" data-value="Summer">Summer</button>
+        <button class="ib-chip" data-filter="tag" data-value="Internship">Internship</button>
+        <button class="ib-chip" data-filter="tag" data-value="EC">EC</button>
+        <button class="ib-chip" data-filter="tag" data-value="Essay">Essay</button>
+        <button class="ib-chip" data-filter="tag" data-value="India">India</button>
+        <button class="ib-chip" data-filter="tag" data-value="Research">Research</button>
+        <button class="ib-chip" data-filter="tag" data-value="Misc">Misc</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add / Edit modal -->
+  <div id="ib-modal" class="ib-modal" style="display:none">
+    <div class="ib-modal__box">
+      <h3 class="ib-modal__title" id="ib-modal-title">New Idea</h3>
+      <form id="ib-form" class="ib-form">
+        <div class="ib-form__row">
+          <label class="ib-label" for="ib-title">Idea</label>
+          <input id="ib-title" class="ib-input" type="text" placeholder="What's the idea?" required />
+        </div>
+        <div class="ib-form__row ib-form__row--split">
+          <div>
+            <label class="ib-label">Priority</label>
+            <div class="ib-priority-group">
+              <label class="ib-radio"><input type="radio" name="ib-priority" value="high" /> 🔴 High</label>
+              <label class="ib-radio"><input type="radio" name="ib-priority" value="medium" checked /> 🟡 Medium</label>
+              <label class="ib-radio"><input type="radio" name="ib-priority" value="low" /> 🟢 Low</label>
+            </div>
+          </div>
+          <div>
+            <label class="ib-label">Tags</label>
+            <div class="ib-tag-group">
+              {['Summer','Internship','EC','Essay','India','Research','Misc'].map(t => (
+                <label class="ib-check"><input type="checkbox" name="ib-tag" value={t} />{t}</label>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div class="ib-form__row">
+          <label class="ib-label" for="ib-notes">Notes</label>
+          <textarea id="ib-notes" class="ib-textarea" placeholder="Details, links, next steps…" rows="3"></textarea>
+        </div>
+        <div class="ib-form__actions">
+          <button type="submit" class="ib-btn ib-btn--primary" id="ib-submit">Add Idea</button>
+          <button type="button" class="ib-btn ib-btn--cancel" id="ib-modal-cancel">Cancel</button>
+          <span id="ib-error" class="ib-error" style="display:none"></span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Ideas grid/list -->
+  <p id="ib-count" class="ib-count"></p>
+  <div id="ib-board" class="ib-board ib-board--grid">
+    <p id="ib-loading" class="ib-empty">Loading…</p>
+  </div>
+</div>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const ALL_TAGS = ['Summer','Internship','EC','Essay','India','Research','Misc'];
+
+  let familyId  = '';
+  let editingId: number | null = null;
+  let allIdeas:  any[] = [];
+  let viewMode  = localStorage.getItem('ib-view') ?? 'grid';
+  let filterPriority = 'all';
+  let filterTag      = 'all';
+
+  const board      = document.getElementById('ib-board')!;
+  const countEl    = document.getElementById('ib-count')!;
+  const modal      = document.getElementById('ib-modal')!;
+  const form       = document.getElementById('ib-form') as HTMLFormElement;
+  const titleEl    = document.getElementById('ib-title')    as HTMLInputElement;
+  const notesEl    = document.getElementById('ib-notes')    as HTMLTextAreaElement;
+  const submitBtn  = document.getElementById('ib-submit')   as HTMLButtonElement;
+  const errorEl    = document.getElementById('ib-error')    as HTMLElement;
+  const modalTitle = document.getElementById('ib-modal-title')!;
+
+  function esc(s: string | null | undefined) {
+    return (s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  const PRIORITY_META: Record<string,{dot:string, label:string}> = {
+    high:   { dot: '🔴', label: 'High'   },
+    medium: { dot: '🟡', label: 'Medium' },
+    low:    { dot: '🟢', label: 'Low'    },
+  };
+
+  /* ── View toggle ── */
+  function applyView() {
+    board.className = `ib-board ib-board--${viewMode}`;
+    document.getElementById('ib-grid-btn')!.classList.toggle('ib-view-btn--active', viewMode === 'grid');
+    document.getElementById('ib-list-btn')!.classList.toggle('ib-view-btn--active', viewMode === 'list');
+  }
+
+  document.getElementById('ib-grid-btn')!.addEventListener('click', () => {
+    viewMode = 'grid'; localStorage.setItem('ib-view', viewMode); applyView();
+  });
+  document.getElementById('ib-list-btn')!.addEventListener('click', () => {
+    viewMode = 'list'; localStorage.setItem('ib-view', viewMode); applyView();
+  });
+
+  /* ── Render ── */
+  function visibleIdeas() {
+    return allIdeas.filter(i => {
+      const okPriority = filterPriority === 'all' || i.priority === filterPriority;
+      const okTag      = filterTag === 'all' || (i.tags ?? []).includes(filterTag);
+      return okPriority && okTag;
+    });
+  }
+
+  function renderBoard() {
+    const ideas = visibleIdeas();
+    countEl.textContent = `${ideas.length} idea${ideas.length !== 1 ? 's' : ''}`;
+
+    if (ideas.length === 0) {
+      board.innerHTML = '<p class="ib-empty">No ideas match. Try adjusting the filters.</p>';
+      return;
+    }
+
+    board.innerHTML = ideas.map(i => {
+      const pm   = PRIORITY_META[i.priority] ?? PRIORITY_META.medium;
+      const tags = (i.tags ?? []).map((t: string) =>
+        `<span class="ib-tag">${esc(t)}</span>`).join('');
+      return `
+        <div class="ib-card ib-card--${i.priority}" data-id="${i.id}">
+          <div class="ib-card__header">
+            <p class="ib-card__title">${esc(i.title)}</p>
+            <span class="ib-card__priority ib-card__priority--${i.priority}">${pm.dot} ${pm.label}</span>
+          </div>
+          ${i.notes ? `<p class="ib-card__notes">${esc(i.notes)}</p>` : ''}
+          ${tags ? `<div class="ib-card__tags">${tags}</div>` : ''}
+          <div class="ib-card__footer">
+            <span class="ib-card__date">${new Date(i.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>
+            <div class="ib-card__actions">
+              <button class="ib-action ib-action--edit" data-id="${i.id}">Edit</button>
+              <button class="ib-action ib-action--delete" data-id="${i.id}">Delete</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  /* ── Filter chips ── */
+  document.querySelector('.ib-filters')!.addEventListener('click', e => {
+    const chip = (e.target as Element).closest<HTMLElement>('.ib-chip[data-filter]');
+    if (!chip) return;
+    const filter = chip.dataset.filter!;
+    const value  = chip.dataset.value!;
+    if (filter === 'priority') filterPriority = value;
+    if (filter === 'tag')      filterTag      = value;
+    document.querySelectorAll<HTMLElement>(`.ib-chip[data-filter="${filter}"]`).forEach(c =>
+      c.classList.toggle('ib-chip--active', c.dataset.value === value));
+    renderBoard();
+  });
+
+  /* ── Modal open/close ── */
+  function openModal(idea?: any) {
+    editingId = idea?.id ?? null;
+    modalTitle.textContent = idea ? 'Edit Idea' : 'New Idea';
+    submitBtn.textContent  = idea ? 'Save Changes' : 'Add Idea';
+    titleEl.value = idea?.title ?? '';
+    notesEl.value = idea?.notes ?? '';
+
+    const priority = idea?.priority ?? 'medium';
+    form.querySelectorAll<HTMLInputElement>('input[name="ib-priority"]').forEach(r => {
+      r.checked = r.value === priority;
+    });
+    form.querySelectorAll<HTMLInputElement>('input[name="ib-tag"]').forEach(cb => {
+      cb.checked = (idea?.tags ?? []).includes(cb.value);
+    });
+
+    errorEl.style.display = 'none';
+    modal.style.display   = 'flex';
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => titleEl.focus(), 50);
+  }
+
+  function closeModal() {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+    form.reset();
+    editingId = null;
+  }
+
+  document.getElementById('ib-add-btn')!.addEventListener('click', () => openModal());
+  document.getElementById('ib-modal-cancel')!.addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+
+  /* ── Submit ── */
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!familyId) return;
+
+    const title    = titleEl.value.trim();
+    const priority = (form.querySelector<HTMLInputElement>('input[name="ib-priority"]:checked')?.value ?? 'medium');
+    const tags     = [...form.querySelectorAll<HTMLInputElement>('input[name="ib-tag"]:checked')].map(c => c.value);
+    const notes    = notesEl.value.trim() || null;
+
+    errorEl.style.display = 'none';
+    submitBtn.disabled = true;
+
+    const payload = { title, priority, tags, notes, updated_at: new Date().toISOString() };
+
+    let error: any;
+    if (editingId !== null) {
+      ({ error } = await supabase.from('ideas').update(payload).eq('id', editingId).eq('family_id', familyId));
+    } else {
+      ({ error } = await supabase.from('ideas').insert({ ...payload, family_id: familyId }));
+    }
+
+    submitBtn.disabled = false;
+    if (error) { errorEl.textContent = error.message; errorEl.style.display = 'inline'; return; }
+    closeModal();
+    await loadIdeas();
+  });
+
+  /* ── Edit / Delete ── */
+  board.addEventListener('click', async e => {
+    const target = e.target as HTMLElement;
+
+    if (target.classList.contains('ib-action--edit')) {
+      const id   = Number(target.dataset.id);
+      const idea = allIdeas.find(i => i.id === id);
+      if (idea) openModal(idea);
+    }
+
+    if (target.classList.contains('ib-action--delete')) {
+      const id = Number(target.dataset.id);
+      if (!confirm('Delete this idea?')) return;
+      await supabase.from('ideas').delete().eq('id', id).eq('family_id', familyId);
+      await loadIdeas();
+    }
+  });
+
+  /* ── Export CSV ── */
+  document.getElementById('ib-export')!.addEventListener('click', () => {
+    if (allIdeas.length === 0) return;
+    const cell = (v: any) => `"${(v ?? '').toString().replace(/"/g,'""')}"`;
+    const lines = [
+      ['Idea','Priority','Tags','Notes','Date'].map(cell).join(','),
+      ...allIdeas.map(i => [
+        i.title, i.priority, (i.tags ?? []).join('; '), i.notes ?? '',
+        new Date(i.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+      ].map(cell).join(','))
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'ideas.csv'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  /* ── Load ── */
+  async function loadIdeas() {
+    const { data, error } = await supabase
+      .from('ideas')
+      .select('*')
+      .eq('family_id', familyId)
+      .order('created_at', { ascending: false });
+
+    document.getElementById('ib-loading')?.remove();
+    if (error) { board.innerHTML = '<p class="ib-empty" style="color:var(--sl-color-red)">Failed to load ideas.</p>'; return; }
+    allIdeas = data ?? [];
+    renderBoard();
+  }
+
+  /* ── Init ── */
+  async function init() {
+    applyView();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      document.addEventListener('data-loaded', async () => {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (s) {
+          const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', s.user.id).single();
+          familyId = p?.family_id ?? '';
+          await loadIdeas();
+        }
+      }, { once: true });
+      return;
+    }
+    const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', session.user.id).single();
+    familyId = p?.family_id ?? '';
+    await loadIdeas();
+  }
+
+  init();
+</script>
+
+<style>
+  #ib-wrap { max-width: 900px; }
+
+  /* ── Toolbar ── */
+  .ib-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    gap: 0.75rem;
+  }
+
+  .ib-toolbar-right { display: flex; align-items: center; gap: 0.5rem; }
+
+  .ib-view-toggle {
+    display: flex;
+    border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.375rem;
+    overflow: hidden;
+  }
+
+  .ib-view-btn {
+    padding: 0.3rem 0.65rem;
+    background: var(--sl-color-bg);
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    color: var(--sl-color-gray-3);
+    line-height: 1;
+  }
+  .ib-view-btn--active {
+    background: var(--sl-color-accent);
+    color: #fff;
+  }
+
+  /* ── Filters ── */
+  .ib-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    background: var(--sl-color-bg-nav);
+  }
+
+  .ib-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .ib-filter-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--sl-color-gray-3);
+    min-width: 52px;
+  }
+
+  .ib-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+  .ib-chip {
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    border: 1px solid var(--sl-color-gray-4);
+    background: var(--sl-color-bg);
+    color: var(--sl-color-gray-2);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .ib-chip--active { background: var(--sl-color-accent); border-color: var(--sl-color-accent); color: #fff; }
+  .ib-chip:not(.ib-chip--active):hover { border-color: var(--sl-color-accent); color: var(--sl-color-accent); }
+
+  /* ── Count ── */
+  .ib-count { font-size: 0.82rem; color: var(--sl-color-gray-2); margin-bottom: 0.75rem; }
+
+  /* ── Board layouts ── */
+  .ib-board--grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+  .ib-board--list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .ib-empty { color: var(--sl-color-gray-2); font-size: 0.9rem; }
+
+  /* ── Cards ── */
+  .ib-card {
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    padding: 0.9rem 1rem;
+    background: var(--sl-color-bg-nav);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .ib-card--high   { border-left: 4px solid #ef4444; }
+  .ib-card--medium { border-left: 4px solid #f59e0b; }
+  .ib-card--low    { border-left: 4px solid #22c55e; }
+
+  .ib-board--list .ib-card { flex-direction: row; align-items: flex-start; gap: 0.75rem; }
+  .ib-board--list .ib-card > * { flex-shrink: 0; }
+  .ib-board--list .ib-card__header { flex: 1; flex-shrink: 1; }
+
+  .ib-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .ib-card__title {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--sl-color-text);
+    margin: 0;
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  .ib-card__priority {
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    flex-shrink: 0;
+  }
+  .ib-card__priority--high   { background: #fee2e2; color: #991b1b; }
+  .ib-card__priority--medium { background: #fef3c7; color: #92400e; }
+  .ib-card__priority--low    { background: #dcfce7; color: #166534; }
+
+  .ib-card__notes {
+    font-size: 0.84rem;
+    color: var(--sl-color-gray-2);
+    line-height: 1.5;
+    margin: 0;
+    white-space: pre-wrap;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .ib-card__tags { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+  .ib-tag {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 9999px;
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-1);
+    font-weight: 500;
+  }
+
+  .ib-card__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+  }
+
+  .ib-card__date { font-size: 0.72rem; color: var(--sl-color-gray-3); }
+  .ib-card__actions { display: flex; gap: 0.4rem; }
+
+  .ib-action {
+    font-size: 0.72rem;
+    background: none;
+    border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.25rem;
+    padding: 0.15rem 0.5rem;
+    cursor: pointer;
+    color: var(--sl-color-text);
+    font-family: inherit;
+  }
+  .ib-action--delete { color: #ef4444; border-color: #ef4444; }
+  .ib-action:hover { opacity: 0.7; }
+
+  /* ── Buttons ── */
+  .ib-btn {
+    padding: 0.4rem 0.9rem;
+    border-radius: 0.375rem;
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .ib-btn--primary { background: var(--sl-color-accent); color: #fff; border-color: var(--sl-color-accent); }
+  .ib-btn--primary:hover { opacity: 0.88; }
+  .ib-btn--export { background: transparent; border-color: var(--sl-color-accent); color: var(--sl-color-accent); }
+  .ib-btn--export:hover { background: var(--sl-color-accent); color: #fff; }
+  .ib-btn--cancel { background: transparent; border-color: var(--sl-color-gray-4); color: var(--sl-color-gray-2); }
+  .ib-btn--cancel:hover { border-color: #ef4444; color: #ef4444; }
+  .ib-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .ib-error { font-size: 0.82rem; color: #ef4444; }
+
+  /* ── Modal ── */
+  .ib-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+
+  .ib-modal__box {
+    background: var(--sl-color-bg-nav);
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .ib-modal__title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0 0 1.1rem;
+    color: var(--sl-color-text);
+  }
+
+  .ib-form { display: flex; flex-direction: column; gap: 0.85rem; }
+  .ib-form__row { display: flex; flex-direction: column; gap: 0.3rem; }
+  .ib-form__row--split { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  .ib-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--sl-color-gray-2);
+  }
+
+  .ib-input, .ib-textarea {
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.375rem;
+    background: var(--sl-color-bg);
+    color: var(--sl-color-text);
+    font-size: 0.875rem;
+    font-family: inherit;
+    width: 100%;
+  }
+  .ib-input:focus, .ib-textarea:focus {
+    outline: 2px solid var(--sl-color-accent);
+    border-color: var(--sl-color-accent);
+  }
+  .ib-textarea { resize: vertical; min-height: 72px; }
+
+  .ib-priority-group, .ib-tag-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.25rem;
+  }
+
+  .ib-radio, .ib-check {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    color: var(--sl-color-text);
+  }
+
+  .ib-form__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    padding-top: 0.25rem;
+  }
+</style>
