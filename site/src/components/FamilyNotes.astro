@@ -2,32 +2,97 @@
 ---
 
 <div id="fn-wrap">
-  <!-- Add note form -->
+
+  <!-- Add / Edit form -->
   <form id="fn-form" class="fn-form">
-    <div class="fn-form__row">
-      <select id="fn-program" class="fn-select">
-        <option value="">— No program (general note) —</option>
-      </select>
+    <div class="fn-form__fields">
+      <div class="fn-form__field fn-form__field--program">
+        <label class="fn-label" for="fn-program">Program (optional)</label>
+        <select id="fn-program" class="fn-select">
+          <option value="">— General note —</option>
+        </select>
+      </div>
+      <div class="fn-form__field">
+        <label class="fn-label" for="fn-status-form">Status</label>
+        <select id="fn-status-form" class="fn-select">
+          <option value="Open">Open</option>
+          <option value="Interested">Interested</option>
+          <option value="Cancelled">Cancelled</option>
+          <option value="Complete">Complete</option>
+        </select>
+      </div>
     </div>
-    <div class="fn-form__row">
-      <textarea
-        id="fn-content"
-        class="fn-textarea"
-        placeholder="Write your note…"
-        rows="3"
-        required
-      ></textarea>
+    <div class="fn-form__field">
+      <label class="fn-label" for="fn-content">Note</label>
+      <textarea id="fn-content" class="fn-textarea" placeholder="Write your note…" rows="3" required></textarea>
     </div>
-    <div class="fn-form__row fn-form__actions">
+    <div class="fn-form__actions">
       <button type="submit" class="fn-btn fn-btn--primary" id="fn-submit">Add Note</button>
       <button type="button" class="fn-btn fn-btn--export" id="fn-export">⬇ Export CSV</button>
+      <button type="button" class="fn-btn fn-btn--cancel" id="fn-cancel" style="display:none">Cancel</button>
       <span id="fn-error" class="fn-error" style="display:none"></span>
     </div>
   </form>
 
-  <!-- Notes list -->
-  <div id="fn-list" class="fn-list">
-    <p id="fn-loading" class="fn-empty">Loading notes…</p>
+  <!-- Layout: filter sidebar + table -->
+  <div class="fn-layout">
+
+    <!-- Left filter sidebar -->
+    <aside class="fn-sidebar">
+      <div class="fn-sidebar__section">
+        <div class="fn-sidebar__label">Status</div>
+        <div class="fn-sidebar__chips">
+          <button class="fn-fchip fn-fchip--active" data-filter="status" data-value="all">All</button>
+          <button class="fn-fchip" data-filter="status" data-value="Open">Open</button>
+          <button class="fn-fchip" data-filter="status" data-value="Interested">Interested</button>
+          <button class="fn-fchip" data-filter="status" data-value="Cancelled">Cancelled</button>
+          <button class="fn-fchip" data-filter="status" data-value="Complete">Complete</button>
+        </div>
+      </div>
+      <div class="fn-sidebar__section">
+        <div class="fn-sidebar__label">Program</div>
+        <div class="fn-sidebar__chips" id="fn-prog-filters">
+          <button class="fn-fchip fn-fchip--active" data-filter="prog" data-value="all">All</button>
+          <button class="fn-fchip" data-filter="prog" data-value="__general__">General</button>
+        </div>
+      </div>
+      <div class="fn-sidebar__section">
+        <label class="fn-starred-toggle">
+          <input type="checkbox" id="fn-starred-only" />
+          <span>⭐ Starred only</span>
+        </label>
+      </div>
+    </aside>
+
+    <!-- Table area -->
+    <div class="fn-main">
+      <div class="fn-toolbar">
+        <span id="fn-count" class="fn-count"></span>
+        <select id="fn-sort" class="fn-sort-sel">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="az">Note A → Z</option>
+          <option value="status">By status</option>
+        </select>
+      </div>
+      <div class="fn-table-wrap">
+        <table class="fn-table">
+          <thead>
+            <tr>
+              <th class="fn-th fn-th--star">★</th>
+              <th class="fn-th fn-th--note">Note</th>
+              <th class="fn-th fn-th--prog">Program</th>
+              <th class="fn-th fn-th--status">Status</th>
+              <th class="fn-th fn-th--date">Date</th>
+              <th class="fn-th fn-th--actions"></th>
+            </tr>
+          </thead>
+          <tbody id="fn-tbody">
+            <tr><td colspan="6" class="fn-td-msg">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -37,207 +102,277 @@
   let familyId  = '';
   let editingId: number | null = null;
   let cachedNotes: any[] = [];
+  let filterStatus  = 'all';
+  let filterProg    = 'all';
+  let filterStarred = false;
+  let sortMode      = 'newest';
 
-  const form      = document.getElementById('fn-form')      as HTMLFormElement;
-  const programSel = document.getElementById('fn-program')  as HTMLSelectElement;
-  const contentEl = document.getElementById('fn-content')   as HTMLTextAreaElement;
-  const submitBtn = document.getElementById('fn-submit')    as HTMLButtonElement;
-  const errorEl   = document.getElementById('fn-error')     as HTMLElement;
-  const listEl    = document.getElementById('fn-list')      as HTMLElement;
+  const form         = document.getElementById('fn-form')        as HTMLFormElement;
+  const programSel   = document.getElementById('fn-program')     as HTMLSelectElement;
+  const statusFormEl = document.getElementById('fn-status-form') as HTMLSelectElement;
+  const contentEl    = document.getElementById('fn-content')     as HTMLTextAreaElement;
+  const submitBtn    = document.getElementById('fn-submit')      as HTMLButtonElement;
+  const cancelBtn    = document.getElementById('fn-cancel')      as HTMLButtonElement;
+  const errorEl      = document.getElementById('fn-error')       as HTMLElement;
+  const tbody        = document.getElementById('fn-tbody')       as HTMLElement;
+  const countEl      = document.getElementById('fn-count')       as HTMLElement;
+  const sortSel      = document.getElementById('fn-sort')        as HTMLSelectElement;
+  const starredCb    = document.getElementById('fn-starred-only') as HTMLInputElement;
+  const progFilters  = document.getElementById('fn-prog-filters')!;
 
-  /* ── Helpers ── */
+  const STATUS_COLOR: Record<string, string> = {
+    'Open':       '#3b82f6',
+    'Interested': '#f59e0b',
+    'Cancelled':  '#94a3b8',
+    'Complete':   '#22c55e',
+  };
+
   function esc(s: string | null | undefined) {
     return (s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
-
   function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  /* ── Load programs into dropdown ── */
-  async function loadPrograms() {
-    const { data } = await supabase
-      .from('programs')
-      .select('name')
-      .order('sort_order', { ascending: true });
-    if (!data) return;
-    data.forEach((p: any) => {
-      const opt = document.createElement('option');
-      opt.value = p.name;
-      opt.textContent = p.name;
-      programSel.appendChild(opt);
+  function visibleNotes() {
+    let list = cachedNotes.filter(n => {
+      if (filterStatus !== 'all' && n.status !== filterStatus) return false;
+      if (filterProg   !== 'all') {
+        if (filterProg === '__general__' && n.program_name != null) return false;
+        if (filterProg !== '__general__' && n.program_name !== filterProg) return false;
+      }
+      if (filterStarred && !n.starred) return false;
+      return true;
+    });
+    const statusOrder = ['Open','Interested','Complete','Cancelled'];
+    list.sort((a, b) => {
+      if (sortMode === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sortMode === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (sortMode === 'az')     return a.content.localeCompare(b.content);
+      if (sortMode === 'status') return statusOrder.indexOf(a.status ?? 'Open') - statusOrder.indexOf(b.status ?? 'Open');
+      return 0;
+    });
+    return list;
+  }
+
+  function renderTable() {
+    const notes = visibleNotes();
+    countEl.textContent = `${notes.length} note${notes.length !== 1 ? 's' : ''}`;
+
+    if (notes.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="fn-td-msg">No notes match. Try adjusting filters.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = notes.map(n => {
+      const sc = STATUS_COLOR[n.status ?? 'Open'] ?? '#3b82f6';
+      return `
+        <tr class="fn-row${n.status === 'Cancelled' ? ' fn-row--cancelled' : ''}${n.status === 'Complete' ? ' fn-row--complete' : ''}">
+          <td class="fn-td fn-td--star">
+            <button class="fn-star${n.starred ? ' fn-star--on' : ''}" data-id="${n.id}" data-starred="${!!n.starred}" title="Star">${n.starred ? '★' : '☆'}</button>
+          </td>
+          <td class="fn-td fn-td--note">
+            <span class="fn-row-content">${esc(n.content)}</span>
+          </td>
+          <td class="fn-td fn-td--prog">
+            ${n.program_name
+              ? `<span class="fn-prog-badge">☀️ ${esc(n.program_name)}</span>`
+              : '<span class="fn-general">📝 General</span>'}
+          </td>
+          <td class="fn-td fn-td--status">
+            <select class="fn-status-sel" data-id="${n.id}" data-status="${n.status ?? 'Open'}" style="--sc:${sc}">
+              <option value="Open"       ${(n.status ?? 'Open') === 'Open'       ? 'selected' : ''}>Open</option>
+              <option value="Interested" ${n.status === 'Interested' ? 'selected' : ''}>Interested</option>
+              <option value="Cancelled"  ${n.status === 'Cancelled'  ? 'selected' : ''}>Cancelled</option>
+              <option value="Complete"   ${n.status === 'Complete'   ? 'selected' : ''}>Complete</option>
+            </select>
+          </td>
+          <td class="fn-td fn-td--date">${formatDate(n.created_at)}</td>
+          <td class="fn-td fn-td--actions">
+            <button class="fn-act fn-act--edit"   data-id="${n.id}">Edit</button>
+            <button class="fn-act fn-act--delete" data-id="${n.id}">Delete</button>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  /* ── Update program filter chips from loaded notes ── */
+  function rebuildProgFilters() {
+    const programs = [...new Set(cachedNotes.map(n => n.program_name).filter(Boolean))].sort();
+    // Remove old program chips (keep All + General)
+    progFilters.querySelectorAll('[data-filter="prog"]:not([data-value="all"]):not([data-value="__general__"])').forEach(el => el.remove());
+    programs.forEach(p => {
+      const btn = document.createElement('button');
+      btn.className = 'fn-fchip';
+      btn.dataset.filter = 'prog';
+      btn.dataset.value  = p;
+      btn.textContent    = p;
+      progFilters.appendChild(btn);
     });
   }
 
-  /* ── Render notes list ── */
-  function renderNotes(notes: any[]) {
-    if (notes.length === 0) {
-      listEl.innerHTML = '<p class="fn-empty">No notes yet. Add one above.</p>';
+  /* ── Filter sidebar ── */
+  document.querySelector('.fn-sidebar')!.addEventListener('click', e => {
+    const chip = (e.target as Element).closest<HTMLElement>('.fn-fchip');
+    if (!chip) return;
+    const filter = chip.dataset.filter!;
+    const value  = chip.dataset.value!;
+    if (filter === 'status') filterStatus = value;
+    if (filter === 'prog')   filterProg   = value;
+    document.querySelectorAll<HTMLElement>(`.fn-fchip[data-filter="${filter}"]`).forEach(c =>
+      c.classList.toggle('fn-fchip--active', c.dataset.value === value));
+    renderTable();
+  });
+
+  starredCb.addEventListener('change', () => { filterStarred = starredCb.checked; renderTable(); });
+  sortSel.addEventListener('change',   () => { sortMode = sortSel.value; renderTable(); });
+
+  /* ── Table interactions ── */
+  tbody.addEventListener('change', async e => {
+    const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('.fn-status-sel');
+    if (!sel) return;
+    const id     = Number(sel.dataset.id);
+    const status = sel.value;
+    sel.dataset.status = status;
+    sel.style.setProperty('--sc', STATUS_COLOR[status] ?? '#3b82f6');
+    await supabase.from('family_notes').update({ status }).eq('id', id).eq('family_id', familyId);
+    const n = cachedNotes.find(n => n.id === id);
+    if (n) { n.status = status; renderTable(); }
+  });
+
+  tbody.addEventListener('click', async e => {
+    const target = e.target as HTMLElement;
+
+    const starBtn = target.closest<HTMLElement>('.fn-star');
+    if (starBtn) {
+      const id      = Number(starBtn.dataset.id);
+      const starred = starBtn.dataset.starred !== 'true';
+      await supabase.from('family_notes').update({ starred }).eq('id', id).eq('family_id', familyId);
+      const n = cachedNotes.find(n => n.id === id);
+      if (n) { n.starred = starred; renderTable(); }
       return;
     }
-    listEl.innerHTML = notes.map(n => `
-      <div class="fn-card" data-id="${n.id}">
-        <div class="fn-card__header">
-          ${n.program_name
-            ? `<span class="fn-card__program">☀️ ${esc(n.program_name)}</span>`
-            : `<span class="fn-card__program fn-card__program--general">📝 General</span>`
-          }
-          <span class="fn-card__date">${formatDate(n.created_at)}</span>
-        </div>
-        <p class="fn-card__content">${esc(n.content)}</p>
-        <div class="fn-card__footer">
-          <button class="fn-action fn-action--edit" data-id="${n.id}">Edit</button>
-          <button class="fn-action fn-action--delete" data-id="${n.id}">Delete</button>
-        </div>
-      </div>
-    `).join('');
-  }
 
-  /* ── Load notes from Supabase ── */
-  async function loadNotes() {
-    if (!familyId) return;
-    const { data, error } = await supabase
-      .from('family_notes')
-      .select('*')
-      .eq('family_id', familyId)
-      .order('created_at', { ascending: false });
-
-    document.getElementById('fn-loading')?.remove();
-
-    if (error) {
-      listEl.innerHTML = '<p class="fn-empty" style="color:var(--sl-color-red)">Failed to load notes.</p>';
-      return;
+    if (target.classList.contains('fn-act--delete')) {
+      const id = Number(target.dataset.id);
+      if (!confirm('Delete this note?')) return;
+      await supabase.from('family_notes').delete().eq('id', id).eq('family_id', familyId);
+      cachedNotes = cachedNotes.filter(n => n.id !== id);
+      renderTable();
     }
-    cachedNotes = data ?? [];
-    renderNotes(cachedNotes);
-  }
 
-  /* ── Submit (add or update) ── */
-  form.addEventListener('submit', async (e) => {
+    if (target.classList.contains('fn-act--edit')) {
+      const id   = Number(target.dataset.id);
+      const note = cachedNotes.find(n => n.id === id);
+      if (!note) return;
+      editingId            = id;
+      contentEl.value      = note.content;
+      programSel.value     = note.program_name ?? '';
+      statusFormEl.value   = note.status ?? 'Open';
+      submitBtn.textContent = 'Save Changes';
+      submitBtn.classList.add('fn-btn--save');
+      cancelBtn.style.display = 'inline-block';
+      contentEl.focus();
+      contentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+
+  /* ── Submit ── */
+  form.addEventListener('submit', async e => {
     e.preventDefault();
     if (!familyId) return;
-
     const content     = contentEl.value.trim();
     const programName = programSel.value || null;
+    const status      = statusFormEl.value;
     if (!content) return;
 
     errorEl.style.display = 'none';
     submitBtn.disabled = true;
 
     if (editingId !== null) {
-      // Update existing note
-      const { error } = await supabase
-        .from('family_notes')
-        .update({ content, program_name: programName, updated_at: new Date().toISOString() })
-        .eq('id', editingId)
-        .eq('family_id', familyId);
-
-      if (error) {
-        errorEl.textContent = error.message;
-        errorEl.style.display = 'inline';
-      } else {
-        resetForm();
-        await loadNotes();
-      }
+      const { error } = await supabase.from('family_notes')
+        .update({ content, program_name: programName, status, updated_at: new Date().toISOString() })
+        .eq('id', editingId).eq('family_id', familyId);
+      if (error) { errorEl.textContent = error.message; errorEl.style.display = 'inline'; }
+      else { resetForm(); await loadNotes(); }
     } else {
-      // Insert new note
-      const { error } = await supabase
-        .from('family_notes')
-        .insert({ family_id: familyId, content, program_name: programName });
-
-      if (error) {
-        errorEl.textContent = error.message;
-        errorEl.style.display = 'inline';
-      } else {
-        resetForm();
-        await loadNotes();
-      }
+      const { error } = await supabase.from('family_notes')
+        .insert({ family_id: familyId, content, program_name: programName, status });
+      if (error) { errorEl.textContent = error.message; errorEl.style.display = 'inline'; }
+      else { resetForm(); await loadNotes(); }
     }
-
     submitBtn.disabled = false;
   });
 
   function resetForm() {
     editingId = null;
-    contentEl.value = '';
-    programSel.value = '';
+    contentEl.value = ''; programSel.value = ''; statusFormEl.value = 'Open';
     submitBtn.textContent = 'Add Note';
     submitBtn.classList.remove('fn-btn--save');
+    cancelBtn.style.display = 'none';
   }
+  cancelBtn.addEventListener('click', resetForm);
 
-  /* ── Edit / Delete via event delegation ── */
-  listEl.addEventListener('click', async (e) => {
-    const target = e.target as HTMLElement;
-
-    if (target.classList.contains('fn-action--delete')) {
-      const id = Number(target.dataset.id);
-      if (!confirm('Delete this note?')) return;
-      await supabase.from('family_notes').delete().eq('id', id).eq('family_id', familyId);
-      await loadNotes();
-    }
-
-    if (target.classList.contains('fn-action--edit')) {
-      const id   = Number(target.dataset.id);
-      const card = target.closest<HTMLElement>('.fn-card');
-      if (!card) return;
-
-      editingId = id;
-      const contentText = card.querySelector('.fn-card__content')?.textContent ?? '';
-      const programText = card.querySelector('.fn-card__program')?.textContent?.replace('☀️ ', '').replace('📝 General', '').trim() ?? '';
-
-      contentEl.value  = contentText;
-      programSel.value = programText;
-      submitBtn.textContent = 'Save Changes';
-      submitBtn.classList.add('fn-btn--save');
-      contentEl.focus();
-      contentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  });
-
-  /* ── Export CSV ── */
+  /* ── Export ── */
   document.getElementById('fn-export')!.addEventListener('click', () => {
-    if (cachedNotes.length === 0) return;
-
-    const csvCell = (v: any) => `"${(v ?? '').toString().replace(/"/g, '""')}"`;
-    const headers = ['Program', 'Note', 'Date'];
+    if (!cachedNotes.length) return;
+    const cell = (v: any) => `"${(v ?? '').toString().replace(/"/g,'""')}"`;
     const lines = [
-      headers.map(csvCell).join(','),
+      ['Starred','Program','Note','Status','Date'].map(cell).join(','),
       ...cachedNotes.map(n => [
-        n.program_name ?? '',
-        n.content,
-        new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      ].map(csvCell).join(','))
+        n.starred ? 'Yes' : 'No', n.program_name ?? '', n.content,
+        n.status ?? 'Open',
+        new Date(n.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+      ].map(cell).join(','))
     ];
-
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const blob = new Blob([lines.join('\n')], { type:'text/csv' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    a.href     = url;
-    a.download = 'notes.csv';
-    a.click();
+    a.href = url; a.download = 'notes.csv'; a.click();
     URL.revokeObjectURL(url);
   });
 
-  /* ── Init: wait for auth then load ── */
+  /* ── Load programs ── */
+  async function loadPrograms() {
+    const { data } = await supabase.from('programs').select('name').order('sort_order', { ascending: true });
+    if (!data) return;
+    data.forEach((p: any) => {
+      const opt = document.createElement('option');
+      opt.value = p.name; opt.textContent = p.name;
+      programSel.appendChild(opt);
+    });
+  }
+
+  /* ── Load notes ── */
+  async function loadNotes() {
+    if (!familyId) return;
+    const { data, error } = await supabase.from('family_notes').select('*')
+      .eq('family_id', familyId).order('created_at', { ascending: false });
+    if (error) {
+      tbody.innerHTML = '<tr><td colspan="6" class="fn-td-msg" style="color:var(--sl-color-red)">Failed to load.</td></tr>';
+      return;
+    }
+    cachedNotes = data ?? [];
+    rebuildProgFilters();
+    renderTable();
+  }
+
+  /* ── Init ── */
   async function init() {
-    // Wait for SupabaseSync to authenticate
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      // Re-try after login
       document.addEventListener('data-loaded', async () => {
         const { data: { session: s } } = await supabase.auth.getSession();
         if (s) {
-          const { data: profile } = await supabase
-            .from('user_profiles').select('family_id').eq('user_id', s.user.id).single();
-          familyId = profile?.family_id ?? '';
+          const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', s.user.id).single();
+          familyId = p?.family_id ?? '';
           await Promise.all([loadPrograms(), loadNotes()]);
         }
       }, { once: true });
       return;
     }
-    const { data: profile } = await supabase
-      .from('user_profiles').select('family_id').eq('user_id', session.user.id).single();
-    familyId = profile?.family_id ?? '';
+    const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', session.user.id).single();
+    familyId = p?.family_id ?? '';
     await Promise.all([loadPrograms(), loadNotes()]);
   }
 
@@ -245,174 +380,134 @@
 </script>
 
 <style>
-  #fn-wrap {
-    max-width: 720px;
-  }
+  #fn-wrap { max-width: 100%; }
 
   .fn-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin-bottom: 2rem;
-    padding: 1.25rem;
-    border: 1px solid var(--sl-color-gray-5);
-    border-radius: 0.5rem;
-    background: var(--sl-color-bg-nav);
+    display: flex; flex-direction: column; gap: 0.75rem;
+    padding: 1.25rem; border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem; background: var(--sl-color-bg-nav); margin-bottom: 1.5rem;
   }
-
-  .fn-form__row {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
+  .fn-form__fields { display: grid; grid-template-columns: 1fr auto; gap: 0.75rem; align-items: end; }
+  .fn-form__field  { display: flex; flex-direction: column; gap: 0.25rem; }
+  .fn-label {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--sl-color-gray-2);
   }
-
-  .fn-form__actions {
-    flex-direction: row;
-    align-items: center;
-    gap: 1rem;
+  .fn-select, .fn-textarea {
+    padding: 0.5rem 0.65rem; border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.375rem; background: var(--sl-color-bg);
+    color: var(--sl-color-text); font-size: 0.875rem; font-family: inherit; width: 100%;
   }
-
-  .fn-select,
-  .fn-textarea {
-    width: 100%;
-    padding: 0.5rem 0.65rem;
-    border: 1px solid var(--sl-color-gray-4);
-    border-radius: 0.375rem;
-    background: var(--sl-color-bg);
-    color: var(--sl-color-text);
-    font-size: 0.875rem;
-    font-family: inherit;
-  }
-
-  .fn-select:focus,
-  .fn-textarea:focus {
-    outline: 2px solid var(--sl-color-accent);
-    border-color: var(--sl-color-accent);
-  }
-
-  .fn-textarea {
-    resize: vertical;
-    min-height: 80px;
-  }
-
+  .fn-select:focus, .fn-textarea:focus { outline: 2px solid var(--sl-color-accent); border-color: var(--sl-color-accent); }
+  .fn-textarea { resize: vertical; min-height: 80px; }
+  .fn-form__actions { display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap; }
   .fn-btn {
-    padding: 0.45rem 1.1rem;
-    border-radius: 0.375rem;
-    font-size: 0.85rem;
-    cursor: pointer;
-    border: 1px solid transparent;
+    padding: 0.45rem 1rem; border-radius: 0.375rem; font-size: 0.85rem;
+    font-family: inherit; cursor: pointer; border: 1px solid transparent; white-space: nowrap;
+  }
+  .fn-btn--primary { background: var(--sl-color-accent); color: #fff; border-color: var(--sl-color-accent); }
+  .fn-btn--primary:hover { opacity: 0.88; }
+  .fn-btn--save { background: #16a34a; border-color: #16a34a; color: #fff; }
+  .fn-btn--export { background: transparent; border-color: var(--sl-color-accent); color: var(--sl-color-accent); }
+  .fn-btn--export:hover { background: var(--sl-color-accent); color: #fff; }
+  .fn-btn--cancel { background: transparent; border-color: var(--sl-color-gray-4); color: var(--sl-color-gray-2); }
+  .fn-btn--cancel:hover { border-color: #ef4444; color: #ef4444; }
+  .fn-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .fn-error { font-size: 0.82rem; color: #ef4444; }
+
+  .fn-layout { display: flex; gap: 1.25rem; align-items: flex-start; }
+
+  .fn-sidebar {
+    width: 160px; flex-shrink: 0; position: sticky; top: 4rem;
+    display: flex; flex-direction: column; gap: 1.25rem;
+  }
+  .fn-sidebar__section { display: flex; flex-direction: column; gap: 0.4rem; }
+  .fn-sidebar__label {
+    font-size: 0.67rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--sl-color-gray-3);
+    padding-bottom: 0.2rem; border-bottom: 1px solid var(--sl-color-gray-6);
+  }
+  .fn-sidebar__chips { display: flex; flex-direction: column; gap: 0.22rem; }
+  .fn-fchip {
+    padding: 0.25rem 0.6rem; border-radius: 0.3rem; text-align: left;
+    border: 1px solid transparent; background: transparent;
+    color: var(--sl-color-gray-2); font-size: 0.8rem; cursor: pointer; transition: all 0.1s;
+  }
+  .fn-fchip--active { background: var(--sl-color-accent); color: #fff; border-color: var(--sl-color-accent); }
+  .fn-fchip:not(.fn-fchip--active):hover { background: var(--sl-color-gray-6); color: var(--sl-color-text); }
+  .fn-starred-toggle {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.82rem; cursor: pointer; color: var(--sl-color-gray-2);
   }
 
-  .fn-btn--primary {
-    background: var(--sl-color-accent);
-    color: #fff;
-    border-color: var(--sl-color-accent);
+  .fn-main { flex: 1; min-width: 0; }
+  .fn-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; }
+  .fn-count { font-size: 0.82rem; color: var(--sl-color-gray-2); }
+  .fn-sort-sel {
+    padding: 0.28rem 0.55rem; border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.35rem; background: var(--sl-color-bg);
+    color: var(--sl-color-text); font-size: 0.8rem; font-family: inherit; cursor: pointer;
   }
 
-  .fn-btn--primary:hover {
-    opacity: 0.88;
+  .fn-table-wrap { overflow-x: auto; }
+  .fn-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .fn-th {
+    padding: 0.45rem 0.75rem; text-align: left; font-size: 0.68rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--sl-color-gray-2);
+    border-bottom: 2px solid var(--sl-color-gray-5); white-space: nowrap;
   }
+  .fn-th--star    { width: 36px; text-align: center; }
+  .fn-th--prog    { width: 160px; }
+  .fn-th--status  { width: 130px; }
+  .fn-th--date    { width: 88px; }
+  .fn-th--actions { width: 100px; }
 
-  .fn-btn--save {
-    background: var(--sl-color-green);
-    border-color: var(--sl-color-green);
-  }
+  .fn-td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--sl-color-gray-6); vertical-align: middle; }
+  .fn-td--star  { text-align: center; }
+  .fn-td--note  { vertical-align: top; padding-top: 0.65rem; }
+  .fn-td--date  { white-space: nowrap; color: var(--sl-color-gray-3); font-size: 0.8rem; }
+  .fn-td-msg    { padding: 2rem; text-align: center; color: var(--sl-color-gray-2); }
 
-  .fn-btn--export {
-    background: transparent;
-    border: 1px solid var(--sl-color-accent);
-    color: var(--sl-color-accent);
-  }
-  .fn-btn--export:hover {
-    background: var(--sl-color-accent);
-    color: #fff;
-  }
+  .fn-row:hover { background: var(--sl-color-gray-7, rgba(0,0,0,0.02)); }
+  .fn-row--cancelled .fn-row-content { opacity: 0.5; text-decoration: line-through; }
+  .fn-row--complete  .fn-row-content { opacity: 0.7; }
 
-  .fn-btn:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-
-  .fn-error {
-    font-size: 0.82rem;
-    color: var(--sl-color-red);
-  }
-
-  /* ── Notes list ── */
-  .fn-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .fn-empty {
-    color: var(--sl-color-gray-2);
-    font-size: 0.9rem;
-  }
-
-  .fn-card {
-    padding: 1rem 1.1rem;
-    border: 1px solid var(--sl-color-gray-5);
-    border-radius: 0.5rem;
-    background: var(--sl-color-bg-nav);
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .fn-card__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-  }
-
-  .fn-card__program {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--sl-color-accent);
-  }
-
-  .fn-card__program--general {
-    color: var(--sl-color-gray-2);
-    font-weight: 400;
-  }
-
-  .fn-card__date {
-    font-size: 0.75rem;
-    color: var(--sl-color-gray-3);
-    white-space: nowrap;
-  }
-
-  .fn-card__content {
-    font-size: 0.9rem;
-    line-height: 1.55;
-    margin: 0;
+  .fn-row-content {
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden; font-size: 0.875rem; color: var(--sl-color-text); line-height: 1.5;
     white-space: pre-wrap;
   }
 
-  .fn-card__footer {
-    display: flex;
-    gap: 0.6rem;
-    margin-top: 0.25rem;
-  }
+  .fn-prog-badge { font-size: 0.8rem; font-weight: 600; color: var(--sl-color-accent); }
+  .fn-general    { font-size: 0.8rem; color: var(--sl-color-gray-3); }
 
-  .fn-action {
-    font-size: 0.78rem;
-    background: none;
-    border: 1px solid var(--sl-color-gray-4);
-    border-radius: 0.3rem;
-    padding: 0.2rem 0.6rem;
-    cursor: pointer;
-    color: var(--sl-color-text);
+  .fn-star {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.15rem; color: var(--sl-color-gray-4); padding: 0; line-height: 1; transition: color 0.1s;
   }
+  .fn-star--on, .fn-star:hover { color: #f59e0b; }
 
-  .fn-action--delete {
-    color: var(--sl-color-red);
-    border-color: var(--sl-color-red);
+  .fn-status-sel {
+    padding: 0.22rem 0.45rem; border-radius: 0.3rem;
+    border: 1px solid var(--sc, #3b82f6); background: transparent;
+    color: var(--sc, #3b82f6); font-size: 0.78rem; font-family: inherit;
+    cursor: pointer; font-weight: 600; width: 100%;
   }
+  .fn-status-sel:focus { outline: 2px solid var(--sl-color-accent); }
 
-  .fn-action:hover {
-    opacity: 0.75;
+  .fn-act {
+    font-size: 0.72rem; background: none; border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.25rem; padding: 0.15rem 0.5rem;
+    cursor: pointer; color: var(--sl-color-text); font-family: inherit; margin-right: 0.25rem;
+  }
+  .fn-act--delete { color: #ef4444; border-color: #ef4444; }
+  .fn-act:hover { opacity: 0.7; }
+
+  @media (max-width: 680px) {
+    .fn-layout { flex-direction: column; }
+    .fn-sidebar { width: 100%; position: static; flex-direction: row; flex-wrap: wrap; gap: 0.75rem; }
+    .fn-sidebar__chips { flex-direction: row; flex-wrap: wrap; }
+    .fn-fchip { border-radius: 9999px; }
+    .fn-form__fields { grid-template-columns: 1fr; }
   }
 </style>

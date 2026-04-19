@@ -8,15 +8,10 @@
     <div class="ri-form__fields">
       <div class="ri-form__field ri-form__field--title">
         <label class="ri-label" for="ri-title">Idea / Point</label>
-        <input
-          id="ri-title"
-          class="ri-input"
-          type="text"
-          placeholder="e.g. Use a swerve drive for better maneuverability"
-          required
-        />
+        <input id="ri-title" class="ri-input" type="text"
+          placeholder="e.g. Build a sorting robot for food bank donations" required />
       </div>
-      <div class="ri-form__field ri-form__field--cat">
+      <div class="ri-form__field">
         <label class="ri-label" for="ri-category">Category</label>
         <select id="ri-category" class="ri-select">
           <option value="">— Pick a category —</option>
@@ -26,15 +21,20 @@
           <option>Other</option>
         </select>
       </div>
+      <div class="ri-form__field">
+        <label class="ri-label" for="ri-status-form">Status</label>
+        <select id="ri-status-form" class="ri-select">
+          <option value="Open">Open</option>
+          <option value="Interested">Interested</option>
+          <option value="Cancelled">Cancelled</option>
+          <option value="Complete">Complete</option>
+        </select>
+      </div>
     </div>
     <div class="ri-form__field">
       <label class="ri-label" for="ri-details">Details &amp; Notes</label>
-      <textarea
-        id="ri-details"
-        class="ri-textarea"
-        placeholder="Sketches, references, pros/cons, next steps…"
-        rows="3"
-      ></textarea>
+      <textarea id="ri-details" class="ri-textarea"
+        placeholder="Sketches, references, pros/cons, next steps…" rows="3"></textarea>
     </div>
     <div class="ri-form__actions">
       <button type="submit" class="ri-btn ri-btn--primary" id="ri-submit">Add Idea</button>
@@ -44,17 +44,69 @@
     </div>
   </form>
 
-  <!-- Filter bar -->
-  <div class="ri-filter-bar" id="ri-filter-bar" style="display:none">
-    <span class="ri-filter-label">Filter:</span>
-    <div id="ri-filter-chips" class="ri-filter-chips">
-      <button class="ri-chip ri-chip--active" data-cat="">All</button>
-    </div>
-  </div>
+  <!-- Layout: filter sidebar + table -->
+  <div class="ri-layout">
 
-  <!-- Ideas list -->
-  <div id="ri-list" class="ri-list">
-    <p id="ri-loading" class="ri-empty">Loading…</p>
+    <!-- Left filter sidebar -->
+    <aside class="ri-sidebar">
+      <div class="ri-sidebar__section">
+        <div class="ri-sidebar__label">Status</div>
+        <div class="ri-sidebar__chips">
+          <button class="ri-fchip ri-fchip--active" data-filter="status" data-value="all">All</button>
+          <button class="ri-fchip" data-filter="status" data-value="Open">Open</button>
+          <button class="ri-fchip" data-filter="status" data-value="Interested">Interested</button>
+          <button class="ri-fchip" data-filter="status" data-value="Cancelled">Cancelled</button>
+          <button class="ri-fchip" data-filter="status" data-value="Complete">Complete</button>
+        </div>
+      </div>
+      <div class="ri-sidebar__section">
+        <div class="ri-sidebar__label">Category</div>
+        <div class="ri-sidebar__chips">
+          <button class="ri-fchip ri-fchip--active" data-filter="cat" data-value="all">All</button>
+          <button class="ri-fchip" data-filter="cat" data-value="Fun">Fun</button>
+          <button class="ri-fchip" data-filter="cat" data-value="Charity">Charity</button>
+          <button class="ri-fchip" data-filter="cat" data-value="Benefit Community">Benefit Community</button>
+          <button class="ri-fchip" data-filter="cat" data-value="Other">Other</button>
+        </div>
+      </div>
+      <div class="ri-sidebar__section">
+        <label class="ri-starred-toggle">
+          <input type="checkbox" id="ri-starred-only" />
+          <span>⭐ Starred only</span>
+        </label>
+      </div>
+    </aside>
+
+    <!-- Table area -->
+    <div class="ri-main">
+      <div class="ri-toolbar">
+        <span id="ri-count" class="ri-count"></span>
+        <select id="ri-sort" class="ri-sort-sel">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="az">Title A → Z</option>
+          <option value="za">Title Z → A</option>
+          <option value="status">By status</option>
+        </select>
+      </div>
+      <div class="ri-table-wrap">
+        <table class="ri-table">
+          <thead>
+            <tr>
+              <th class="ri-th ri-th--star">★</th>
+              <th class="ri-th ri-th--title">Idea / Point</th>
+              <th class="ri-th ri-th--cat">Category</th>
+              <th class="ri-th ri-th--status">Status</th>
+              <th class="ri-th ri-th--date">Date</th>
+              <th class="ri-th ri-th--actions"></th>
+            </tr>
+          </thead>
+          <tbody id="ri-tbody">
+            <tr><td colspan="6" class="ri-td-msg">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -64,20 +116,24 @@
   let familyId  = '';
   let editingId: number | null = null;
   let allIdeas: any[] = [];
-  let activeCategory = '';
+  let filterStatus  = 'all';
+  let filterCat     = 'all';
+  let filterStarred = false;
+  let sortMode      = 'newest';
 
-  const form       = document.getElementById('ri-form')     as HTMLFormElement;
-  const titleEl    = document.getElementById('ri-title')    as HTMLInputElement;
-  const categoryEl = document.getElementById('ri-category') as HTMLSelectElement;
-  const detailsEl  = document.getElementById('ri-details')  as HTMLTextAreaElement;
-  const submitBtn  = document.getElementById('ri-submit')   as HTMLButtonElement;
-  const cancelBtn  = document.getElementById('ri-cancel')   as HTMLButtonElement;
-  const errorEl    = document.getElementById('ri-error')    as HTMLElement;
-  const listEl     = document.getElementById('ri-list')     as HTMLElement;
-  const filterBar  = document.getElementById('ri-filter-bar')    as HTMLElement;
-  const filterChips = document.getElementById('ri-filter-chips') as HTMLElement;
+  const form         = document.getElementById('ri-form')        as HTMLFormElement;
+  const titleEl      = document.getElementById('ri-title')       as HTMLInputElement;
+  const categoryEl   = document.getElementById('ri-category')    as HTMLSelectElement;
+  const statusFormEl = document.getElementById('ri-status-form') as HTMLSelectElement;
+  const detailsEl    = document.getElementById('ri-details')     as HTMLTextAreaElement;
+  const submitBtn    = document.getElementById('ri-submit')      as HTMLButtonElement;
+  const cancelBtn    = document.getElementById('ri-cancel')      as HTMLButtonElement;
+  const errorEl      = document.getElementById('ri-error')       as HTMLElement;
+  const tbody        = document.getElementById('ri-tbody')       as HTMLElement;
+  const countEl      = document.getElementById('ri-count')       as HTMLElement;
+  const sortSel      = document.getElementById('ri-sort')        as HTMLSelectElement;
+  const starredCb    = document.getElementById('ri-starred-only') as HTMLInputElement;
 
-  /* ── Category colour map ── */
   const CAT_COLOR: Record<string, string> = {
     'Fun':               '#f59e0b',
     'Charity':           '#ec4899',
@@ -85,151 +141,139 @@
     'Other':             '#94a3b8',
   };
 
-  function catColor(cat: string | null) {
-    return CAT_COLOR[cat ?? ''] ?? '#94a3b8';
-  }
+  const STATUS_COLOR: Record<string, string> = {
+    'Open':       '#3b82f6',
+    'Interested': '#f59e0b',
+    'Cancelled':  '#94a3b8',
+    'Complete':   '#22c55e',
+  };
 
   function esc(s: string | null | undefined) {
     return (s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
-
   function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
-  /* ── Render ── */
-  function renderIdeas() {
-    const filtered = activeCategory
-      ? allIdeas.filter(t => t.category === activeCategory)
-      : allIdeas;
+  function visibleIdeas() {
+    let list = allIdeas.filter(i => {
+      if (filterStatus !== 'all' && i.status !== filterStatus) return false;
+      if (filterCat    !== 'all' && i.category !== filterCat)  return false;
+      if (filterStarred && !i.starred) return false;
+      return true;
+    });
+    const statusOrder = ['Open','Interested','Complete','Cancelled'];
+    list.sort((a, b) => {
+      if (sortMode === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sortMode === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (sortMode === 'az')     return a.title.localeCompare(b.title);
+      if (sortMode === 'za')     return b.title.localeCompare(a.title);
+      if (sortMode === 'status') return statusOrder.indexOf(a.status ?? 'Open') - statusOrder.indexOf(b.status ?? 'Open');
+      return 0;
+    });
+    return list;
+  }
 
-    if (filtered.length === 0) {
-      listEl.innerHTML = '<p class="ri-empty">No ideas yet. Add one above.</p>';
+  function renderTable() {
+    const ideas = visibleIdeas();
+    countEl.textContent = `${ideas.length} idea${ideas.length !== 1 ? 's' : ''}`;
+
+    if (ideas.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="ri-td-msg">No ideas match. Try adjusting filters.</td></tr>';
       return;
     }
 
-    listEl.innerHTML = filtered.map(t => {
-      const color = catColor(t.category);
+    tbody.innerHTML = ideas.map(i => {
+      const catColor = CAT_COLOR[i.category] ?? '#94a3b8';
+      const sc       = STATUS_COLOR[i.status ?? 'Open'] ?? '#3b82f6';
       return `
-        <div class="ri-card" data-id="${t.id}" style="--cat-color:${color}">
-          <div class="ri-card__header">
-            <p class="ri-card__title">${esc(t.title)}</p>
-            <div class="ri-card__meta">
-              ${t.category ? `<span class="ri-card__cat" style="background:${color}20;color:${color};border-color:${color}40">${esc(t.category)}</span>` : ''}
-              <span class="ri-card__date">${formatDate(t.created_at)}</span>
-            </div>
-          </div>
-          ${t.details ? `<p class="ri-card__details">${esc(t.details)}</p>` : ''}
-          <div class="ri-card__footer">
-            <button class="ri-action ri-action--edit" data-id="${t.id}">Edit</button>
-            <button class="ri-action ri-action--delete" data-id="${t.id}">Delete</button>
-          </div>
-        </div>`;
+        <tr class="ri-row${i.status === 'Cancelled' ? ' ri-row--cancelled' : ''}${i.status === 'Complete' ? ' ri-row--complete' : ''}">
+          <td class="ri-td ri-td--star">
+            <button class="ri-star${i.starred ? ' ri-star--on' : ''}" data-id="${i.id}" data-starred="${!!i.starred}" title="Star">${i.starred ? '★' : '☆'}</button>
+          </td>
+          <td class="ri-td ri-td--title">
+            <span class="ri-row-title">${esc(i.title)}</span>
+            ${i.details ? `<span class="ri-row-sub">${esc(i.details)}</span>` : ''}
+          </td>
+          <td class="ri-td ri-td--cat">
+            ${i.category
+              ? `<span class="ri-cat-badge" style="background:${catColor}20;color:${catColor};border-color:${catColor}40">${esc(i.category)}</span>`
+              : '<span class="ri-none">—</span>'}
+          </td>
+          <td class="ri-td ri-td--status">
+            <select class="ri-status-sel" data-id="${i.id}" data-status="${i.status ?? 'Open'}" style="--sc:${sc}">
+              <option value="Open"       ${(i.status ?? 'Open') === 'Open'       ? 'selected' : ''}>Open</option>
+              <option value="Interested" ${i.status === 'Interested' ? 'selected' : ''}>Interested</option>
+              <option value="Cancelled"  ${i.status === 'Cancelled'  ? 'selected' : ''}>Cancelled</option>
+              <option value="Complete"   ${i.status === 'Complete'   ? 'selected' : ''}>Complete</option>
+            </select>
+          </td>
+          <td class="ri-td ri-td--date">${formatDate(i.created_at)}</td>
+          <td class="ri-td ri-td--actions">
+            <button class="ri-act ri-act--edit"   data-id="${i.id}">Edit</button>
+            <button class="ri-act ri-act--delete" data-id="${i.id}">Delete</button>
+          </td>
+        </tr>`;
     }).join('');
   }
 
-  /* ── Render filter chips ── */
-  function renderFilters() {
-    const categories = [...new Set(allIdeas.map(t => t.category).filter(Boolean))].sort();
-    if (categories.length === 0) { filterBar.style.display = 'none'; return; }
-
-    filterBar.style.display = 'flex';
-    filterChips.innerHTML = `<button class="ri-chip${activeCategory === '' ? ' ri-chip--active' : ''}" data-cat="">All (${allIdeas.length})</button>` +
-      categories.map(c => {
-        const count = allIdeas.filter(t => t.category === c).length;
-        const active = activeCategory === c ? ' ri-chip--active' : '';
-        return `<button class="ri-chip${active}" data-cat="${esc(c)}" style="--chip-color:${catColor(c)}">${esc(c)} (${count})</button>`;
-      }).join('');
-  }
-
-  /* ── Load ── */
-  async function loadIdeas() {
-    if (!familyId) return;
-    const { data, error } = await supabase
-      .from('robotics_ideas')
-      .select('*')
-      .eq('family_id', familyId)
-      .order('created_at', { ascending: false });
-
-    document.getElementById('ri-loading')?.remove();
-
-    if (error) {
-      listEl.innerHTML = '<p class="ri-empty" style="color:var(--sl-color-red)">Failed to load ideas.</p>';
-      return;
-    }
-    allIdeas = data ?? [];
-    renderFilters();
-    renderIdeas();
-  }
-
-  /* ── Submit ── */
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!familyId) return;
-
-    const title    = titleEl.value.trim();
-    const category = categoryEl.value || null;
-    const details  = detailsEl.value.trim() || null;
-    if (!title) return;
-
-    errorEl.style.display = 'none';
-    submitBtn.disabled = true;
-
-    if (editingId !== null) {
-      const { error } = await supabase
-        .from('robotics_ideas')
-        .update({ title, category, details, updated_at: new Date().toISOString() })
-        .eq('id', editingId)
-        .eq('family_id', familyId);
-      if (error) { showError(error.message); }
-      else { resetForm(); await loadIdeas(); }
-    } else {
-      const { error } = await supabase
-        .from('robotics_ideas')
-        .insert({ family_id: familyId, title, category, details });
-      if (error) { showError(error.message); }
-      else { resetForm(); await loadIdeas(); }
-    }
-    submitBtn.disabled = false;
+  document.querySelector('.ri-sidebar')!.addEventListener('click', e => {
+    const chip = (e.target as Element).closest<HTMLElement>('.ri-fchip');
+    if (!chip) return;
+    const filter = chip.dataset.filter!;
+    const value  = chip.dataset.value!;
+    if (filter === 'status') filterStatus = value;
+    if (filter === 'cat')    filterCat    = value;
+    document.querySelectorAll<HTMLElement>(`.ri-fchip[data-filter="${filter}"]`).forEach(c =>
+      c.classList.toggle('ri-fchip--active', c.dataset.value === value));
+    renderTable();
   });
 
-  function showError(msg: string) {
-    errorEl.textContent = msg;
-    errorEl.style.display = 'inline';
-  }
+  starredCb.addEventListener('change', () => { filterStarred = starredCb.checked; renderTable(); });
+  sortSel.addEventListener('change',   () => { sortMode = sortSel.value; renderTable(); });
 
-  function resetForm() {
-    editingId = null;
-    titleEl.value    = '';
-    categoryEl.value = '';
-    detailsEl.value  = '';
-    submitBtn.textContent = 'Add Idea';
-    submitBtn.classList.remove('ri-btn--save');
-    cancelBtn.style.display = 'none';
-  }
+  tbody.addEventListener('change', async e => {
+    const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('.ri-status-sel');
+    if (!sel) return;
+    const id     = Number(sel.dataset.id);
+    const status = sel.value;
+    sel.dataset.status = status;
+    sel.style.setProperty('--sc', STATUS_COLOR[status] ?? '#3b82f6');
+    await supabase.from('robotics_ideas').update({ status }).eq('id', id).eq('family_id', familyId);
+    const i = allIdeas.find(i => i.id === id);
+    if (i) { i.status = status; renderTable(); }
+  });
 
-  cancelBtn.addEventListener('click', resetForm);
-
-  /* ── Edit / Delete ── */
-  listEl.addEventListener('click', async (e) => {
+  tbody.addEventListener('click', async e => {
     const target = e.target as HTMLElement;
 
-    if (target.classList.contains('ri-action--delete')) {
+    const starBtn = target.closest<HTMLElement>('.ri-star');
+    if (starBtn) {
+      const id      = Number(starBtn.dataset.id);
+      const starred = starBtn.dataset.starred !== 'true';
+      await supabase.from('robotics_ideas').update({ starred }).eq('id', id).eq('family_id', familyId);
+      const i = allIdeas.find(i => i.id === id);
+      if (i) { i.starred = starred; renderTable(); }
+      return;
+    }
+
+    if (target.classList.contains('ri-act--delete')) {
       const id = Number(target.dataset.id);
       if (!confirm('Delete this idea?')) return;
       await supabase.from('robotics_ideas').delete().eq('id', id).eq('family_id', familyId);
-      await loadIdeas();
+      allIdeas = allIdeas.filter(i => i.id !== id);
+      renderTable();
     }
 
-    if (target.classList.contains('ri-action--edit')) {
+    if (target.classList.contains('ri-act--edit')) {
       const id   = Number(target.dataset.id);
-      const idea = allIdeas.find(t => t.id === id);
+      const idea = allIdeas.find(i => i.id === id);
       if (!idea) return;
-
-      editingId = id;
-      titleEl.value    = idea.title;
-      categoryEl.value = idea.category ?? '';
-      detailsEl.value  = idea.details  ?? '';
+      editingId            = id;
+      titleEl.value        = idea.title;
+      categoryEl.value     = idea.category ?? '';
+      statusFormEl.value   = idea.status   ?? 'Open';
+      detailsEl.value      = idea.details  ?? '';
       submitBtn.textContent = 'Save Changes';
       submitBtn.classList.add('ri-btn--save');
       cancelBtn.style.display = 'inline-block';
@@ -238,54 +282,86 @@
     }
   });
 
-  /* ── Filter chips ── */
-  filterChips.addEventListener('click', (e) => {
-    const chip = (e.target as Element).closest<HTMLElement>('.ri-chip');
-    if (!chip) return;
-    activeCategory = chip.dataset.cat ?? '';
-    renderFilters();
-    renderIdeas();
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!familyId) return;
+    const title    = titleEl.value.trim();
+    const category = categoryEl.value || null;
+    const status   = statusFormEl.value;
+    const details  = detailsEl.value.trim() || null;
+    if (!title) return;
+    errorEl.style.display = 'none';
+    submitBtn.disabled = true;
+
+    if (editingId !== null) {
+      const { error } = await supabase.from('robotics_ideas')
+        .update({ title, category, status, details, updated_at: new Date().toISOString() })
+        .eq('id', editingId).eq('family_id', familyId);
+      if (error) { errorEl.textContent = error.message; errorEl.style.display = 'inline'; }
+      else { resetForm(); await loadIdeas(); }
+    } else {
+      const { error } = await supabase.from('robotics_ideas')
+        .insert({ family_id: familyId, title, category, status, details });
+      if (error) { errorEl.textContent = error.message; errorEl.style.display = 'inline'; }
+      else { resetForm(); await loadIdeas(); }
+    }
+    submitBtn.disabled = false;
   });
 
-  /* ── Export CSV ── */
+  function resetForm() {
+    editingId = null;
+    titleEl.value = ''; categoryEl.value = ''; statusFormEl.value = 'Open'; detailsEl.value = '';
+    submitBtn.textContent = 'Add Idea';
+    submitBtn.classList.remove('ri-btn--save');
+    cancelBtn.style.display = 'none';
+  }
+  cancelBtn.addEventListener('click', resetForm);
+
   document.getElementById('ri-export')!.addEventListener('click', () => {
-    if (allIdeas.length === 0) return;
-    const csvCell = (v: any) => `"${(v ?? '').toString().replace(/"/g, '""')}"`;
-    const headers = ['Category', 'Idea / Point', 'Details', 'Date'];
+    if (!allIdeas.length) return;
+    const cell = (v: any) => `"${(v ?? '').toString().replace(/"/g,'""')}"`;
     const lines = [
-      headers.map(csvCell).join(','),
-      ...allIdeas.map(t => [
-        t.category ?? '',
-        t.title,
-        t.details ?? '',
-        new Date(t.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      ].map(csvCell).join(','))
+      ['Starred','Category','Idea / Point','Details','Status','Date'].map(cell).join(','),
+      ...allIdeas.map(i => [
+        i.starred ? 'Yes' : 'No', i.category ?? '', i.title, i.details ?? '',
+        i.status ?? 'Open',
+        new Date(i.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+      ].map(cell).join(','))
     ];
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const blob = new Blob([lines.join('\n')], { type:'text/csv' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href = url; a.download = 'robotics-ideas.csv'; a.click();
     URL.revokeObjectURL(url);
   });
 
-  /* ── Init ── */
+  async function loadIdeas() {
+    if (!familyId) return;
+    const { data, error } = await supabase.from('robotics_ideas').select('*')
+      .eq('family_id', familyId).order('created_at', { ascending: false });
+    if (error) {
+      tbody.innerHTML = '<tr><td colspan="6" class="ri-td-msg" style="color:var(--sl-color-red)">Failed to load.</td></tr>';
+      return;
+    }
+    allIdeas = data ?? [];
+    renderTable();
+  }
+
   async function init() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       document.addEventListener('data-loaded', async () => {
         const { data: { session: s } } = await supabase.auth.getSession();
         if (s) {
-          const { data: profile } = await supabase
-            .from('user_profiles').select('family_id').eq('user_id', s.user.id).single();
-          familyId = profile?.family_id ?? '';
+          const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', s.user.id).single();
+          familyId = p?.family_id ?? '';
           await loadIdeas();
         }
       }, { once: true });
       return;
     }
-    const { data: profile } = await supabase
-      .from('user_profiles').select('family_id').eq('user_id', session.user.id).single();
-    familyId = profile?.family_id ?? '';
+    const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', session.user.id).single();
+    familyId = p?.family_id ?? '';
     await loadIdeas();
   }
 
@@ -293,223 +369,140 @@
 </script>
 
 <style>
-  #ri-wrap { max-width: 780px; }
+  #ri-wrap { max-width: 100%; }
 
-  /* ── Form ── */
   .ri-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 1.25rem;
-    border: 1px solid var(--sl-color-gray-5);
-    border-radius: 0.5rem;
-    background: var(--sl-color-bg-nav);
-    margin-bottom: 1.5rem;
+    display: flex; flex-direction: column; gap: 0.75rem;
+    padding: 1.25rem; border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem; background: var(--sl-color-bg-nav); margin-bottom: 1.5rem;
   }
-
-  .ri-form__fields {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 0.75rem;
-    align-items: end;
-  }
-
-  .ri-form__field { display: flex; flex-direction: column; gap: 0.25rem; }
-  .ri-form__field--cat { min-width: 200px; }
-
+  .ri-form__fields { display: grid; grid-template-columns: 1fr auto auto; gap: 0.75rem; align-items: end; }
+  .ri-form__field  { display: flex; flex-direction: column; gap: 0.25rem; }
   .ri-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--sl-color-gray-2);
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--sl-color-gray-2);
   }
-
   .ri-input, .ri-select, .ri-textarea {
-    padding: 0.5rem 0.65rem;
-    border: 1px solid var(--sl-color-gray-4);
-    border-radius: 0.375rem;
-    background: var(--sl-color-bg);
-    color: var(--sl-color-text);
-    font-size: 0.875rem;
-    font-family: inherit;
-    width: 100%;
+    padding: 0.5rem 0.65rem; border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.375rem; background: var(--sl-color-bg);
+    color: var(--sl-color-text); font-size: 0.875rem; font-family: inherit; width: 100%;
   }
-
   .ri-input:focus, .ri-select:focus, .ri-textarea:focus {
-    outline: 2px solid var(--sl-color-accent);
-    border-color: var(--sl-color-accent);
+    outline: 2px solid var(--sl-color-accent); border-color: var(--sl-color-accent);
   }
-
   .ri-textarea { resize: vertical; min-height: 72px; }
-
-  .ri-form__actions {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    flex-wrap: wrap;
-  }
-
+  .ri-form__actions { display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap; }
   .ri-btn {
-    padding: 0.45rem 1rem;
-    border-radius: 0.375rem;
-    font-size: 0.85rem;
-    font-family: inherit;
-    cursor: pointer;
-    border: 1px solid transparent;
-    white-space: nowrap;
+    padding: 0.45rem 1rem; border-radius: 0.375rem; font-size: 0.85rem;
+    font-family: inherit; cursor: pointer; border: 1px solid transparent; white-space: nowrap;
   }
-
-  .ri-btn--primary {
-    background: var(--sl-color-accent);
-    color: #fff;
-    border-color: var(--sl-color-accent);
-  }
+  .ri-btn--primary { background: var(--sl-color-accent); color: #fff; border-color: var(--sl-color-accent); }
   .ri-btn--primary:hover { opacity: 0.88; }
-  .ri-btn--save {
-    background: #16a34a;
-    border-color: #16a34a;
-  }
-  .ri-btn--export {
-    background: transparent;
-    border-color: var(--sl-color-accent);
-    color: var(--sl-color-accent);
-  }
-  .ri-btn--export:hover {
-    background: var(--sl-color-accent);
-    color: #fff;
-  }
-  .ri-btn--cancel {
-    background: transparent;
-    border-color: var(--sl-color-gray-4);
-    color: var(--sl-color-gray-2);
-  }
+  .ri-btn--save { background: #16a34a; border-color: #16a34a; color: #fff; }
+  .ri-btn--export { background: transparent; border-color: var(--sl-color-accent); color: var(--sl-color-accent); }
+  .ri-btn--export:hover { background: var(--sl-color-accent); color: #fff; }
+  .ri-btn--cancel { background: transparent; border-color: var(--sl-color-gray-4); color: var(--sl-color-gray-2); }
   .ri-btn--cancel:hover { border-color: #ef4444; color: #ef4444; }
   .ri-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
   .ri-error { font-size: 0.82rem; color: #ef4444; }
 
-  /* ── Filter bar ── */
-  .ri-filter-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-bottom: 1rem;
+  .ri-layout { display: flex; gap: 1.25rem; align-items: flex-start; }
+
+  .ri-sidebar {
+    width: 160px; flex-shrink: 0; position: sticky; top: 4rem;
+    display: flex; flex-direction: column; gap: 1.25rem;
+  }
+  .ri-sidebar__section { display: flex; flex-direction: column; gap: 0.4rem; }
+  .ri-sidebar__label {
+    font-size: 0.67rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--sl-color-gray-3);
+    padding-bottom: 0.2rem; border-bottom: 1px solid var(--sl-color-gray-6);
+  }
+  .ri-sidebar__chips { display: flex; flex-direction: column; gap: 0.22rem; }
+  .ri-fchip {
+    padding: 0.25rem 0.6rem; border-radius: 0.3rem; text-align: left;
+    border: 1px solid transparent; background: transparent;
+    color: var(--sl-color-gray-2); font-size: 0.8rem; cursor: pointer; transition: all 0.1s;
+  }
+  .ri-fchip--active { background: var(--sl-color-accent); color: #fff; border-color: var(--sl-color-accent); }
+  .ri-fchip:not(.ri-fchip--active):hover { background: var(--sl-color-gray-6); color: var(--sl-color-text); }
+  .ri-starred-toggle {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.82rem; cursor: pointer; color: var(--sl-color-gray-2);
   }
 
-  .ri-filter-label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--sl-color-gray-3);
-    flex-shrink: 0;
+  .ri-main { flex: 1; min-width: 0; }
+  .ri-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; }
+  .ri-count { font-size: 0.82rem; color: var(--sl-color-gray-2); }
+  .ri-sort-sel {
+    padding: 0.28rem 0.55rem; border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.35rem; background: var(--sl-color-bg);
+    color: var(--sl-color-text); font-size: 0.8rem; font-family: inherit; cursor: pointer;
   }
 
-  .ri-filter-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .ri-table-wrap { overflow-x: auto; }
+  .ri-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .ri-th {
+    padding: 0.45rem 0.75rem; text-align: left; font-size: 0.68rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--sl-color-gray-2);
+    border-bottom: 2px solid var(--sl-color-gray-5); white-space: nowrap;
+  }
+  .ri-th--star    { width: 36px; text-align: center; }
+  .ri-th--cat     { width: 130px; }
+  .ri-th--status  { width: 130px; }
+  .ri-th--date    { width: 88px; }
+  .ri-th--actions { width: 100px; }
 
-  .ri-chip {
-    padding: 0.22rem 0.65rem;
-    border-radius: 9999px;
-    border: 1px solid var(--sl-color-gray-4);
-    background: var(--sl-color-bg);
-    color: var(--sl-color-gray-2);
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: all 0.1s;
+  .ri-td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--sl-color-gray-6); vertical-align: middle; }
+  .ri-td--star    { text-align: center; }
+  .ri-td--title   { vertical-align: top; padding-top: 0.65rem; }
+  .ri-td--date    { white-space: nowrap; color: var(--sl-color-gray-3); font-size: 0.8rem; }
+  .ri-td-msg      { padding: 2rem; text-align: center; color: var(--sl-color-gray-2); }
+
+  .ri-row:hover { background: var(--sl-color-gray-7, rgba(0,0,0,0.02)); }
+  .ri-row--cancelled .ri-row-title { opacity: 0.5; text-decoration: line-through; }
+  .ri-row--complete  .ri-row-title { opacity: 0.7; }
+
+  .ri-row-title { display: block; font-weight: 600; color: var(--sl-color-text); line-height: 1.4; }
+  .ri-row-sub {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; font-size: 0.78rem; color: var(--sl-color-gray-2);
+    margin-top: 0.1rem; line-height: 1.4;
+  }
+  .ri-none { color: var(--sl-color-gray-4); }
+
+  .ri-star {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.15rem; color: var(--sl-color-gray-4); padding: 0; line-height: 1; transition: color 0.1s;
+  }
+  .ri-star--on, .ri-star:hover { color: #f59e0b; }
+
+  .ri-cat-badge {
+    font-size: 0.71rem; font-weight: 600; padding: 0.15rem 0.5rem;
+    border-radius: 9999px; border: 1px solid transparent; white-space: nowrap;
   }
 
-  .ri-chip--active {
-    background: var(--sl-color-accent);
-    border-color: var(--sl-color-accent);
-    color: #fff;
+  .ri-status-sel {
+    padding: 0.22rem 0.45rem; border-radius: 0.3rem;
+    border: 1px solid var(--sc, #3b82f6); background: transparent;
+    color: var(--sc, #3b82f6); font-size: 0.78rem; font-family: inherit;
+    cursor: pointer; font-weight: 600; width: 100%;
   }
+  .ri-status-sel:focus { outline: 2px solid var(--sl-color-accent); }
 
-  .ri-chip:not(.ri-chip--active):hover {
-    border-color: var(--chip-color, var(--sl-color-accent));
-    color: var(--chip-color, var(--sl-color-accent));
+  .ri-act {
+    font-size: 0.72rem; background: none; border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.25rem; padding: 0.15rem 0.5rem;
+    cursor: pointer; color: var(--sl-color-text); font-family: inherit; margin-right: 0.25rem;
   }
+  .ri-act--delete { color: #ef4444; border-color: #ef4444; }
+  .ri-act:hover { opacity: 0.7; }
 
-  /* ── Cards ── */
-  .ri-list { display: flex; flex-direction: column; gap: 0.75rem; }
-
-  .ri-empty { color: var(--sl-color-gray-2); font-size: 0.9rem; }
-
-  .ri-card {
-    padding: 1rem 1.1rem;
-    border: 1px solid var(--sl-color-gray-5);
-    border-left: 4px solid var(--cat-color, var(--sl-color-gray-4));
-    border-radius: 0.5rem;
-    background: var(--sl-color-bg-nav);
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .ri-card__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .ri-card__title {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--sl-color-text);
-    margin: 0;
-    flex: 1;
-    line-height: 1.4;
-  }
-
-  .ri-card__meta {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-shrink: 0;
-  }
-
-  .ri-card__cat {
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 0.15rem 0.55rem;
-    border-radius: 9999px;
-    border: 1px solid transparent;
-    white-space: nowrap;
-  }
-
-  .ri-card__date {
-    font-size: 0.72rem;
-    color: var(--sl-color-gray-3);
-    white-space: nowrap;
-  }
-
-  .ri-card__details {
-    font-size: 0.875rem;
-    color: var(--sl-color-gray-2);
-    line-height: 1.55;
-    margin: 0;
-    white-space: pre-wrap;
-  }
-
-  .ri-card__footer { display: flex; gap: 0.5rem; }
-
-  .ri-action {
-    font-size: 0.75rem;
-    background: none;
-    border: 1px solid var(--sl-color-gray-4);
-    border-radius: 0.3rem;
-    padding: 0.18rem 0.55rem;
-    cursor: pointer;
-    color: var(--sl-color-text);
-    font-family: inherit;
-  }
-  .ri-action--delete { color: #ef4444; border-color: #ef4444; }
-  .ri-action:hover { opacity: 0.7; }
-
-  @media (max-width: 600px) {
+  @media (max-width: 680px) {
+    .ri-layout { flex-direction: column; }
+    .ri-sidebar { width: 100%; position: static; flex-direction: row; flex-wrap: wrap; gap: 0.75rem; }
+    .ri-sidebar__chips { flex-direction: row; flex-wrap: wrap; }
+    .ri-fchip { border-radius: 9999px; }
     .ri-form__fields { grid-template-columns: 1fr; }
-    .ri-form__field--cat { min-width: unset; }
   }
 </style>
