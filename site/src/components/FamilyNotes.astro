@@ -28,7 +28,6 @@
     </div>
     <div class="fn-form__actions">
       <button type="submit" class="fn-btn fn-btn--primary" id="fn-submit">Add Note</button>
-      <button type="button" class="fn-btn fn-btn--export" id="fn-export">⬇ Export CSV</button>
       <button type="button" class="fn-btn fn-btn--cancel" id="fn-cancel" style="display:none">Cancel</button>
       <span id="fn-error" class="fn-error" style="display:none"></span>
     </div>
@@ -77,8 +76,6 @@
   const errorEl      = document.getElementById('fn-error')       as HTMLElement;
   const tbody        = document.getElementById('fn-tbody')       as HTMLElement;
   const countEl      = document.getElementById('fn-count')       as HTMLElement;
-  const sortSel      = document.getElementById('fn-sort')        as HTMLSelectElement;
-  const starredCb    = document.getElementById('fn-starred-only') as HTMLInputElement;
   const progFilters  = document.getElementById('fn-prog-filters')!;
 
   const STATUS_COLOR: Record<string, string> = {
@@ -159,12 +156,13 @@
 
   /* ── Update program filter chips from loaded notes ── */
   function rebuildProgFilters() {
+    if (!progFilters) return;
     const programs = [...new Set(cachedNotes.map(n => n.program_name).filter(Boolean))].sort();
     // Remove old program chips (keep All + General)
     progFilters.querySelectorAll('[data-filter="prog"]:not([data-value="all"]):not([data-value="__general__"])').forEach(el => el.remove());
     programs.forEach(p => {
       const btn = document.createElement('button');
-      btn.className = 'fn-fchip';
+      btn.className = 'filter-chip';
       btn.dataset.filter = 'prog';
       btn.dataset.value  = p;
       btn.textContent    = p;
@@ -172,21 +170,24 @@
     });
   }
 
-  /* ── Filter sidebar ── */
-  document.querySelector('.fn-sidebar')!.addEventListener('click', e => {
-    const chip = (e.target as Element).closest<HTMLElement>('.fn-fchip');
+  /* ── Filter chips (in right sidebar) ── */
+  document.addEventListener('click', e => {
+    const chip = (e.target as Element).closest<HTMLElement>('.filter-chip[data-filter]');
     if (!chip) return;
     const filter = chip.dataset.filter!;
     const value  = chip.dataset.value!;
     if (filter === 'status') filterStatus = value;
     if (filter === 'prog')   filterProg   = value;
-    document.querySelectorAll<HTMLElement>(`.fn-fchip[data-filter="${filter}"]`).forEach(c =>
-      c.classList.toggle('fn-fchip--active', c.dataset.value === value));
+    document.querySelectorAll<HTMLElement>(`.filter-chip[data-filter="${filter}"]`).forEach(c =>
+      c.classList.toggle('active', c.dataset.value === value));
     renderTable();
   });
 
-  starredCb.addEventListener('change', () => { filterStarred = starredCb.checked; renderTable(); });
-  sortSel.addEventListener('change',   () => { sortMode = sortSel.value; renderTable(); });
+  document.addEventListener('change', e => {
+    const target = e.target as HTMLElement;
+    if (target.id === 'bs-sort')    { sortMode = (target as HTMLSelectElement).value; renderTable(); }
+    if (target.id === 'bs-starred') { filterStarred = (target as HTMLInputElement).checked; renderTable(); }
+  });
 
   /* ── Table interactions ── */
   tbody.addEventListener('change', async e => {
@@ -274,8 +275,12 @@
   }
   cancelBtn.addEventListener('click', resetForm);
 
-  /* ── Export ── */
-  document.getElementById('fn-export')!.addEventListener('click', () => {
+  /* ── Export (button lives in right sidebar) ── */
+  document.addEventListener('click', e => {
+    if (!(e.target as HTMLElement).closest('#fn-export')) return;
+    exportCSV();
+  });
+  function exportCSV() {
     if (!cachedNotes.length) return;
     const cell = (v: any) => `"${(v ?? '').toString().replace(/"/g,'""')}"`;
     const lines = [
@@ -291,7 +296,7 @@
     const a    = document.createElement('a');
     a.href = url; a.download = 'notes.csv'; a.click();
     URL.revokeObjectURL(url);
-  });
+  }
 
   /* ── Load programs ── */
   async function loadPrograms() {
@@ -376,39 +381,8 @@
   .fn-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .fn-error { font-size: 0.82rem; color: #ef4444; }
 
-  .fn-layout { display: flex; gap: 1.25rem; align-items: flex-start; }
-
-  .fn-sidebar {
-    width: 160px; flex-shrink: 0; order: 1; position: sticky; top: 4rem;
-    display: flex; flex-direction: column; gap: 1.25rem;
-  }
-  .fn-sidebar__section { display: flex; flex-direction: column; gap: 0.4rem; }
-  .fn-sidebar__label {
-    font-size: 0.67rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.06em; color: var(--sl-color-gray-3);
-    padding-bottom: 0.2rem; border-bottom: 1px solid var(--sl-color-gray-6);
-  }
-  .fn-sidebar__chips { display: flex; flex-direction: column; gap: 0.22rem; }
-  .fn-fchip {
-    padding: 0.25rem 0.6rem; border-radius: 0.3rem; text-align: left;
-    border: 1px solid transparent; background: transparent;
-    color: var(--sl-color-gray-2); font-size: 0.8rem; cursor: pointer; transition: all 0.1s;
-  }
-  .fn-fchip--active { background: var(--sl-color-accent); color: #fff; border-color: var(--sl-color-accent); }
-  .fn-fchip:not(.fn-fchip--active):hover { background: var(--sl-color-gray-6); color: var(--sl-color-text); }
-  .fn-starred-toggle {
-    display: flex; align-items: center; gap: 0.4rem;
-    font-size: 0.82rem; cursor: pointer; color: var(--sl-color-gray-2);
-  }
-
-  .fn-main { flex: 1; min-width: 0; }
   .fn-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; }
   .fn-count { font-size: 0.82rem; color: var(--sl-color-gray-2); }
-  .fn-sort-sel {
-    padding: 0.28rem 0.55rem; border: 1px solid var(--sl-color-gray-4);
-    border-radius: 0.35rem; background: var(--sl-color-bg);
-    color: var(--sl-color-text); font-size: 0.8rem; font-family: inherit; cursor: pointer;
-  }
 
   .fn-table-wrap { overflow-x: auto; }
   .fn-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
@@ -465,10 +439,6 @@
   .fn-act:hover { opacity: 0.7; }
 
   @media (max-width: 680px) {
-    .fn-layout { flex-direction: column; }
-    .fn-sidebar { width: 100%; position: static; flex-direction: row; flex-wrap: wrap; gap: 0.75rem; }
-    .fn-sidebar__chips { flex-direction: row; flex-wrap: wrap; }
-    .fn-fchip { border-radius: 9999px; }
     .fn-form__fields { grid-template-columns: 1fr; }
   }
 </style>
