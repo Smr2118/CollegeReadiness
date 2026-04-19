@@ -20,11 +20,9 @@
         <label class="ri-label" for="ri-category">Category</label>
         <select id="ri-category" class="ri-select">
           <option value="">— Pick a category —</option>
-          <option>Mechanism Design</option>
-          <option>Programming</option>
-          <option>Strategy</option>
-          <option>Outreach</option>
-          <option>Team</option>
+          <option>Fun</option>
+          <option>Charity</option>
+          <option>Benefit Community</option>
           <option>Other</option>
         </select>
       </div>
@@ -81,12 +79,10 @@
 
   /* ── Category colour map ── */
   const CAT_COLOR: Record<string, string> = {
-    'Mechanism Design': '#f59e0b',
-    'Programming':      '#3b82f6',
-    'Strategy':         '#ef4444',
-    'Outreach':         '#22c55e',
-    'Team':             '#8b5cf6',
-    'Other':            '#94a3b8',
+    'Fun':               '#f59e0b',
+    'Charity':           '#ec4899',
+    'Benefit Community': '#22c55e',
+    'Other':             '#94a3b8',
   };
 
   function catColor(cat: string | null) {
