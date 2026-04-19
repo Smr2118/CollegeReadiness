@@ -20,7 +20,7 @@ export default defineConfig({
 				{
 					label: 'Programs & Activities',
 					items: [
-						{ label: '☀️ Summer Programs', link: '/programs/' },
+						{ label: '☀️ College Summer Programs', link: '/programs/' },
 						{ label: '💼 Internships', link: '/internships/' },
 						{ label: '🏆 Extra Curriculars', link: '/extracurriculars/' },
 						{ label: '🇮🇳 India Activities', link: '/india-activities/' },
