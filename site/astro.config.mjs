@@ -38,7 +38,7 @@ export default defineConfig({
 				{
 					label: 'Brainstorm',
 					items: [
-						{ label: '✍️ Essay Fodder', link: '/essay-topics/' },
+						{ label: '✍️ Essay Ideas', link: '/essay-topics/' },
 						{ label: '💡 Ideas Board', link: '/ideas/' },
 					],
 				},

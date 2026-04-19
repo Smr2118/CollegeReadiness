@@ -20,16 +20,9 @@
         <label class="et-label" for="et-category">Theme</label>
         <select id="et-category" class="et-select">
           <option value="">— Pick a theme —</option>
-          <option>Identity &amp; Background</option>
-          <option>Leadership &amp; Impact</option>
-          <option>Challenges &amp; Resilience</option>
-          <option>Community &amp; Relationships</option>
-          <option>Academic Passion</option>
-          <option>Extracurricular</option>
-          <option>Values &amp; Beliefs</option>
-          <option>Creative &amp; Artistic</option>
-          <option>Goals &amp; Future</option>
-          <option>Humor &amp; Personality</option>
+          <option>STEM</option>
+          <option>Political</option>
+          <option>Family</option>
           <option>Other</option>
         </select>
       </div>
@@ -86,17 +79,10 @@
 
   /* ── Category colour map ── */
   const CAT_COLOR: Record<string, string> = {
-    'Identity & Background':      '#8b5cf6',
-    'Leadership & Impact':        '#f59e0b',
-    'Challenges & Resilience':    '#ef4444',
-    'Community & Relationships':  '#22c55e',
-    'Academic Passion':           '#3b82f6',
-    'Extracurricular':            '#06b6d4',
-    'Values & Beliefs':           '#ec4899',
-    'Creative & Artistic':        '#f97316',
-    'Goals & Future':             '#6366f1',
-    'Humor & Personality':        '#84cc16',
-    'Other':                      '#94a3b8',
+    'STEM':      '#3b82f6',
+    'Political': '#ef4444',
+    'Family':    '#22c55e',
+    'Other':     '#94a3b8',
   };
 
   function catColor(cat: string | null) {
