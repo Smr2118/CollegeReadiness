@@ -21,6 +21,7 @@
         <option value="">Everyone</option>
       </select>
       <button class="todo-add-btn" type="submit">Add</button>
+      <button class="todo-export-btn" type="button" id="todo-export">⬇ Export</button>
     </div>
     <p id="todo-error" class="todo-form-error" style="display:none"></p>
   </form>
@@ -51,6 +52,7 @@
   let myUserId = '';
   let myFamilyId = '';
   let members: Member[] = [];
+  let cachedTodos: Todo[] = [];
 
   /* ── Init ── */
   async function init() {
@@ -119,6 +121,7 @@
     const wrap = document.getElementById('todo-list')!;
 
     if (error) { wrap.textContent = `Error: ${error.message}`; return; }
+    cachedTodos = data ?? [];
     if (!data?.length) { wrap.innerHTML = '<p class="todo-empty">No tasks yet. Add one above!</p>'; return; }
 
     // Group by assigned_to
@@ -236,6 +239,26 @@
   function escHtml(str: string) {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
+
+  /* ── Export CSV ── */
+  document.getElementById('todo-export')!.addEventListener('click', () => {
+    if (!cachedTodos.length) return;
+    const cell = (v: any) => `"${(v ?? '').toString().replace(/"/g,'""')}"`;
+    const lines = [
+      ['Task','Assigned To','Status','Created'].map(cell).join(','),
+      ...cachedTodos.map(t => [
+        t.title,
+        t.assigned_to ? memberName(t.assigned_to) : 'Everyone',
+        t.done ? 'Done' : 'Open',
+        new Date(t.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+      ].map(cell).join(','))
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'todos.csv'; a.click();
+    URL.revokeObjectURL(url);
+  });
 
   init();
 </script>

@@ -9,6 +9,7 @@
     <button id="cal-prev" class="cal-nav-btn" aria-label="Previous month">‹</button>
     <span id="cal-title" class="cal-title"></span>
     <button id="cal-next" class="cal-nav-btn" aria-label="Next month">›</button>
+    <button id="cal-export" class="cal-export-btn">⬇ Export CSV</button>
   </div>
 
   <!-- Day-of-week labels -->
@@ -237,6 +238,28 @@
 
   document.getElementById('cal-detail-close')!.addEventListener('click', () => {
     document.getElementById('cal-detail')!.style.display = 'none';
+  });
+
+  // ── Export CSV ───────────────────────────────────────────────────────────
+  document.getElementById('cal-export')!.addEventListener('click', () => {
+    if (!entries.length) return;
+    const cell = (v: any) => `"${(v ?? '').toString().replace(/"/g,'""')}"`;
+    const tierLabel: Record<number,string> = { 1:'T1 – Elite', 2:'T2 – Highly Selective', 3:'T3 – Moderate', 4:'T4 – Accessible' };
+    const sorted = [...entries].sort((a,b) => a.dateISO.localeCompare(b.dateISO));
+    const lines = [
+      ['Program','Org','Deadline','Tier','Status','URL'].map(cell).join(','),
+      ...sorted.map(e => [
+        e.name, e.org,
+        new Date(e.dateISO + 'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+        tierLabel[e.tier] ?? `T${e.tier}`,
+        e.status, e.url,
+      ].map(cell).join(','))
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'deadlines.csv'; a.click();
+    URL.revokeObjectURL(url);
   });
 
   init();
