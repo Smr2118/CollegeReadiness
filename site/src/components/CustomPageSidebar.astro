@@ -3,7 +3,12 @@ import MobileTableOfContents from 'virtual:starlight/components/MobileTableOfCon
 import TableOfContents from 'virtual:starlight/components/TableOfContents';
 import programData from '../data/programs.json';
 
-const isProgramsPage = Astro.url.pathname.includes('/programs');
+const isProgramsPage  = Astro.url.pathname.includes('/programs');
+const isEssayPage     = Astro.url.pathname.includes('/essay-topics');
+const isRoboticsPage  = Astro.url.pathname.includes('/robotics-ideas');
+const isIdeasPage     = Astro.url.pathname.includes('/ideas');
+const isNotesPage     = Astro.url.pathname.includes('/notes');
+const isBrainstormPage = isEssayPage || isRoboticsPage || isIdeasPage || isNotesPage;
 const { toc } = Astro.locals.starlightRoute;
 const { meta } = programData as any;
 ---
@@ -39,10 +44,12 @@ const { meta } = programData as any;
       // Move to <body> so it stays visible when .right-sidebar is display:none
       document.body.appendChild(tocBtn);
 
-      const isProgramsPage = window.location.pathname.includes('/programs');
+      const p = window.location.pathname;
+      const isFilterPage = p.includes('/programs') || p.includes('/essay-topics') ||
+        p.includes('/robotics-ideas') || p.includes('/ideas') || p.includes('/notes');
 
-      if (isProgramsPage) {
-        // Programs page: use separate key/class so TOC collapse on other pages
+      if (isFilterPage) {
+        // Filter pages: use separate key/class so TOC collapse on other pages
         // never hides the filter panel.
         const FILTER_KEY = 'filter-collapsed';
         if (localStorage.getItem(FILTER_KEY) === 'true') {
@@ -162,6 +169,196 @@ const { meta } = programData as any;
       </div>
     </div>
   </div>
+) : isEssayPage ? (
+  <div class="right-sidebar-panel sl-hidden lg:sl-block">
+    <div class="sl-container">
+      <div class="filter-panel">
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Sort By</span>
+          <select id="bs-sort" class="sort-select">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="az">A → Z</option>
+            <option value="za">Z → A</option>
+            <option value="status">By status</option>
+          </select>
+        </div>
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Status</span>
+          <div class="filter-panel__chips">
+            <button class="filter-chip active" data-filter="status" data-value="all">All</button>
+            <button class="filter-chip" data-filter="status" data-value="Open">Open</button>
+            <button class="filter-chip" data-filter="status" data-value="Interested">Interested</button>
+            <button class="filter-chip" data-filter="status" data-value="Cancelled">Cancelled</button>
+            <button class="filter-chip" data-filter="status" data-value="Complete">Complete</button>
+          </div>
+        </div>
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Theme</span>
+          <div class="filter-panel__chips">
+            <button class="filter-chip active" data-filter="cat" data-value="all">All</button>
+            <button class="filter-chip" data-filter="cat" data-value="STEM">STEM</button>
+            <button class="filter-chip" data-filter="cat" data-value="Political">Political</button>
+            <button class="filter-chip" data-filter="cat" data-value="Family">Family</button>
+            <button class="filter-chip" data-filter="cat" data-value="Other">Other</button>
+          </div>
+        </div>
+        <div class="filter-panel__section">
+          <label class="bs-starred-label">
+            <input type="checkbox" id="bs-starred" /> ⭐ Starred only
+          </label>
+        </div>
+        <div class="filter-panel__section">
+          <button id="et-export" class="export-btn">⬇ Export CSV</button>
+        </div>
+      </div>
+    </div>
+  </div>
+) : isRoboticsPage ? (
+  <div class="right-sidebar-panel sl-hidden lg:sl-block">
+    <div class="sl-container">
+      <div class="filter-panel">
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Sort By</span>
+          <select id="bs-sort" class="sort-select">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="az">A → Z</option>
+            <option value="za">Z → A</option>
+            <option value="status">By status</option>
+          </select>
+        </div>
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Status</span>
+          <div class="filter-panel__chips">
+            <button class="filter-chip active" data-filter="status" data-value="all">All</button>
+            <button class="filter-chip" data-filter="status" data-value="Open">Open</button>
+            <button class="filter-chip" data-filter="status" data-value="Interested">Interested</button>
+            <button class="filter-chip" data-filter="status" data-value="Cancelled">Cancelled</button>
+            <button class="filter-chip" data-filter="status" data-value="Complete">Complete</button>
+          </div>
+        </div>
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Category</span>
+          <div class="filter-panel__chips">
+            <button class="filter-chip active" data-filter="cat" data-value="all">All</button>
+            <button class="filter-chip" data-filter="cat" data-value="Fun">Fun</button>
+            <button class="filter-chip" data-filter="cat" data-value="Charity">Charity</button>
+            <button class="filter-chip" data-filter="cat" data-value="Benefit Community">Benefit Community</button>
+            <button class="filter-chip" data-filter="cat" data-value="Other">Other</button>
+          </div>
+        </div>
+        <div class="filter-panel__section">
+          <label class="bs-starred-label">
+            <input type="checkbox" id="bs-starred" /> ⭐ Starred only
+          </label>
+        </div>
+        <div class="filter-panel__section">
+          <button id="ri-export" class="export-btn">⬇ Export CSV</button>
+        </div>
+      </div>
+    </div>
+  </div>
+) : isIdeasPage ? (
+  <div class="right-sidebar-panel sl-hidden lg:sl-block">
+    <div class="sl-container">
+      <div class="filter-panel">
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Sort By</span>
+          <select id="bs-sort" class="sort-select">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="az">A → Z</option>
+            <option value="za">Z → A</option>
+            <option value="priority">By priority</option>
+            <option value="status">By status</option>
+          </select>
+        </div>
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Status</span>
+          <div class="filter-panel__chips">
+            <button class="filter-chip active" data-filter="status" data-value="all">All</button>
+            <button class="filter-chip" data-filter="status" data-value="Open">Open</button>
+            <button class="filter-chip" data-filter="status" data-value="Interested">Interested</button>
+            <button class="filter-chip" data-filter="status" data-value="Cancelled">Cancelled</button>
+            <button class="filter-chip" data-filter="status" data-value="Complete">Complete</button>
+          </div>
+        </div>
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Priority</span>
+          <div class="filter-panel__chips">
+            <button class="filter-chip active" data-filter="priority" data-value="all">All</button>
+            <button class="filter-chip" data-filter="priority" data-value="high">🔴 High</button>
+            <button class="filter-chip" data-filter="priority" data-value="medium">🟡 Medium</button>
+            <button class="filter-chip" data-filter="priority" data-value="low">🟢 Low</button>
+          </div>
+        </div>
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Tag</span>
+          <div class="filter-panel__chips">
+            <button class="filter-chip active" data-filter="tag" data-value="all">All</button>
+            <button class="filter-chip" data-filter="tag" data-value="Summer">Summer</button>
+            <button class="filter-chip" data-filter="tag" data-value="Internship">Internship</button>
+            <button class="filter-chip" data-filter="tag" data-value="EC">EC</button>
+            <button class="filter-chip" data-filter="tag" data-value="Essay">Essay</button>
+            <button class="filter-chip" data-filter="tag" data-value="India">India</button>
+            <button class="filter-chip" data-filter="tag" data-value="Research">Research</button>
+            <button class="filter-chip" data-filter="tag" data-value="Misc">Misc</button>
+          </div>
+        </div>
+        <div class="filter-panel__section">
+          <label class="bs-starred-label">
+            <input type="checkbox" id="bs-starred" /> ⭐ Starred only
+          </label>
+        </div>
+        <div class="filter-panel__section">
+          <button id="ib-export" class="export-btn">⬇ Export CSV</button>
+          <button id="ib-add-btn" class="export-btn" style="margin-top:0.4rem">+ Add Idea</button>
+        </div>
+      </div>
+    </div>
+  </div>
+) : isNotesPage ? (
+  <div class="right-sidebar-panel sl-hidden lg:sl-block">
+    <div class="sl-container">
+      <div class="filter-panel">
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Sort By</span>
+          <select id="bs-sort" class="sort-select">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="az">A → Z</option>
+            <option value="status">By status</option>
+          </select>
+        </div>
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Status</span>
+          <div class="filter-panel__chips">
+            <button class="filter-chip active" data-filter="status" data-value="all">All</button>
+            <button class="filter-chip" data-filter="status" data-value="Open">Open</button>
+            <button class="filter-chip" data-filter="status" data-value="Interested">Interested</button>
+            <button class="filter-chip" data-filter="status" data-value="Cancelled">Cancelled</button>
+            <button class="filter-chip" data-filter="status" data-value="Complete">Complete</button>
+          </div>
+        </div>
+        <div class="filter-panel__section">
+          <span class="filter-panel__label">Program</span>
+          <div class="filter-panel__chips" id="fn-prog-filters">
+            <button class="filter-chip active" data-filter="prog" data-value="all">All</button>
+            <button class="filter-chip" data-filter="prog" data-value="__general__">General</button>
+          </div>
+        </div>
+        <div class="filter-panel__section">
+          <label class="bs-starred-label">
+            <input type="checkbox" id="bs-starred" /> ⭐ Starred only
+          </label>
+        </div>
+        <div class="filter-panel__section">
+          <button id="fn-export" class="export-btn">⬇ Export CSV</button>
+        </div>
+      </div>
+    </div>
+  </div>
 ) : (
   toc && (
     <>
@@ -177,6 +374,7 @@ const { meta } = programData as any;
   )
 )}
 
+
 <style>
   .right-sidebar-panel {
     padding: 1rem var(--sl-sidebar-pad-x);
@@ -185,5 +383,9 @@ const { meta } = programData as any;
     /* Use the Starlight default (18.75rem) directly so this doesn't shrink
        when --sl-sidebar-width is zeroed out for the left sidebar collapse. */
     width: calc(18.75rem - 2 * var(--sl-sidebar-pad-x));
+  }
+  .bs-starred-label {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.82rem; cursor: pointer; color: var(--sl-color-gray-2);
   }
 </style>

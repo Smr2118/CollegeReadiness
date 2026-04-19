@@ -61,79 +61,27 @@
     </div>
   </div>
 
-  <!-- Layout: filter sidebar + table -->
-  <div class="ib-layout">
-
-    <!-- Left filter sidebar -->
-    <aside class="ib-sidebar">
-      <div class="ib-sidebar__section">
-        <div class="ib-sidebar__label">Status</div>
-        <div class="ib-sidebar__chips">
-          <button class="ib-fchip ib-fchip--active" data-filter="status" data-value="all">All</button>
-          <button class="ib-fchip" data-filter="status" data-value="Open">Open</button>
-          <button class="ib-fchip" data-filter="status" data-value="Interested">Interested</button>
-          <button class="ib-fchip" data-filter="status" data-value="Cancelled">Cancelled</button>
-          <button class="ib-fchip" data-filter="status" data-value="Complete">Complete</button>
-        </div>
-      </div>
-      <div class="ib-sidebar__section">
-        <div class="ib-sidebar__label">Priority</div>
-        <div class="ib-sidebar__chips">
-          <button class="ib-fchip ib-fchip--active" data-filter="priority" data-value="all">All</button>
-          <button class="ib-fchip" data-filter="priority" data-value="high">🔴 High</button>
-          <button class="ib-fchip" data-filter="priority" data-value="medium">🟡 Medium</button>
-          <button class="ib-fchip" data-filter="priority" data-value="low">🟢 Low</button>
-        </div>
-      </div>
-      <div class="ib-sidebar__section">
-        <div class="ib-sidebar__label">Tag</div>
-        <div class="ib-sidebar__chips">
-          <button class="ib-fchip ib-fchip--active" data-filter="tag" data-value="all">All</button>
-          {['Summer','Internship','EC','Essay','India','Research','Misc'].map(t => (
-            <button class="ib-fchip" data-filter="tag" data-value={t}>{t}</button>
-          ))}
-        </div>
-      </div>
-      <div class="ib-sidebar__section">
-        <label class="ib-starred-toggle">
-          <input type="checkbox" id="ib-starred-only" />
-          <span>⭐ Starred only</span>
-        </label>
-      </div>
-    </aside>
-
-    <!-- Table area -->
-    <div class="ib-main">
-      <div class="ib-table-toolbar">
-        <span id="ib-count" class="ib-count"></span>
-        <select id="ib-sort" class="ib-sort-sel">
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-          <option value="az">Title A → Z</option>
-          <option value="za">Title Z → A</option>
-          <option value="priority">By priority</option>
-          <option value="status">By status</option>
-        </select>
-      </div>
-      <div class="ib-table-wrap">
-        <table class="ib-table">
-          <thead>
-            <tr>
-              <th class="ib-th ib-th--star">★</th>
-              <th class="ib-th ib-th--title">Idea</th>
-              <th class="ib-th ib-th--priority">Priority</th>
-              <th class="ib-th ib-th--tags">Tags</th>
-              <th class="ib-th ib-th--status">Status</th>
-              <th class="ib-th ib-th--date">Date</th>
-              <th class="ib-th ib-th--actions"></th>
-            </tr>
-          </thead>
-          <tbody id="ib-tbody">
-            <tr><td colspan="7" class="ib-td-msg">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+  <!-- Table area -->
+  <div class="ib-table-toolbar">
+    <span id="ib-count" class="ib-count"></span>
+  </div>
+  <div class="ib-table-wrap">
+    <table class="ib-table">
+      <thead>
+        <tr>
+          <th class="ib-th ib-th--star">★</th>
+          <th class="ib-th ib-th--title">Idea</th>
+          <th class="ib-th ib-th--priority">Priority</th>
+          <th class="ib-th ib-th--tags">Tags</th>
+          <th class="ib-th ib-th--status">Status</th>
+          <th class="ib-th ib-th--date">Date</th>
+          <th class="ib-th ib-th--actions"></th>
+        </tr>
+      </thead>
+      <tbody id="ib-tbody">
+        <tr><td colspan="7" class="ib-td-msg">Loading…</td></tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
@@ -159,8 +107,6 @@
   const submitBtn    = document.getElementById('ib-submit')      as HTMLButtonElement;
   const errorEl      = document.getElementById('ib-error')       as HTMLElement;
   const modalTitle   = document.getElementById('ib-modal-title')!;
-  const sortSel      = document.getElementById('ib-sort')        as HTMLSelectElement;
-  const starredCb    = document.getElementById('ib-starred-only') as HTMLInputElement;
 
   const PRIORITY_META: Record<string,{dot:string; label:string; color:string}> = {
     high:   { dot:'🔴', label:'High',   color:'#ef4444' },
@@ -249,22 +195,25 @@
     }).join('');
   }
 
-  /* ── Filter sidebar ── */
-  document.querySelector('.ib-sidebar')!.addEventListener('click', e => {
-    const chip = (e.target as Element).closest<HTMLElement>('.ib-fchip');
+  /* ── Filter chips + sort + starred (in right sidebar) ── */
+  document.addEventListener('click', e => {
+    const chip = (e.target as Element).closest<HTMLElement>('.filter-chip[data-filter]');
     if (!chip) return;
     const filter = chip.dataset.filter!;
     const value  = chip.dataset.value!;
     if (filter === 'status')   filterStatus   = value;
     if (filter === 'priority') filterPriority = value;
     if (filter === 'tag')      filterTag      = value;
-    document.querySelectorAll<HTMLElement>(`.ib-fchip[data-filter="${filter}"]`).forEach(c =>
-      c.classList.toggle('ib-fchip--active', c.dataset.value === value));
+    document.querySelectorAll<HTMLElement>(`.filter-chip[data-filter="${filter}"]`).forEach(c =>
+      c.classList.toggle('active', c.dataset.value === value));
     renderTable();
   });
 
-  starredCb.addEventListener('change', () => { filterStarred = starredCb.checked; renderTable(); });
-  sortSel.addEventListener('change',   () => { sortMode = sortSel.value; renderTable(); });
+  document.addEventListener('change', e => {
+    const target = e.target as HTMLElement;
+    if (target.id === 'bs-sort')    { sortMode = (target as HTMLSelectElement).value; renderTable(); }
+    if (target.id === 'bs-starred') { filterStarred = (target as HTMLInputElement).checked; renderTable(); }
+  });
 
   /* ── Table interactions ── */
   tbody.addEventListener('change', async e => {
@@ -436,42 +385,8 @@
   .ib-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .ib-error { font-size: 0.82rem; color: #ef4444; }
 
-  /* ── Layout ── */
-  .ib-layout { display: flex; gap: 1.25rem; align-items: flex-start; }
-
-  /* ── Sidebar ── */
-  .ib-sidebar {
-    width: 160px; flex-shrink: 0; order: 1; position: sticky; top: 4rem;
-    display: flex; flex-direction: column; gap: 1.25rem;
-  }
-  .ib-sidebar__section { display: flex; flex-direction: column; gap: 0.4rem; }
-  .ib-sidebar__label {
-    font-size: 0.67rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.06em; color: var(--sl-color-gray-3);
-    padding-bottom: 0.2rem; border-bottom: 1px solid var(--sl-color-gray-6);
-  }
-  .ib-sidebar__chips { display: flex; flex-direction: column; gap: 0.22rem; }
-  .ib-fchip {
-    padding: 0.25rem 0.6rem; border-radius: 0.3rem; text-align: left;
-    border: 1px solid transparent; background: transparent;
-    color: var(--sl-color-gray-2); font-size: 0.8rem; cursor: pointer; transition: all 0.1s;
-  }
-  .ib-fchip--active { background: var(--sl-color-accent); color: #fff; border-color: var(--sl-color-accent); }
-  .ib-fchip:not(.ib-fchip--active):hover { background: var(--sl-color-gray-6); color: var(--sl-color-text); }
-  .ib-starred-toggle {
-    display: flex; align-items: center; gap: 0.4rem;
-    font-size: 0.82rem; cursor: pointer; color: var(--sl-color-gray-2);
-  }
-
-  /* ── Main ── */
-  .ib-main { flex: 1; min-width: 0; }
-  .ib-table-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; }
+  .ib-table-toolbar { display: flex; align-items: center; margin-bottom: 0.65rem; }
   .ib-count { font-size: 0.82rem; color: var(--sl-color-gray-2); }
-  .ib-sort-sel {
-    padding: 0.28rem 0.55rem; border: 1px solid var(--sl-color-gray-4);
-    border-radius: 0.35rem; background: var(--sl-color-bg);
-    color: var(--sl-color-text); font-size: 0.8rem; font-family: inherit; cursor: pointer;
-  }
 
   /* ── Table ── */
   .ib-table-wrap { overflow-x: auto; }
@@ -574,10 +489,6 @@
   .ib-form__actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; padding-top: 0.25rem; }
 
   @media (max-width: 680px) {
-    .ib-layout { flex-direction: column; }
-    .ib-sidebar { width: 100%; position: static; flex-direction: row; flex-wrap: wrap; gap: 0.75rem; }
-    .ib-sidebar__chips { flex-direction: row; flex-wrap: wrap; }
-    .ib-fchip { border-radius: 9999px; }
     .ib-form__row--split { grid-template-columns: 1fr; }
   }
 </style>

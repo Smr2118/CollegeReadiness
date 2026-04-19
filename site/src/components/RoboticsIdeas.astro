@@ -44,69 +44,26 @@
     </div>
   </form>
 
-  <!-- Layout: filter sidebar + table -->
-  <div class="ri-layout">
-
-    <!-- Left filter sidebar -->
-    <aside class="ri-sidebar">
-      <div class="ri-sidebar__section">
-        <div class="ri-sidebar__label">Status</div>
-        <div class="ri-sidebar__chips">
-          <button class="ri-fchip ri-fchip--active" data-filter="status" data-value="all">All</button>
-          <button class="ri-fchip" data-filter="status" data-value="Open">Open</button>
-          <button class="ri-fchip" data-filter="status" data-value="Interested">Interested</button>
-          <button class="ri-fchip" data-filter="status" data-value="Cancelled">Cancelled</button>
-          <button class="ri-fchip" data-filter="status" data-value="Complete">Complete</button>
-        </div>
-      </div>
-      <div class="ri-sidebar__section">
-        <div class="ri-sidebar__label">Category</div>
-        <div class="ri-sidebar__chips">
-          <button class="ri-fchip ri-fchip--active" data-filter="cat" data-value="all">All</button>
-          <button class="ri-fchip" data-filter="cat" data-value="Fun">Fun</button>
-          <button class="ri-fchip" data-filter="cat" data-value="Charity">Charity</button>
-          <button class="ri-fchip" data-filter="cat" data-value="Benefit Community">Benefit Community</button>
-          <button class="ri-fchip" data-filter="cat" data-value="Other">Other</button>
-        </div>
-      </div>
-      <div class="ri-sidebar__section">
-        <label class="ri-starred-toggle">
-          <input type="checkbox" id="ri-starred-only" />
-          <span>⭐ Starred only</span>
-        </label>
-      </div>
-    </aside>
-
-    <!-- Table area -->
-    <div class="ri-main">
-      <div class="ri-toolbar">
-        <span id="ri-count" class="ri-count"></span>
-        <select id="ri-sort" class="ri-sort-sel">
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-          <option value="az">Title A → Z</option>
-          <option value="za">Title Z → A</option>
-          <option value="status">By status</option>
-        </select>
-      </div>
-      <div class="ri-table-wrap">
-        <table class="ri-table">
-          <thead>
-            <tr>
-              <th class="ri-th ri-th--star">★</th>
-              <th class="ri-th ri-th--title">Idea / Point</th>
-              <th class="ri-th ri-th--cat">Category</th>
-              <th class="ri-th ri-th--status">Status</th>
-              <th class="ri-th ri-th--date">Date</th>
-              <th class="ri-th ri-th--actions"></th>
-            </tr>
-          </thead>
-          <tbody id="ri-tbody">
-            <tr><td colspan="6" class="ri-td-msg">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+  <!-- Table area -->
+  <div class="ri-toolbar">
+    <span id="ri-count" class="ri-count"></span>
+  </div>
+  <div class="ri-table-wrap">
+    <table class="ri-table">
+      <thead>
+        <tr>
+          <th class="ri-th ri-th--star">★</th>
+          <th class="ri-th ri-th--title">Idea / Point</th>
+          <th class="ri-th ri-th--cat">Category</th>
+          <th class="ri-th ri-th--status">Status</th>
+          <th class="ri-th ri-th--date">Date</th>
+          <th class="ri-th ri-th--actions"></th>
+        </tr>
+      </thead>
+      <tbody id="ri-tbody">
+        <tr><td colspan="6" class="ri-td-msg">Loading…</td></tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
@@ -129,10 +86,8 @@
   const submitBtn    = document.getElementById('ri-submit')      as HTMLButtonElement;
   const cancelBtn    = document.getElementById('ri-cancel')      as HTMLButtonElement;
   const errorEl      = document.getElementById('ri-error')       as HTMLElement;
-  const tbody        = document.getElementById('ri-tbody')       as HTMLElement;
-  const countEl      = document.getElementById('ri-count')       as HTMLElement;
-  const sortSel      = document.getElementById('ri-sort')        as HTMLSelectElement;
-  const starredCb    = document.getElementById('ri-starred-only') as HTMLInputElement;
+  const tbody   = document.getElementById('ri-tbody') as HTMLElement;
+  const countEl = document.getElementById('ri-count') as HTMLElement;
 
   const CAT_COLOR: Record<string, string> = {
     'Fun':               '#f59e0b',
@@ -217,20 +172,23 @@
     }).join('');
   }
 
-  document.querySelector('.ri-sidebar')!.addEventListener('click', e => {
-    const chip = (e.target as Element).closest<HTMLElement>('.ri-fchip');
+  document.addEventListener('click', e => {
+    const chip = (e.target as Element).closest<HTMLElement>('.filter-chip[data-filter]');
     if (!chip) return;
     const filter = chip.dataset.filter!;
     const value  = chip.dataset.value!;
     if (filter === 'status') filterStatus = value;
     if (filter === 'cat')    filterCat    = value;
-    document.querySelectorAll<HTMLElement>(`.ri-fchip[data-filter="${filter}"]`).forEach(c =>
-      c.classList.toggle('ri-fchip--active', c.dataset.value === value));
+    document.querySelectorAll<HTMLElement>(`.filter-chip[data-filter="${filter}"]`).forEach(c =>
+      c.classList.toggle('active', c.dataset.value === value));
     renderTable();
   });
 
-  starredCb.addEventListener('change', () => { filterStarred = starredCb.checked; renderTable(); });
-  sortSel.addEventListener('change',   () => { sortMode = sortSel.value; renderTable(); });
+  document.addEventListener('change', e => {
+    const target = e.target as HTMLElement;
+    if (target.id === 'bs-sort')    { sortMode = (target as HTMLSelectElement).value; renderTable(); }
+    if (target.id === 'bs-starred') { filterStarred = (target as HTMLInputElement).checked; renderTable(); }
+  });
 
   tbody.addEventListener('change', async e => {
     const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('.ri-status-sel');
@@ -406,39 +364,8 @@
   .ri-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .ri-error { font-size: 0.82rem; color: #ef4444; }
 
-  .ri-layout { display: flex; gap: 1.25rem; align-items: flex-start; }
-
-  .ri-sidebar {
-    width: 160px; flex-shrink: 0; order: 1; position: sticky; top: 4rem;
-    display: flex; flex-direction: column; gap: 1.25rem;
-  }
-  .ri-sidebar__section { display: flex; flex-direction: column; gap: 0.4rem; }
-  .ri-sidebar__label {
-    font-size: 0.67rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.06em; color: var(--sl-color-gray-3);
-    padding-bottom: 0.2rem; border-bottom: 1px solid var(--sl-color-gray-6);
-  }
-  .ri-sidebar__chips { display: flex; flex-direction: column; gap: 0.22rem; }
-  .ri-fchip {
-    padding: 0.25rem 0.6rem; border-radius: 0.3rem; text-align: left;
-    border: 1px solid transparent; background: transparent;
-    color: var(--sl-color-gray-2); font-size: 0.8rem; cursor: pointer; transition: all 0.1s;
-  }
-  .ri-fchip--active { background: var(--sl-color-accent); color: #fff; border-color: var(--sl-color-accent); }
-  .ri-fchip:not(.ri-fchip--active):hover { background: var(--sl-color-gray-6); color: var(--sl-color-text); }
-  .ri-starred-toggle {
-    display: flex; align-items: center; gap: 0.4rem;
-    font-size: 0.82rem; cursor: pointer; color: var(--sl-color-gray-2);
-  }
-
-  .ri-main { flex: 1; min-width: 0; }
-  .ri-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; }
+  .ri-toolbar { display: flex; align-items: center; margin-bottom: 0.65rem; }
   .ri-count { font-size: 0.82rem; color: var(--sl-color-gray-2); }
-  .ri-sort-sel {
-    padding: 0.28rem 0.55rem; border: 1px solid var(--sl-color-gray-4);
-    border-radius: 0.35rem; background: var(--sl-color-bg);
-    color: var(--sl-color-text); font-size: 0.8rem; font-family: inherit; cursor: pointer;
-  }
 
   .ri-table-wrap { overflow-x: auto; }
   .ri-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
@@ -499,10 +426,6 @@
   .ri-act:hover { opacity: 0.7; }
 
   @media (max-width: 680px) {
-    .ri-layout { flex-direction: column; }
-    .ri-sidebar { width: 100%; position: static; flex-direction: row; flex-wrap: wrap; gap: 0.75rem; }
-    .ri-sidebar__chips { flex-direction: row; flex-wrap: wrap; }
-    .ri-fchip { border-radius: 9999px; }
     .ri-form__fields { grid-template-columns: 1fr; }
   }
 </style>

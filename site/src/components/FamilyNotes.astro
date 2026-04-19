@@ -34,65 +34,26 @@
     </div>
   </form>
 
-  <!-- Layout: filter sidebar + table -->
-  <div class="fn-layout">
-
-    <!-- Left filter sidebar -->
-    <aside class="fn-sidebar">
-      <div class="fn-sidebar__section">
-        <div class="fn-sidebar__label">Status</div>
-        <div class="fn-sidebar__chips">
-          <button class="fn-fchip fn-fchip--active" data-filter="status" data-value="all">All</button>
-          <button class="fn-fchip" data-filter="status" data-value="Open">Open</button>
-          <button class="fn-fchip" data-filter="status" data-value="Interested">Interested</button>
-          <button class="fn-fchip" data-filter="status" data-value="Cancelled">Cancelled</button>
-          <button class="fn-fchip" data-filter="status" data-value="Complete">Complete</button>
-        </div>
-      </div>
-      <div class="fn-sidebar__section">
-        <div class="fn-sidebar__label">Program</div>
-        <div class="fn-sidebar__chips" id="fn-prog-filters">
-          <button class="fn-fchip fn-fchip--active" data-filter="prog" data-value="all">All</button>
-          <button class="fn-fchip" data-filter="prog" data-value="__general__">General</button>
-        </div>
-      </div>
-      <div class="fn-sidebar__section">
-        <label class="fn-starred-toggle">
-          <input type="checkbox" id="fn-starred-only" />
-          <span>⭐ Starred only</span>
-        </label>
-      </div>
-    </aside>
-
-    <!-- Table area -->
-    <div class="fn-main">
-      <div class="fn-toolbar">
-        <span id="fn-count" class="fn-count"></span>
-        <select id="fn-sort" class="fn-sort-sel">
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-          <option value="az">Note A → Z</option>
-          <option value="status">By status</option>
-        </select>
-      </div>
-      <div class="fn-table-wrap">
-        <table class="fn-table">
-          <thead>
-            <tr>
-              <th class="fn-th fn-th--star">★</th>
-              <th class="fn-th fn-th--note">Note</th>
-              <th class="fn-th fn-th--prog">Program</th>
-              <th class="fn-th fn-th--status">Status</th>
-              <th class="fn-th fn-th--date">Date</th>
-              <th class="fn-th fn-th--actions"></th>
-            </tr>
-          </thead>
-          <tbody id="fn-tbody">
-            <tr><td colspan="6" class="fn-td-msg">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+  <!-- Table area -->
+  <div class="fn-toolbar">
+    <span id="fn-count" class="fn-count"></span>
+  </div>
+  <div class="fn-table-wrap">
+    <table class="fn-table">
+      <thead>
+        <tr>
+          <th class="fn-th fn-th--star">★</th>
+          <th class="fn-th fn-th--note">Note</th>
+          <th class="fn-th fn-th--prog">Program</th>
+          <th class="fn-th fn-th--status">Status</th>
+          <th class="fn-th fn-th--date">Date</th>
+          <th class="fn-th fn-th--actions"></th>
+        </tr>
+      </thead>
+      <tbody id="fn-tbody">
+        <tr><td colspan="6" class="fn-td-msg">Loading…</td></tr>
+      </tbody>
+    </table>
   </div>
 </div>
 

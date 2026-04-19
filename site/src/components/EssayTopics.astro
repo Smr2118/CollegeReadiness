@@ -44,69 +44,26 @@
     </div>
   </form>
 
-  <!-- Layout: filter sidebar + table -->
-  <div class="et-layout">
-
-    <!-- Left filter sidebar -->
-    <aside class="et-sidebar">
-      <div class="et-sidebar__section">
-        <div class="et-sidebar__label">Status</div>
-        <div class="et-sidebar__chips">
-          <button class="et-fchip et-fchip--active" data-filter="status" data-value="all">All</button>
-          <button class="et-fchip" data-filter="status" data-value="Open">Open</button>
-          <button class="et-fchip" data-filter="status" data-value="Interested">Interested</button>
-          <button class="et-fchip" data-filter="status" data-value="Cancelled">Cancelled</button>
-          <button class="et-fchip" data-filter="status" data-value="Complete">Complete</button>
-        </div>
-      </div>
-      <div class="et-sidebar__section">
-        <div class="et-sidebar__label">Theme</div>
-        <div class="et-sidebar__chips">
-          <button class="et-fchip et-fchip--active" data-filter="cat" data-value="all">All</button>
-          <button class="et-fchip" data-filter="cat" data-value="STEM">STEM</button>
-          <button class="et-fchip" data-filter="cat" data-value="Political">Political</button>
-          <button class="et-fchip" data-filter="cat" data-value="Family">Family</button>
-          <button class="et-fchip" data-filter="cat" data-value="Other">Other</button>
-        </div>
-      </div>
-      <div class="et-sidebar__section">
-        <label class="et-starred-toggle">
-          <input type="checkbox" id="et-starred-only" />
-          <span>⭐ Starred only</span>
-        </label>
-      </div>
-    </aside>
-
-    <!-- Table area -->
-    <div class="et-main">
-      <div class="et-toolbar">
-        <span id="et-count" class="et-count"></span>
-        <select id="et-sort" class="et-sort-sel">
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-          <option value="az">Title A → Z</option>
-          <option value="za">Title Z → A</option>
-          <option value="status">By status</option>
-        </select>
-      </div>
-      <div class="et-table-wrap">
-        <table class="et-table">
-          <thead>
-            <tr>
-              <th class="et-th et-th--star">★</th>
-              <th class="et-th et-th--title">Point / Story</th>
-              <th class="et-th et-th--cat">Theme</th>
-              <th class="et-th et-th--status">Status</th>
-              <th class="et-th et-th--date">Date</th>
-              <th class="et-th et-th--actions"></th>
-            </tr>
-          </thead>
-          <tbody id="et-tbody">
-            <tr><td colspan="6" class="et-td-msg">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+  <!-- Table area -->
+  <div class="et-toolbar">
+    <span id="et-count" class="et-count"></span>
+  </div>
+  <div class="et-table-wrap">
+    <table class="et-table">
+      <thead>
+        <tr>
+          <th class="et-th et-th--star">★</th>
+          <th class="et-th et-th--title">Point / Story</th>
+          <th class="et-th et-th--cat">Theme</th>
+          <th class="et-th et-th--status">Status</th>
+          <th class="et-th et-th--date">Date</th>
+          <th class="et-th et-th--actions"></th>
+        </tr>
+      </thead>
+      <tbody id="et-tbody">
+        <tr><td colspan="6" class="et-td-msg">Loading…</td></tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
@@ -129,10 +86,8 @@
   const submitBtn  = document.getElementById('et-submit')      as HTMLButtonElement;
   const cancelBtn  = document.getElementById('et-cancel')      as HTMLButtonElement;
   const errorEl    = document.getElementById('et-error')       as HTMLElement;
-  const tbody      = document.getElementById('et-tbody')       as HTMLElement;
-  const countEl    = document.getElementById('et-count')       as HTMLElement;
-  const sortSel    = document.getElementById('et-sort')        as HTMLSelectElement;
-  const starredCb  = document.getElementById('et-starred-only') as HTMLInputElement;
+  const tbody      = document.getElementById('et-tbody') as HTMLElement;
+  const countEl    = document.getElementById('et-count') as HTMLElement;
 
   const CAT_COLOR: Record<string, string> = {
     'STEM':      '#3b82f6',
@@ -219,21 +174,24 @@
     }).join('');
   }
 
-  /* ── Filter chips ── */
-  document.querySelector('.et-sidebar')!.addEventListener('click', e => {
-    const chip = (e.target as Element).closest<HTMLElement>('.et-fchip');
+  /* ── Filter chips + sort + starred (in right sidebar) ── */
+  document.addEventListener('click', e => {
+    const chip = (e.target as Element).closest<HTMLElement>('.filter-chip[data-filter]');
     if (!chip) return;
     const filter = chip.dataset.filter!;
     const value  = chip.dataset.value!;
     if (filter === 'status') filterStatus = value;
     if (filter === 'cat')    filterCat    = value;
-    document.querySelectorAll<HTMLElement>(`.et-fchip[data-filter="${filter}"]`).forEach(c =>
-      c.classList.toggle('et-fchip--active', c.dataset.value === value));
+    document.querySelectorAll<HTMLElement>(`.filter-chip[data-filter="${filter}"]`).forEach(c =>
+      c.classList.toggle('active', c.dataset.value === value));
     renderTable();
   });
 
-  starredCb.addEventListener('change', () => { filterStarred = starredCb.checked; renderTable(); });
-  sortSel.addEventListener('change',   () => { sortMode = sortSel.value; renderTable(); });
+  document.addEventListener('change', e => {
+    const target = e.target as HTMLElement;
+    if (target.id === 'bs-sort')    { sortMode = (target as HTMLSelectElement).value; renderTable(); }
+    if (target.id === 'bs-starred') { filterStarred = (target as HTMLInputElement).checked; renderTable(); }
+  });
 
   /* ── Table interactions ── */
   tbody.addEventListener('change', async e => {
@@ -419,43 +377,9 @@
   .et-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .et-error { font-size: 0.82rem; color: #ef4444; }
 
-  /* ── Layout ── */
-  .et-layout { display: flex; gap: 1.25rem; align-items: flex-start; }
-
-  /* ── Sidebar ── */
-  .et-sidebar {
-    width: 160px; flex-shrink: 0; order: 1;
-    position: sticky; top: 4rem;
-    display: flex; flex-direction: column; gap: 1.25rem;
-  }
-  .et-sidebar__section { display: flex; flex-direction: column; gap: 0.4rem; }
-  .et-sidebar__label {
-    font-size: 0.67rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.06em; color: var(--sl-color-gray-3);
-    padding-bottom: 0.2rem; border-bottom: 1px solid var(--sl-color-gray-6);
-  }
-  .et-sidebar__chips { display: flex; flex-direction: column; gap: 0.22rem; }
-  .et-fchip {
-    padding: 0.25rem 0.6rem; border-radius: 0.3rem; text-align: left;
-    border: 1px solid transparent; background: transparent;
-    color: var(--sl-color-gray-2); font-size: 0.8rem; cursor: pointer; transition: all 0.1s;
-  }
-  .et-fchip--active { background: var(--sl-color-accent); color: #fff; border-color: var(--sl-color-accent); }
-  .et-fchip:not(.et-fchip--active):hover { background: var(--sl-color-gray-6); color: var(--sl-color-text); }
-  .et-starred-toggle {
-    display: flex; align-items: center; gap: 0.4rem;
-    font-size: 0.82rem; cursor: pointer; color: var(--sl-color-gray-2);
-  }
-
-  /* ── Main ── */
-  .et-main { flex: 1; min-width: 0; }
-  .et-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; }
+  /* ── Toolbar ── */
+  .et-toolbar { display: flex; align-items: center; margin-bottom: 0.65rem; }
   .et-count { font-size: 0.82rem; color: var(--sl-color-gray-2); }
-  .et-sort-sel {
-    padding: 0.28rem 0.55rem; border: 1px solid var(--sl-color-gray-4);
-    border-radius: 0.35rem; background: var(--sl-color-bg);
-    color: var(--sl-color-text); font-size: 0.8rem; font-family: inherit; cursor: pointer;
-  }
 
   /* ── Table ── */
   .et-table-wrap { overflow-x: auto; }
@@ -527,13 +451,6 @@
   .et-act:hover { opacity: 0.7; }
 
   @media (max-width: 680px) {
-    .et-layout { flex-direction: column; }
-    .et-sidebar {
-      width: 100%; position: static;
-      flex-direction: row; flex-wrap: wrap; gap: 0.75rem;
-    }
-    .et-sidebar__chips { flex-direction: row; flex-wrap: wrap; }
-    .et-fchip { border-radius: 9999px; }
     .et-form__fields { grid-template-columns: 1fr; }
   }
 </style>
