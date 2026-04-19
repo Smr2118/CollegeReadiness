@@ -32,7 +32,7 @@ export default defineConfig({
 						{ label: '📅 Deadline Calendar', link: '/calendar/' },
 						{ label: '✅ Family To-Do', link: '/todos/' },
 						{ label: '📓 Notes', link: '/notes/' },
-						{ label: '✍️ Essay Prep', link: '/essay-topics/' },
+						{ label: '✍️ Essay Fodder', link: '/essay-topics/' },
 						{ label: '💡 Ideas Board', link: '/ideas/' },
 						{ label: '🔗 Reference Links', link: '/references/' },
 					],
