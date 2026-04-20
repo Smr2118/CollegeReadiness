@@ -1,0 +1,175 @@
+---
+---
+
+<div id="rsl-wrap">
+  <p class="rsl-hint">Items pinned 📌 in <strong>Robotics Ideas</strong> appear here.</p>
+  <div class="rsl-toolbar">
+    <span id="rsl-count" class="rsl-count"></span>
+  </div>
+  <div class="rsl-table-wrap">
+    <table class="rsl-table">
+      <thead>
+        <tr>
+          <th class="rsl-th rsl-th--title">Idea / Point</th>
+          <th class="rsl-th rsl-th--cat">Category</th>
+          <th class="rsl-th rsl-th--status">Status</th>
+          <th class="rsl-th rsl-th--date">Date</th>
+          <th class="rsl-th rsl-th--actions"></th>
+        </tr>
+      </thead>
+      <tbody id="rsl-tbody">
+        <tr><td colspan="5" class="rsl-td-msg">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  let familyId = '';
+  let items: any[] = [];
+
+  const tbody   = document.getElementById('rsl-tbody')! as HTMLElement;
+  const countEl = document.getElementById('rsl-count')! as HTMLElement;
+
+  const CAT_COLOR: Record<string, string> = {
+    'Fun': '#f59e0b', 'Charity': '#ec4899', 'Benefit Community': '#22c55e', 'Other': '#94a3b8',
+  };
+  const STATUS_COLOR: Record<string, string> = {
+    'Open': '#3b82f6', 'Interested': '#f59e0b', 'Cancelled': '#94a3b8', 'Complete': '#22c55e',
+  };
+
+  function esc(s: string | null | undefined) {
+    return (s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function formatDate(iso: string) {
+    return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  }
+
+  function render() {
+    countEl.textContent = `${items.length} item${items.length !== 1 ? 's' : ''}`;
+    if (items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="rsl-td-msg">No items shortlisted yet — pin 📌 items in Robotics Ideas to add them here.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(i => {
+      const catColor = CAT_COLOR[i.category] ?? '#94a3b8';
+      const sc = STATUS_COLOR[i.status ?? 'Open'] ?? '#3b82f6';
+      return `
+        <tr class="rsl-row${i.status === 'Cancelled' ? ' rsl-row--cancelled' : ''}${i.status === 'Complete' ? ' rsl-row--complete' : ''}">
+          <td class="rsl-td rsl-td--title">
+            <span class="rsl-title">${esc(i.title)}</span>
+            ${i.details ? `<span class="rsl-sub">${esc(i.details)}</span>` : ''}
+          </td>
+          <td class="rsl-td rsl-td--cat">
+            ${i.category
+              ? `<span class="rsl-badge" style="background:${catColor}20;color:${catColor};border-color:${catColor}40">${esc(i.category)}</span>`
+              : '<span class="rsl-none">—</span>'}
+          </td>
+          <td class="rsl-td rsl-td--status">
+            <span style="color:${sc};font-weight:600;font-size:0.8rem">${esc(i.status ?? 'Open')}</span>
+          </td>
+          <td class="rsl-td rsl-td--date">${formatDate(i.created_at)}</td>
+          <td class="rsl-td rsl-td--actions">
+            <button class="rsl-remove" data-id="${i.id}">📌 Remove</button>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  tbody.addEventListener('click', async e => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('.rsl-remove');
+    if (!btn) return;
+    const id = Number(btn.dataset.id);
+    await supabase.from('robotics_ideas').update({ shortlisted: false }).eq('id', id).eq('family_id', familyId);
+    items = items.filter(i => i.id !== id);
+    render();
+  });
+
+  async function load() {
+    const { data, error } = await supabase.from('robotics_ideas')
+      .select('*').eq('family_id', familyId).eq('shortlisted', true)
+      .order('created_at', { ascending: false });
+    if (error) {
+      tbody.innerHTML = '<tr><td colspan="5" class="rsl-td-msg" style="color:var(--sl-color-red)">Failed to load.</td></tr>';
+      return;
+    }
+    items = data ?? [];
+    render();
+  }
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      document.addEventListener('data-loaded', async () => {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (s) {
+          const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', s.user.id).single();
+          familyId = p?.family_id ?? '';
+          await load();
+        }
+      }, { once: true });
+      return;
+    }
+    const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', session.user.id).single();
+    familyId = p?.family_id ?? '';
+    await load();
+  }
+
+  init();
+</script>
+
+<style>
+  #rsl-wrap { max-width: 100%; }
+
+  .rsl-hint {
+    font-size: 0.85rem; color: var(--sl-color-gray-2);
+    margin-bottom: 1rem; padding: 0.65rem 0.9rem;
+    background: var(--sl-color-bg-nav); border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.4rem;
+  }
+  .rsl-toolbar { margin-bottom: 0.65rem; }
+  .rsl-count { font-size: 0.82rem; color: var(--sl-color-gray-2); }
+
+  .rsl-table-wrap { overflow-x: auto; }
+  .rsl-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .rsl-th {
+    padding: 0.45rem 0.75rem; text-align: left; font-size: 0.68rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--sl-color-gray-2);
+    border-bottom: 2px solid var(--sl-color-gray-5); white-space: nowrap;
+  }
+  .rsl-th--cat     { width: 130px; }
+  .rsl-th--status  { width: 100px; }
+  .rsl-th--date    { width: 88px; }
+  .rsl-th--actions { width: 110px; }
+
+  .rsl-td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--sl-color-gray-6); vertical-align: middle; }
+  .rsl-td--title { vertical-align: top; padding-top: 0.65rem; }
+  .rsl-td--date  { white-space: nowrap; color: var(--sl-color-gray-3); font-size: 0.8rem; }
+  .rsl-td-msg    { padding: 2rem; text-align: center; color: var(--sl-color-gray-2); }
+
+  .rsl-row:hover { background: var(--sl-color-gray-7, rgba(0,0,0,0.02)); }
+  .rsl-row--cancelled .rsl-title { opacity: 0.5; text-decoration: line-through; }
+  .rsl-row--complete  .rsl-title { opacity: 0.7; }
+
+  .rsl-title { display: block; font-weight: 600; color: var(--sl-color-text); line-height: 1.4; }
+  .rsl-sub {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; font-size: 0.78rem; color: var(--sl-color-gray-2);
+    margin-top: 0.1rem; line-height: 1.4;
+  }
+  .rsl-none { color: var(--sl-color-gray-4); }
+
+  .rsl-badge {
+    font-size: 0.71rem; font-weight: 600; padding: 0.15rem 0.5rem;
+    border-radius: 9999px; border: 1px solid transparent; white-space: nowrap;
+  }
+
+  .rsl-remove {
+    font-size: 0.72rem; background: none; border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.25rem; padding: 0.15rem 0.55rem;
+    cursor: pointer; color: var(--sl-color-gray-2); font-family: inherit;
+  }
+  .rsl-remove:hover { border-color: #ef4444; color: #ef4444; }
+</style>

@@ -53,6 +53,7 @@
       <thead>
         <tr>
           <th class="ri-th ri-th--star">★</th>
+          <th class="ri-th ri-th--pin" title="Shortlist">📌</th>
           <th class="ri-th ri-th--title">Idea / Point</th>
           <th class="ri-th ri-th--cat">Category</th>
           <th class="ri-th ri-th--status">Status</th>
@@ -61,7 +62,7 @@
         </tr>
       </thead>
       <tbody id="ri-tbody">
-        <tr><td colspan="6" class="ri-td-msg">Loading…</td></tr>
+        <tr><td colspan="7" class="ri-td-msg">Loading…</td></tr>
       </tbody>
     </table>
   </div>
@@ -134,7 +135,7 @@
     countEl.textContent = `${ideas.length} idea${ideas.length !== 1 ? 's' : ''}`;
 
     if (ideas.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="ri-td-msg">No ideas match. Try adjusting filters.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="ri-td-msg">No ideas match. Try adjusting filters.</td></tr>';
       return;
     }
 
@@ -145,6 +146,9 @@
         <tr class="ri-row${i.status === 'Cancelled' ? ' ri-row--cancelled' : ''}${i.status === 'Complete' ? ' ri-row--complete' : ''}">
           <td class="ri-td ri-td--star">
             <button class="ri-star${i.starred ? ' ri-star--on' : ''}" data-id="${i.id}" data-starred="${!!i.starred}" title="Star">${i.starred ? '★' : '☆'}</button>
+          </td>
+          <td class="ri-td ri-td--pin">
+            <button class="ri-pin${i.shortlisted ? ' ri-pin--on' : ''}" data-id="${i.id}" data-shortlisted="${!!i.shortlisted}" title="Toggle shortlist">📌</button>
           </td>
           <td class="ri-td ri-td--title">
             <span class="ri-row-title">${esc(i.title)}</span>
@@ -212,6 +216,16 @@
       await supabase.from('robotics_ideas').update({ starred }).eq('id', id).eq('family_id', familyId);
       const i = allIdeas.find(i => i.id === id);
       if (i) { i.starred = starred; renderTable(); }
+      return;
+    }
+
+    const pinBtn = target.closest<HTMLElement>('.ri-pin');
+    if (pinBtn) {
+      const id          = Number(pinBtn.dataset.id);
+      const shortlisted = pinBtn.dataset.shortlisted !== 'true';
+      await supabase.from('robotics_ideas').update({ shortlisted }).eq('id', id).eq('family_id', familyId);
+      const i = allIdeas.find(i => i.id === id);
+      if (i) { i.shortlisted = shortlisted; renderTable(); }
       return;
     }
 
@@ -298,7 +312,7 @@
     const { data, error } = await supabase.from('robotics_ideas').select('*')
       .eq('family_id', familyId).order('created_at', { ascending: false });
     if (error) {
-      tbody.innerHTML = '<tr><td colspan="6" class="ri-td-msg" style="color:var(--sl-color-red)">Failed to load.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="ri-td-msg" style="color:var(--sl-color-red)">Failed to load.</td></tr>';
       return;
     }
     allIdeas = data ?? [];
@@ -397,6 +411,16 @@
     margin-top: 0.1rem; line-height: 1.4;
   }
   .ri-none { color: var(--sl-color-gray-4); }
+
+  .ri-th--pin { width: 36px; text-align: center; }
+  .ri-td--pin { text-align: center; }
+  .ri-pin {
+    background: none; border: none; cursor: pointer;
+    font-size: 1rem; padding: 0; line-height: 1;
+    opacity: 0.2; filter: grayscale(1); transition: all 0.15s;
+  }
+  .ri-pin--on { opacity: 1; filter: none; }
+  .ri-pin:hover { opacity: 0.75; filter: none; }
 
   .ri-star {
     background: none; border: none; cursor: pointer;

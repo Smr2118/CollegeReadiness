@@ -70,6 +70,7 @@
       <thead>
         <tr>
           <th class="ib-th ib-th--star">★</th>
+          <th class="ib-th ib-th--pin" title="Shortlist">📌</th>
           <th class="ib-th ib-th--title">Idea</th>
           <th class="ib-th ib-th--priority">Priority</th>
           <th class="ib-th ib-th--tags">Tags</th>
@@ -79,7 +80,7 @@
         </tr>
       </thead>
       <tbody id="ib-tbody">
-        <tr><td colspan="7" class="ib-td-msg">Loading…</td></tr>
+        <tr><td colspan="8" class="ib-td-msg">Loading…</td></tr>
       </tbody>
     </table>
   </div>
@@ -155,7 +156,7 @@
     countEl.textContent = `${ideas.length} idea${ideas.length !== 1 ? 's' : ''}`;
 
     if (ideas.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="ib-td-msg">No ideas match. Try adjusting filters.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="ib-td-msg">No ideas match. Try adjusting filters.</td></tr>';
       return;
     }
 
@@ -167,6 +168,9 @@
         <tr class="ib-row${i.status === 'Cancelled' ? ' ib-row--cancelled' : ''}${i.status === 'Complete' ? ' ib-row--complete' : ''}">
           <td class="ib-td ib-td--star">
             <button class="ib-star${i.starred ? ' ib-star--on' : ''}" data-id="${i.id}" data-starred="${!!i.starred}" title="Star">${i.starred ? '★' : '☆'}</button>
+          </td>
+          <td class="ib-td ib-td--pin">
+            <button class="ib-pin${i.shortlisted ? ' ib-pin--on' : ''}" data-id="${i.id}" data-shortlisted="${!!i.shortlisted}" title="Toggle shortlist">📌</button>
           </td>
           <td class="ib-td ib-td--title">
             <span class="ib-row-title">${esc(i.title)}</span>
@@ -238,6 +242,16 @@
       await supabase.from('ideas').update({ starred }).eq('id', id).eq('family_id', familyId);
       const i = allIdeas.find(i => i.id === id);
       if (i) { i.starred = starred; renderTable(); }
+      return;
+    }
+
+    const pinBtn = target.closest<HTMLElement>('.ib-pin');
+    if (pinBtn) {
+      const id          = Number(pinBtn.dataset.id);
+      const shortlisted = pinBtn.dataset.shortlisted !== 'true';
+      await supabase.from('ideas').update({ shortlisted }).eq('id', id).eq('family_id', familyId);
+      const i = allIdeas.find(i => i.id === id);
+      if (i) { i.shortlisted = shortlisted; renderTable(); }
       return;
     }
 
@@ -335,7 +349,7 @@
     const { data, error } = await supabase.from('ideas').select('*')
       .eq('family_id', familyId).order('created_at', { ascending: false });
     if (error) {
-      tbody.innerHTML = '<tr><td colspan="7" class="ib-td-msg" style="color:var(--sl-color-red)">Failed to load.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="ib-td-msg" style="color:var(--sl-color-red)">Failed to load.</td></tr>';
       return;
     }
     allIdeas = data ?? [];
@@ -421,6 +435,16 @@
     margin-top: 0.1rem; line-height: 1.4;
   }
   .ib-none { color: var(--sl-color-gray-4); }
+
+  .ib-th--pin { width: 36px; text-align: center; }
+  .ib-td--pin { text-align: center; }
+  .ib-pin {
+    background: none; border: none; cursor: pointer;
+    font-size: 1rem; padding: 0; line-height: 1;
+    opacity: 0.2; filter: grayscale(1); transition: all 0.15s;
+  }
+  .ib-pin--on { opacity: 1; filter: none; }
+  .ib-pin:hover { opacity: 0.75; filter: none; }
 
   .ib-star {
     background: none; border: none; cursor: pointer;
