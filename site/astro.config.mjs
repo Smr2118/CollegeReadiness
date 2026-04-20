@@ -35,6 +35,15 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'Shortlists',
+					items: [
+						{ label: '✍️ Essay Theme', link: '/shortlists/essay-theme/' },
+						{ label: '🤖 Robotics', link: '/shortlists/robotics/' },
+						{ label: '🏆 Extra Curriculars', link: '/shortlists/extracurriculars/' },
+						{ label: '🤝 Volunteering', link: '/shortlists/volunteering/' },
+					],
+				},
+				{
 					label: 'Resources',
 					items: [
 						{ label: '📅 Deadline Calendar', link: '/calendar/' },
