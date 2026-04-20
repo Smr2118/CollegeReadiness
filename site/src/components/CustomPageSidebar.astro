@@ -8,7 +8,7 @@ const isEssayPage     = Astro.url.pathname.includes('/essay-topics');
 const isRoboticsPage  = Astro.url.pathname.includes('/robotics-ideas');
 const isIdeasPage     = Astro.url.pathname.includes('/ideas');
 const isNotesPage     = Astro.url.pathname.includes('/notes');
-const isBrainstormPage = isEssayPage || isRoboticsPage || isIdeasPage || isNotesPage;
+const isBrainstormPage = isEssayPage || isRoboticsPage || isIdeasPage;
 const { toc } = Astro.locals.starlightRoute;
 const { meta } = programData as any;
 ---
