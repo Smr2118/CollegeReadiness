@@ -31,6 +31,7 @@ export default defineConfig({
 					items: [
 						{ label: '✍️ Essay Ideas', link: '/essay-topics/' },
 						{ label: '🤖 Robotics Ideas', link: '/robotics-ideas/' },
+						{ label: '🇮🇳 India Activities Ideas', link: '/india-ideas/' },
 						{ label: '💡 Ideas Board', link: '/ideas/' },
 					],
 				},
