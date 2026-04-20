@@ -64,27 +64,12 @@
     </details>
   </form>
 
-  <!-- Table area -->
+  <!-- Cards area -->
   <div class="et-toolbar">
     <span id="et-count" class="et-count"></span>
   </div>
-  <div class="et-table-wrap">
-    <table class="et-table">
-      <thead>
-        <tr>
-          <th class="et-th et-th--star">★</th>
-          <th class="et-th et-th--pin" title="Shortlist">📌</th>
-          <th class="et-th et-th--title">Point / Story</th>
-          <th class="et-th et-th--cat">Theme</th>
-          <th class="et-th et-th--status">Status</th>
-          <th class="et-th et-th--date">Date</th>
-          <th class="et-th et-th--actions"></th>
-        </tr>
-      </thead>
-      <tbody id="et-tbody">
-        <tr><td colspan="7" class="et-td-msg">Loading…</td></tr>
-      </tbody>
-    </table>
+  <div id="et-cards" class="et-cards">
+    <p class="et-td-msg">Loading…</p>
   </div>
 </div>
 
@@ -107,7 +92,7 @@
   const submitBtn  = document.getElementById('et-submit')      as HTMLButtonElement;
   const cancelBtn  = document.getElementById('et-cancel')      as HTMLButtonElement;
   const errorEl    = document.getElementById('et-error')       as HTMLElement;
-  const tbody      = document.getElementById('et-tbody') as HTMLElement;
+  const cardsEl    = document.getElementById('et-cards') as HTMLElement;
   const countEl    = document.getElementById('et-count') as HTMLElement;
 
   const CAT_COLOR: Record<string, string> = {
@@ -157,44 +142,42 @@
     countEl.textContent = `${topics.length} point${topics.length !== 1 ? 's' : ''}`;
 
     if (topics.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="et-td-msg">No points match. Try adjusting filters.</td></tr>';
+      cardsEl.innerHTML = '<p class="et-td-msg">No points match. Try adjusting filters.</p>';
       return;
     }
 
-    tbody.innerHTML = topics.map(t => {
+    cardsEl.innerHTML = topics.map(t => {
       const catColor = CAT_COLOR[t.category] ?? '#94a3b8';
       const sc       = STATUS_COLOR[t.status ?? 'Open'] ?? '#3b82f6';
       return `
-        <tr class="et-row${t.status === 'Cancelled' ? ' et-row--cancelled' : ''}${t.status === 'Complete' ? ' et-row--complete' : ''}">
-          <td class="et-td et-td--star">
-            <button class="et-star${t.starred ? ' et-star--on' : ''}" data-id="${t.id}" data-starred="${!!t.starred}" title="Star">${t.starred ? '★' : '☆'}</button>
-          </td>
-          <td class="et-td et-td--pin">
-            <button class="et-pin${t.shortlisted ? ' et-pin--on' : ''}" data-id="${t.id}" data-shortlisted="${!!t.shortlisted}" title="Toggle shortlist">📌</button>
-          </td>
-          <td class="et-td et-td--title">
-            <span class="et-row-title">${esc(t.title)}</span>
-            ${t.details ? `<span class="et-row-sub">${esc(t.details)}</span>` : ''}
-          </td>
-          <td class="et-td et-td--cat">
-            ${t.category
-              ? `<span class="et-cat-badge" style="background:${catColor}20;color:${catColor};border-color:${catColor}40">${esc(t.category)}</span>`
-              : '<span class="et-none">—</span>'}
-          </td>
-          <td class="et-td et-td--status">
-            <select class="et-status-sel" data-id="${t.id}" data-status="${t.status ?? 'Open'}" style="--sc:${sc}">
-              <option value="Open"       ${(t.status ?? 'Open') === 'Open'       ? 'selected' : ''}>Open</option>
-              <option value="Interested" ${t.status === 'Interested' ? 'selected' : ''}>Interested</option>
-              <option value="Cancelled"  ${t.status === 'Cancelled'  ? 'selected' : ''}>Cancelled</option>
-              <option value="Complete"   ${t.status === 'Complete'   ? 'selected' : ''}>Complete</option>
-            </select>
-          </td>
-          <td class="et-td et-td--date">${formatDate(t.created_at)}</td>
-          <td class="et-td et-td--actions">
-            <button class="et-act et-act--edit"   data-id="${t.id}">Edit</button>
-            <button class="et-act et-act--delete" data-id="${t.id}">Delete</button>
-          </td>
-        </tr>`;
+        <div class="et-card${t.status === 'Cancelled' ? ' et-card--cancelled' : ''}${t.status === 'Complete' ? ' et-card--complete' : ''}" style="--cc:${catColor}">
+          <div class="et-card__top">
+            <div class="et-card__badges">
+              ${t.category
+                ? `<span class="et-cat-badge" style="background:${catColor}20;color:${catColor};border-color:${catColor}40">${esc(t.category)}</span>`
+                : ''}
+              <select class="et-status-sel" data-id="${t.id}" data-status="${t.status ?? 'Open'}" style="--sc:${sc}">
+                <option value="Open"       ${(t.status ?? 'Open') === 'Open'       ? 'selected' : ''}>Open</option>
+                <option value="Interested" ${t.status === 'Interested' ? 'selected' : ''}>Interested</option>
+                <option value="Cancelled"  ${t.status === 'Cancelled'  ? 'selected' : ''}>Cancelled</option>
+                <option value="Complete"   ${t.status === 'Complete'   ? 'selected' : ''}>Complete</option>
+              </select>
+            </div>
+            <div class="et-card__icons">
+              <button class="et-star${t.starred ? ' et-star--on' : ''}" data-id="${t.id}" data-starred="${!!t.starred}" title="Star">${t.starred ? '★' : '☆'}</button>
+              <button class="et-pin${t.shortlisted ? ' et-pin--on' : ''}" data-id="${t.id}" data-shortlisted="${!!t.shortlisted}" title="Toggle shortlist">📌</button>
+            </div>
+          </div>
+          <p class="et-card__title">${esc(t.title)}</p>
+          ${t.details ? `<p class="et-card__details">${esc(t.details)}</p>` : ''}
+          <div class="et-card__footer">
+            <span class="et-card__date">${formatDate(t.created_at)}</span>
+            <div class="et-card__actions">
+              <button class="et-act et-act--edit"   data-id="${t.id}">Edit</button>
+              <button class="et-act et-act--delete" data-id="${t.id}">Delete</button>
+            </div>
+          </div>
+        </div>`;
     }).join('');
   }
 
@@ -217,8 +200,8 @@
     if (target.id === 'bs-starred') { filterStarred = (target as HTMLInputElement).checked; renderTable(); }
   });
 
-  /* ── Table interactions ── */
-  tbody.addEventListener('change', async e => {
+  /* ── Card interactions ── */
+  cardsEl.addEventListener('change', async e => {
     const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('.et-status-sel');
     if (!sel) return;
     const id     = Number(sel.dataset.id);
@@ -230,7 +213,7 @@
     if (t) { t.status = status; renderTable(); }
   });
 
-  tbody.addEventListener('click', async e => {
+  cardsEl.addEventListener('click', async e => {
     const target = e.target as HTMLElement;
 
     const starBtn = target.closest<HTMLElement>('.et-star');
@@ -396,7 +379,7 @@
     const { data, error } = await supabase.from('essay_topics').select('*')
       .eq('family_id', familyId).order('created_at', { ascending: false });
     if (error) {
-      tbody.innerHTML = '<tr><td colspan="7" class="et-td-msg" style="color:var(--sl-color-red)">Failed to load.</td></tr>';
+      cardsEl.innerHTML = '<p class="et-td-msg" style="color:var(--sl-color-red)">Failed to load.</p>';
       return;
     }
     allTopics = data ?? [];
@@ -492,49 +475,54 @@
   }
 
   /* ── Toolbar ── */
-  .et-toolbar { display: flex; align-items: center; margin-bottom: 0.65rem; }
+  .et-toolbar { display: flex; align-items: center; margin-bottom: 0.75rem; }
   .et-count { font-size: 0.82rem; color: var(--sl-color-gray-2); }
+  .et-td-msg { padding: 2rem; text-align: center; color: var(--sl-color-gray-2); }
 
-  /* ── Table ── */
-  .et-table-wrap { overflow-x: auto; }
-  .et-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
-  .et-th {
-    padding: 0.45rem 0.75rem; text-align: left;
-    font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.05em; color: var(--sl-color-gray-2);
-    border-bottom: 2px solid var(--sl-color-gray-5); white-space: nowrap;
+  /* ── Cards grid ── */
+  .et-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
   }
-  .et-th--star    { width: 36px; text-align: center; }
-  .et-th--cat     { width: 100px; }
-  .et-th--status  { width: 130px; }
-  .et-th--date    { width: 88px; }
-  .et-th--actions { width: 100px; }
-
-  .et-td {
-    padding: 0.6rem 0.75rem;
-    border-bottom: 1px solid var(--sl-color-gray-6);
-    vertical-align: middle;
+  .et-card {
+    display: flex; flex-direction: column; gap: 0.6rem;
+    padding: 1rem 1rem 1rem 1.1rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-left: 4px solid var(--cc, #94a3b8);
+    border-radius: 0.5rem;
+    background: var(--sl-color-bg-nav);
+    transition: box-shadow 0.15s;
   }
-  .et-td--star    { text-align: center; }
-  .et-td--title   { vertical-align: top; padding-top: 0.65rem; }
-  .et-td--date    { white-space: nowrap; color: var(--sl-color-gray-3); font-size: 0.8rem; }
-  .et-td-msg      { padding: 2rem; text-align: center; color: var(--sl-color-gray-2); }
+  .et-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .et-card--cancelled { opacity: 0.55; }
+  .et-card--cancelled .et-card__title { text-decoration: line-through; }
+  .et-card--complete .et-card__title { opacity: 0.75; }
 
-  .et-row:hover { background: var(--sl-color-gray-7, rgba(0,0,0,0.02)); }
-  .et-row--cancelled .et-row-title { opacity: 0.5; text-decoration: line-through; }
-  .et-row--complete  .et-row-title { opacity: 0.7; }
-
-  .et-row-title { display: block; font-weight: 600; color: var(--sl-color-text); line-height: 1.4; }
-  .et-row-sub {
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-    overflow: hidden; font-size: 0.78rem; color: var(--sl-color-gray-2);
-    margin-top: 0.1rem; line-height: 1.4;
+  .et-card__top {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
   }
+  .et-card__badges { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; flex: 1; min-width: 0; }
+  .et-card__icons  { display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0; }
+
+  .et-card__title {
+    font-weight: 600; font-size: 0.95rem; color: var(--sl-color-text);
+    line-height: 1.45; margin: 0;
+  }
+  .et-card__details {
+    font-size: 0.8rem; color: var(--sl-color-gray-2); line-height: 1.5; margin: 0;
+  }
+  .et-card__footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: auto; padding-top: 0.4rem;
+    border-top: 1px solid var(--sl-color-gray-6);
+  }
+  .et-card__date    { font-size: 0.75rem; color: var(--sl-color-gray-3); }
+  .et-card__actions { display: flex; gap: 0.3rem; }
+
   .et-none { color: var(--sl-color-gray-4); }
 
   /* ── Pin (shortlist) ── */
-  .et-th--pin { width: 36px; text-align: center; }
-  .et-td--pin { text-align: center; }
   .et-pin {
     background: none; border: none; cursor: pointer;
     font-size: 1rem; padding: 0; line-height: 1;
