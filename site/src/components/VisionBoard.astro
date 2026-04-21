@@ -1,7 +1,3 @@
----
-const base = import.meta.env.BASE_URL.replace(/\/$/, '');
----
-
 <div id="vb-wrap">
   <div class="vb-toolbar">
     <span class="vb-filter-label">Show:</span>
@@ -19,7 +15,11 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   </div>
 </div>
 
-<script define:vars={{ base }}>
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
   const SOURCES = [
     { id: 'essay',    label: 'Essay Ideas',       color: '#8b5cf6', table: 'essay_topics',    link: base + '/essay-topics/'   },
     { id: 'robotics', label: 'Robotics Ideas',    color: '#0891b2', table: 'robotics_ideas',  link: base + '/robotics-ideas/' },
@@ -29,42 +29,42 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     { id: 'ideas',    label: 'Ideas Board',       color: '#f59e0b', table: 'ideas',            link: base + '/ideas/'          },
   ];
 
-  const STATUS_COLOR = {
+  const STATUS_COLOR: Record<string, string> = {
     Open: '#3b82f6', Interested: '#f59e0b', Pursuing: '#8b5cf6',
     Drafting: '#8b5cf6', Complete: '#22c55e', Completed: '#22c55e',
     Ongoing: '#3b82f6', Cancelled: '#94a3b8', Abandoned: '#94a3b8', 'On Hold': '#f59e0b',
   };
 
   let filterMode = 'all';
-  let dataMap = {};
-  const container = document.getElementById('vb-container');
-  const svgEl     = document.getElementById('vb-svg');
-  const nodesEl   = document.getElementById('vb-nodes');
-  const loadingEl = document.getElementById('vb-loading');
+  let dataMap: Record<string, { total: number; items: any[] }> = {};
+  const container = document.getElementById('vb-container')!;
+  const svgEl     = document.getElementById('vb-svg')!;
+  const nodesEl   = document.getElementById('vb-nodes')!;
+  const loadingEl = document.getElementById('vb-loading')!;
 
-  document.getElementById('vb-chips').addEventListener('click', e => {
-    const btn = e.target.closest('[data-f]');
+  document.getElementById('vb-chips')!.addEventListener('click', e => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-f]');
     if (!btn) return;
-    filterMode = btn.dataset.f;
+    filterMode = btn.dataset.f!;
     document.querySelectorAll('[data-f]').forEach(b => b.classList.toggle('vb-chip--on', b === btn));
     buildMap();
   });
 
-  function svgPath(x1, y1, x2, y2, color) {
+  function svgPath(x1: number, y1: number, x2: number, y2: number, color: string) {
     const mx = (x1 + x2) / 2;
     const my = (y1 + y2) / 2;
     return `<path d="M${x1},${y1} Q${mx},${my} ${x2},${y2}" stroke="${color}" stroke-width="2" fill="none" opacity="0.4"/>`;
   }
 
-  function leafLine(x1, y1, x2, y2, color) {
+  function leafLine(x1: number, y1: number, x2: number, y2: number, color: string) {
     return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="1.2" opacity="0.25"/>`;
   }
 
-  function truncate(str, max) {
+  function truncate(str: string, max: number) {
     return str && str.length > max ? str.slice(0, max - 1) + '…' : (str || '');
   }
 
-  function getFiltered(items) {
+  function getFiltered(items: any[]) {
     if (filterMode === 'starred')    return items.filter(r => r.starred);
     if (filterMode === 'open')       return items.filter(r => r.status === 'Open' || r.status === 'Ongoing');
     if (filterMode === 'interested') return items.filter(r => r.status === 'Interested');
@@ -76,8 +76,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     const H = Math.max(620, W * 0.74);
     container.style.height = H + 'px';
     svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
-    svgEl.style.width  = W + 'px';
-    svgEl.style.height = H + 'px';
+    svgEl.setAttribute('width',  String(W));
+    svgEl.setAttribute('height', String(H));
 
     const cx = W / 2, cy = H / 2;
     const R1 = Math.min(W * 0.30, H * 0.30, 195);
@@ -91,7 +91,6 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     let paths = '';
     let nodes = '';
 
-    // Center node
     nodes += `<div class="vb-node vb-node--center" style="left:${cx}px;top:${cy}px">
       <span class="vb-node__label">🔮 Vision Board</span>
     </div>`;
@@ -103,10 +102,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       const filtered = getFiltered(data.items);
       const leaves   = filtered.slice(0, 5);
 
-      // Center → source line
       paths += svgPath(cx, cy, s.x, s.y, s.color);
 
-      // Source node
       const countLabel = filterMode === 'all'
         ? `${total} idea${total !== 1 ? 's' : ''}${starred ? ' · ★' + starred : ''}`
         : `${filtered.length} / ${total}`;
@@ -115,7 +112,6 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         <span class="vb-node__count">${countLabel}</span>
       </a>`;
 
-      // Leaf nodes
       if (leaves.length) {
         const spread = Math.min(Math.PI * 0.32, (leaves.length - 1) * 0.22);
         leaves.forEach((item, j) => {
@@ -139,17 +135,15 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     nodesEl.innerHTML = nodes;
   }
 
-  async function loadData(familyId) {
+  async function loadData(familyId: string) {
     await Promise.all(SOURCES.map(async s => {
-      const { supabase } = await import('./lib/supabase');
       const { data, error } = await supabase
         .from(s.table)
         .select('id, title, starred, status')
         .eq('family_id', familyId)
         .order('created_at', { ascending: false });
       if (error) console.error('[VisionBoard]', s.table, error.message);
-      // Sort starred first in JS to avoid boolean-order issues
-      const rows = (data ?? []).sort((a, b) => (b.starred ? 1 : 0) - (a.starred ? 1 : 0));
+      const rows = (data ?? []).sort((a: any, b: any) => (b.starred ? 1 : 0) - (a.starred ? 1 : 0));
       dataMap[s.id] = { total: rows.length, items: rows };
     }));
     loadingEl.style.display = 'none';
@@ -159,7 +153,6 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   window.addEventListener('resize', () => buildMap());
 
   async function init() {
-    const { supabase } = await import('./lib/supabase');
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       document.addEventListener('data-loaded', async () => {
