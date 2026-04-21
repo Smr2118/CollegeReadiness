@@ -4,10 +4,13 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 <div id="vb-wrap">
   <div class="vb-toolbar">
-    <label class="vb-toggle">
-      <input type="checkbox" id="vb-show-starred" />
-      <span>Show starred items</span>
-    </label>
+    <span class="vb-filter-label">Show:</span>
+    <div class="vb-chips" id="vb-chips">
+      <button class="vb-chip vb-chip--on" data-f="all">All</button>
+      <button class="vb-chip" data-f="starred">★ Starred</button>
+      <button class="vb-chip" data-f="open">Open</button>
+      <button class="vb-chip" data-f="interested">Interested</button>
+    </div>
     <span id="vb-loading" class="vb-loading-msg">Loading…</span>
   </div>
   <div id="vb-container">
@@ -18,47 +21,68 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 <script define:vars={{ base }}>
   const SOURCES = [
-    { id: 'essay',    label: 'Essay Ideas',       color: '#8b5cf6', table: 'essay_topics',    link: base + '/essay-topics/',   titleField: 'title' },
-    { id: 'robotics', label: 'Robotics Ideas',    color: '#0891b2', table: 'robotics_ideas',  link: base + '/robotics-ideas/', titleField: 'title' },
-    { id: 'india',    label: 'India Activities',  color: '#f97316', table: 'india_activities',link: base + '/india-ideas/',    titleField: 'title' },
-    { id: 'ec',       label: 'Extra Curriculars', color: '#22c55e', table: 'ec_ideas',         link: base + '/ec-ideas/',       titleField: 'title' },
-    { id: 'projects', label: 'Past Projects',     color: '#3b82f6', table: 'past_projects',   link: base + '/past-projects/',  titleField: 'title' },
-    { id: 'ideas',    label: 'Ideas Board',       color: '#f59e0b', table: 'ideas',            link: base + '/ideas/',          titleField: 'title' },
+    { id: 'essay',    label: 'Essay Ideas',       color: '#8b5cf6', table: 'essay_topics',    link: base + '/essay-topics/'   },
+    { id: 'robotics', label: 'Robotics Ideas',    color: '#0891b2', table: 'robotics_ideas',  link: base + '/robotics-ideas/' },
+    { id: 'india',    label: 'India Activities',  color: '#f97316', table: 'india_activities',link: base + '/india-ideas/'    },
+    { id: 'ec',       label: 'Extra Curriculars', color: '#22c55e', table: 'ec_ideas',         link: base + '/ec-ideas/'       },
+    { id: 'projects', label: 'Past Projects',     color: '#3b82f6', table: 'past_projects',   link: base + '/past-projects/'  },
+    { id: 'ideas',    label: 'Ideas Board',       color: '#f59e0b', table: 'ideas',            link: base + '/ideas/'          },
   ];
 
-  let showStarred = false;
+  const STATUS_COLOR = {
+    Open: '#3b82f6', Interested: '#f59e0b', Pursuing: '#8b5cf6',
+    Drafting: '#8b5cf6', Complete: '#22c55e', Completed: '#22c55e',
+    Ongoing: '#3b82f6', Cancelled: '#94a3b8', Abandoned: '#94a3b8', 'On Hold': '#f59e0b',
+  };
+
+  let filterMode = 'all';
   let dataMap = {};
   const container = document.getElementById('vb-container');
   const svgEl     = document.getElementById('vb-svg');
   const nodesEl   = document.getElementById('vb-nodes');
   const loadingEl = document.getElementById('vb-loading');
 
+  document.getElementById('vb-chips').addEventListener('click', e => {
+    const btn = e.target.closest('[data-f]');
+    if (!btn) return;
+    filterMode = btn.dataset.f;
+    document.querySelectorAll('[data-f]').forEach(b => b.classList.toggle('vb-chip--on', b === btn));
+    buildMap();
+  });
+
   function svgPath(x1, y1, x2, y2, color) {
     const mx = (x1 + x2) / 2;
     const my = (y1 + y2) / 2;
-    return `<path d="M${x1},${y1} Q${mx},${my} ${x2},${y2}" stroke="${color}" stroke-width="2" fill="none" opacity="0.45"/>`;
+    return `<path d="M${x1},${y1} Q${mx},${my} ${x2},${y2}" stroke="${color}" stroke-width="2" fill="none" opacity="0.4"/>`;
   }
 
-  function leafPath(x1, y1, x2, y2, color) {
-    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="1.2" opacity="0.3"/>`;
+  function leafLine(x1, y1, x2, y2, color) {
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="1.2" opacity="0.25"/>`;
   }
 
   function truncate(str, max) {
     return str && str.length > max ? str.slice(0, max - 1) + '…' : (str || '');
   }
 
+  function getFiltered(items) {
+    if (filterMode === 'starred')    return items.filter(r => r.starred);
+    if (filterMode === 'open')       return items.filter(r => r.status === 'Open' || r.status === 'Ongoing');
+    if (filterMode === 'interested') return items.filter(r => r.status === 'Interested');
+    return items;
+  }
+
   function buildMap() {
     const W = container.offsetWidth || 800;
-    const H = Math.max(560, W * 0.68);
+    const H = Math.max(620, W * 0.74);
     container.style.height = H + 'px';
     svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
     svgEl.style.width  = W + 'px';
     svgEl.style.height = H + 'px';
 
     const cx = W / 2, cy = H / 2;
-    const R1 = Math.min(W * 0.32, H * 0.32, 220);
+    const R1 = Math.min(W * 0.30, H * 0.30, 195);
+    const R2 = Math.min(115, W * 0.14);
 
-    // Position source nodes radially
     const placed = SOURCES.map((s, i) => {
       const angle = (i / SOURCES.length) * 2 * Math.PI - Math.PI / 2;
       return { ...s, x: cx + Math.cos(angle) * R1, y: cy + Math.sin(angle) * R1, angle };
@@ -73,60 +97,64 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     </div>`;
 
     placed.forEach(s => {
-      const data  = dataMap[s.id] || { total: 0, starred: [] };
-      const total = data.total;
-      const stars = data.starred;
+      const data     = dataMap[s.id] || { total: 0, items: [] };
+      const total    = data.total;
+      const starred  = data.items.filter(r => r.starred).length;
+      const filtered = getFiltered(data.items);
+      const leaves   = filtered.slice(0, 5);
 
-      // Line from center to source
+      // Center → source line
       paths += svgPath(cx, cy, s.x, s.y, s.color);
 
       // Source node
+      const countLabel = filterMode === 'all'
+        ? `${total} idea${total !== 1 ? 's' : ''}${starred ? ' · ★' + starred : ''}`
+        : `${filtered.length} / ${total}`;
       nodes += `<a class="vb-node vb-node--source" href="${s.link}" style="left:${s.x}px;top:${s.y}px;--nc:${s.color}">
         <span class="vb-node__label">${s.label}</span>
-        <span class="vb-node__count">${total} idea${total !== 1 ? 's' : ''}</span>
-        ${stars.length ? `<span class="vb-node__stars">★ ${stars.length}</span>` : ''}
+        <span class="vb-node__count">${countLabel}</span>
       </a>`;
 
-      // Leaf nodes for starred items
-      if (showStarred && stars.length) {
-        const spread = Math.min(Math.PI * 0.55, (stars.length - 1) * 0.35);
-        const R2 = Math.min(150, W * 0.18);
-        stars.slice(0, 5).forEach((item, j) => {
-          const t    = stars.length === 1 ? 0 : (j / (stars.length <= 1 ? 1 : stars.length - 1) - 0.5);
+      // Leaf nodes
+      if (leaves.length) {
+        const spread = Math.min(Math.PI * 0.32, (leaves.length - 1) * 0.22);
+        leaves.forEach((item, j) => {
+          const t      = leaves.length === 1 ? 0 : (j / (leaves.length - 1) - 0.5);
           const lAngle = s.angle + t * spread;
-          const lx   = s.x + Math.cos(lAngle) * R2;
-          const ly   = s.y + Math.sin(lAngle) * R2;
-          paths += leafPath(s.x, s.y, lx, ly, s.color);
-          nodes += `<a class="vb-node vb-node--leaf" href="${s.link}" style="left:${lx}px;top:${ly}px;--nc:${s.color}" title="${item.title}">
-            <span class="vb-node__leaf-text">${truncate(item.title, 28)}</span>
+          const lx     = s.x + Math.cos(lAngle) * R2;
+          const ly     = s.y + Math.sin(lAngle) * R2;
+          const sc     = STATUS_COLOR[item.status] || '#94a3b8';
+          const tip    = item.title + (item.status ? ' · ' + item.status : '');
+          paths += leafLine(s.x, s.y, lx, ly, s.color);
+          nodes += `<a class="vb-node vb-node--leaf" href="${s.link}" title="${tip}"
+            style="left:${lx}px;top:${ly}px;--nc:${s.color};--sc:${sc}">
+            <span class="vb-dot"></span>
+            <span class="vb-node__leaf-text">${truncate(item.title, 24)}</span>
           </a>`;
         });
       }
     });
 
-    svgEl.innerHTML  = paths;
+    svgEl.innerHTML   = paths;
     nodesEl.innerHTML = nodes;
   }
 
   async function loadData(familyId) {
     await Promise.all(SOURCES.map(async s => {
       const { supabase } = await import('./lib/supabase');
-      const { data } = await supabase.from(s.table).select('id, title, starred')
-        .eq('family_id', familyId);
+      // Starred items first, then newest
+      const { data } = await supabase
+        .from(s.table)
+        .select('id, title, starred, status')
+        .eq('family_id', familyId)
+        .order('starred', { ascending: false })
+        .order('created_at', { ascending: false });
       const rows = data ?? [];
-      dataMap[s.id] = {
-        total:   rows.length,
-        starred: rows.filter(r => r.starred),
-      };
+      dataMap[s.id] = { total: rows.length, items: rows };
     }));
     loadingEl.style.display = 'none';
     buildMap();
   }
-
-  document.getElementById('vb-show-starred').addEventListener('change', e => {
-    showStarred = (e.target).checked;
-    buildMap();
-  });
 
   window.addEventListener('resize', () => buildMap());
 
@@ -154,14 +182,24 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   #vb-wrap { max-width: 100%; }
 
   .vb-toolbar {
-    display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap;
   }
-  .vb-toggle {
-    display: flex; align-items: center; gap: 0.4rem;
-    font-size: 0.82rem; color: var(--sl-color-gray-2); cursor: pointer; user-select: none;
+  .vb-filter-label {
+    font-size: 0.8rem; color: var(--sl-color-gray-3); white-space: nowrap;
   }
-  .vb-toggle input { cursor: pointer; accent-color: var(--sl-color-accent); }
-  .vb-loading-msg { font-size: 0.8rem; color: var(--sl-color-gray-3); }
+  .vb-chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+  .vb-chip {
+    font-size: 0.75rem; padding: 0.18rem 0.65rem;
+    border-radius: 9999px; border: 1px solid var(--sl-color-gray-5);
+    background: var(--sl-color-bg-nav); color: var(--sl-color-gray-2);
+    cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
+    line-height: 1.5;
+  }
+  .vb-chip--on {
+    background: var(--sl-color-accent); color: #fff;
+    border-color: var(--sl-color-accent);
+  }
+  .vb-loading-msg { font-size: 0.8rem; color: var(--sl-color-gray-3); margin-left: auto; }
 
   #vb-container {
     position: relative; width: 100%; overflow: hidden;
@@ -169,23 +207,19 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     background: var(--sl-color-bg-nav);
   }
 
-  #vb-svg {
-    position: absolute; top: 0; left: 0; pointer-events: none;
-  }
+  #vb-svg { position: absolute; top: 0; left: 0; pointer-events: none; }
 
   #vb-nodes {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     pointer-events: none;
   }
 
-  /* All nodes are absolutely positioned and centered on their x,y */
   .vb-node {
     position: absolute; transform: translate(-50%, -50%);
     pointer-events: all; text-decoration: none; text-align: center;
     transition: transform 0.15s, box-shadow 0.15s;
   }
 
-  /* Center node */
   .vb-node--center {
     background: var(--sl-color-accent);
     color: #fff; border-radius: 9999px;
@@ -195,13 +229,12 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     display: flex; align-items: center; gap: 0.3rem;
   }
 
-  /* Source nodes */
   .vb-node--source {
     background: var(--sl-color-bg);
     border: 2px solid var(--nc, #94a3b8);
     border-radius: 0.5rem;
-    padding: 0.5rem 0.8rem; min-width: 110px; max-width: 140px;
-    display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+    padding: 0.45rem 0.75rem; min-width: 108px; max-width: 138px;
+    display: flex; flex-direction: column; align-items: center; gap: 0.12rem;
     box-shadow: 0 1px 6px rgba(0,0,0,0.1);
     cursor: pointer;
   }
@@ -210,35 +243,37 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     box-shadow: 0 4px 14px rgba(0,0,0,0.15);
   }
   .vb-node--source .vb-node__label {
-    font-size: 0.78rem; font-weight: 700; color: var(--nc, var(--sl-color-text));
+    font-size: 0.77rem; font-weight: 700; color: var(--nc, var(--sl-color-text));
     line-height: 1.3; text-align: center;
   }
   .vb-node--source .vb-node__count {
-    font-size: 0.68rem; color: var(--sl-color-gray-3);
-  }
-  .vb-node--source .vb-node__stars {
-    font-size: 0.68rem; color: #f59e0b; font-weight: 600;
+    font-size: 0.66rem; color: var(--sl-color-gray-3);
   }
 
-  /* Leaf nodes */
   .vb-node--leaf {
-    background: color-mix(in srgb, var(--nc, #94a3b8) 12%, var(--sl-color-bg));
-    border: 1px solid color-mix(in srgb, var(--nc, #94a3b8) 40%, transparent);
+    background: color-mix(in srgb, var(--nc, #94a3b8) 10%, var(--sl-color-bg));
+    border: 1px solid color-mix(in srgb, var(--nc, #94a3b8) 35%, transparent);
     border-radius: 9999px;
-    padding: 0.22rem 0.6rem; max-width: 130px;
-    cursor: pointer;
+    padding: 0.18rem 0.55rem 0.18rem 0.4rem;
+    display: flex; align-items: center; gap: 0.3rem;
+    max-width: 128px; cursor: pointer;
   }
-  .vb-node--leaf:hover {
-    transform: translate(-50%, -50%) scale(1.06);
+  .vb-node--leaf:hover { transform: translate(-50%, -50%) scale(1.08); }
+
+  .vb-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--sc, #94a3b8); flex-shrink: 0;
   }
-  .vb-node--leaf .vb-node__leaf-text {
-    font-size: 0.67rem; color: var(--sl-color-text);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
-    max-width: 120px;
+  .vb-node__leaf-text {
+    font-size: 0.65rem; color: var(--sl-color-text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 108px; display: block;
   }
 
   @media (max-width: 600px) {
-    .vb-node--source { min-width: 80px; max-width: 100px; padding: 0.35rem 0.5rem; }
-    .vb-node--source .vb-node__label { font-size: 0.65rem; }
+    .vb-node--source { min-width: 80px; max-width: 100px; padding: 0.3rem 0.45rem; }
+    .vb-node--source .vb-node__label { font-size: 0.63rem; }
+    .vb-node--leaf { max-width: 100px; }
+    .vb-node__leaf-text { max-width: 82px; font-size: 0.6rem; }
   }
 </style>
