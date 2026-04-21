@@ -39,6 +39,7 @@ export default defineConfig({
 				{
 					label: 'Mind Map',
 					items: [
+						{ label: '🔮 Vision Board', link: '/vision-board/' },
 						{ label: '💡 Ideas Board', link: '/ideas/' },
 					],
 				},
