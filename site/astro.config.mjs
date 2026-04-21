@@ -32,9 +32,14 @@ export default defineConfig({
 						{ label: '✍️ Essay Ideas', link: '/essay-topics/' },
 						{ label: '🤖 Robotics Ideas', link: '/robotics-ideas/' },
 						{ label: '🇮🇳 India Activities Ideas', link: '/india-ideas/' },
-						{ label: '💡 Ideas Board', link: '/ideas/' },
 						{ label: '🏃 Extra Curriculars', link: '/ec-ideas/' },
 						{ label: '🔧 Past Projects', link: '/past-projects/' },
+					],
+				},
+				{
+					label: 'Mind Map',
+					items: [
+						{ label: '💡 Ideas Board', link: '/ideas/' },
 					],
 				},
 				{
