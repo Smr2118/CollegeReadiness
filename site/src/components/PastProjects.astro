@@ -1,0 +1,619 @@
+---
+---
+
+<div id="pp-wrap">
+
+  <!-- Add / Edit form -->
+  <form id="pp-form" class="pp-form">
+    <div class="pp-form__fields">
+      <div class="pp-form__field pp-form__field--title">
+        <label class="pp-label" for="pp-title">Project Name</label>
+        <input id="pp-title" class="pp-input" type="text"
+          placeholder="e.g. AI-powered recycling sorter" required />
+      </div>
+      <div class="pp-form__field">
+        <label class="pp-label" for="pp-category">Category</label>
+        <select id="pp-category" class="pp-select">
+          <option value="">— Pick a category —</option>
+          <option>School</option>
+          <option>Personal</option>
+          <option>Research</option>
+          <option>Competition</option>
+          <option>Volunteer</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="pp-form__field">
+        <label class="pp-label" for="pp-status-form">Status</label>
+        <select id="pp-status-form" class="pp-select">
+          <option value="Ongoing">Ongoing</option>
+          <option value="Completed">Completed</option>
+          <option value="On Hold">On Hold</option>
+          <option value="Abandoned">Abandoned</option>
+        </select>
+      </div>
+      <div class="pp-form__field">
+        <label class="pp-label" for="pp-year">Year(s)</label>
+        <input id="pp-year" class="pp-input" type="text" placeholder="e.g. 2024–2025" />
+      </div>
+    </div>
+    <div class="pp-form__fields pp-form__fields--row2">
+      <div class="pp-form__field">
+        <label class="pp-label" for="pp-role">Role</label>
+        <input id="pp-role" class="pp-input" type="text" placeholder="e.g. Lead Developer, Team Member" />
+      </div>
+      <div class="pp-form__field pp-form__field--skills">
+        <label class="pp-label" for="pp-skills">Skills / Tools</label>
+        <input id="pp-skills" class="pp-input" type="text" placeholder="e.g. Python, TensorFlow, CAD" />
+      </div>
+    </div>
+    <div class="pp-form__field">
+      <label class="pp-label" for="pp-details">Description &amp; Notes</label>
+      <textarea id="pp-details" class="pp-textarea"
+        placeholder="What you built, impact, lessons learned, awards…" rows="3"></textarea>
+    </div>
+    <div class="pp-form__actions">
+      <button type="submit" class="pp-btn pp-btn--primary" id="pp-submit">Add Project</button>
+      <button type="button" class="pp-btn pp-btn--export" id="pp-export">⬇ Export CSV</button>
+      <button type="button" class="pp-btn pp-btn--import" id="pp-import-btn">⬆ Import JSON</button>
+      <input type="file" id="pp-import-file" accept=".json" style="display:none" />
+      <button type="button" class="pp-btn pp-btn--cancel" id="pp-cancel" style="display:none">Cancel</button>
+      <span id="pp-error" class="pp-error" style="display:none"></span>
+    </div>
+    <div id="pp-import-preview" class="pp-import-preview" style="display:none">
+      <span id="pp-import-msg" class="pp-import-msg"></span>
+      <button type="button" class="pp-btn pp-btn--primary" id="pp-import-confirm">Import</button>
+      <button type="button" class="pp-btn pp-btn--cancel" id="pp-import-cancel">Cancel</button>
+    </div>
+    <details class="pp-import-format">
+      <summary>JSON format reference</summary>
+      <pre class="pp-import-pre" is:raw>[
+  {
+    "title": "AI-powered recycling sorter",   // required
+    "category": "Personal",    // School | Personal | Research | Competition | Volunteer | Other
+    "status": "Completed",     // Ongoing | Completed | On Hold | Abandoned
+    "year": "2024–2025",
+    "role": "Lead Developer",
+    "skills": "Python, TensorFlow, Raspberry Pi",
+    "details": "Built a CV model that classifies recyclables with 94% accuracy",
+    "starred": false,
+    "shortlisted": false
+  }
+]</pre>
+    </details>
+  </form>
+
+  <!-- Cards area -->
+  <div class="pp-toolbar">
+    <span id="pp-count" class="pp-count"></span>
+  </div>
+  <div id="pp-cards" class="pp-cards">
+    <p class="pp-msg">Loading…</p>
+  </div>
+</div>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  let familyId   = '';
+  let editingId: number | null = null;
+  let allProjects: any[] = [];
+  let filterStatus  = 'all';
+  let filterCat     = 'all';
+  let filterStarred = false;
+  let sortMode      = 'newest';
+
+  const form         = document.getElementById('pp-form')        as HTMLFormElement;
+  const titleEl      = document.getElementById('pp-title')       as HTMLInputElement;
+  const categoryEl   = document.getElementById('pp-category')    as HTMLSelectElement;
+  const statusFormEl = document.getElementById('pp-status-form') as HTMLSelectElement;
+  const yearEl       = document.getElementById('pp-year')        as HTMLInputElement;
+  const roleEl       = document.getElementById('pp-role')        as HTMLInputElement;
+  const skillsEl     = document.getElementById('pp-skills')      as HTMLInputElement;
+  const detailsEl    = document.getElementById('pp-details')     as HTMLTextAreaElement;
+  const submitBtn    = document.getElementById('pp-submit')      as HTMLButtonElement;
+  const cancelBtn    = document.getElementById('pp-cancel')      as HTMLButtonElement;
+  const errorEl      = document.getElementById('pp-error')       as HTMLElement;
+  const cardsEl      = document.getElementById('pp-cards')       as HTMLElement;
+  const countEl      = document.getElementById('pp-count')       as HTMLElement;
+
+  const CAT_COLOR: Record<string,string> = {
+    'School':      '#3b82f6',
+    'Personal':    '#8b5cf6',
+    'Research':    '#0891b2',
+    'Competition': '#f59e0b',
+    'Volunteer':   '#22c55e',
+    'Other':       '#94a3b8',
+  };
+
+  const STATUS_COLOR: Record<string,string> = {
+    'Ongoing':   '#3b82f6',
+    'Completed': '#22c55e',
+    'On Hold':   '#f59e0b',
+    'Abandoned': '#94a3b8',
+  };
+
+  function esc(s: string | null | undefined) {
+    return (s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function formatDate(iso: string) {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function visibleProjects() {
+    let list = allProjects.filter(p => {
+      if (filterStatus !== 'all' && p.status !== filterStatus) return false;
+      if (filterCat    !== 'all' && p.category !== filterCat)  return false;
+      if (filterStarred && !p.starred) return false;
+      return true;
+    });
+    const statusOrder = ['Ongoing','Completed','On Hold','Abandoned'];
+    list.sort((a, b) => {
+      if (sortMode === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sortMode === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (sortMode === 'az')     return a.title.localeCompare(b.title);
+      if (sortMode === 'za')     return b.title.localeCompare(a.title);
+      if (sortMode === 'status') return statusOrder.indexOf(a.status ?? 'Ongoing') - statusOrder.indexOf(b.status ?? 'Ongoing');
+      return 0;
+    });
+    return list;
+  }
+
+  function renderCards() {
+    const projects = visibleProjects();
+    countEl.textContent = `${projects.length} project${projects.length !== 1 ? 's' : ''}`;
+
+    if (projects.length === 0) {
+      cardsEl.innerHTML = '<p class="pp-msg">No projects match. Try adjusting filters.</p>';
+      return;
+    }
+
+    cardsEl.innerHTML = projects.map(p => {
+      const catColor = CAT_COLOR[p.category] ?? '#94a3b8';
+      const sc       = STATUS_COLOR[p.status ?? 'Ongoing'] ?? '#3b82f6';
+      const hasExtra = p.details || p.role || p.skills;
+      return `
+        <div class="pp-card${p.status === 'Abandoned' ? ' pp-card--abandoned' : ''}${p.status === 'Completed' ? ' pp-card--complete' : ''}" style="--cc:${catColor}" data-id="${p.id}">
+          <div class="pp-card__top">
+            <div class="pp-card__badges">
+              ${p.category
+                ? `<span class="pp-cat-badge" style="background:${catColor}20;color:${catColor};border-color:${catColor}40">${esc(p.category)}</span>`
+                : ''}
+              <select class="pp-status-sel" data-id="${p.id}" style="--sc:${sc}">
+                <option value="Ongoing"   ${(p.status ?? 'Ongoing') === 'Ongoing'   ? 'selected' : ''}>Ongoing</option>
+                <option value="Completed" ${p.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                <option value="On Hold"   ${p.status === 'On Hold'   ? 'selected' : ''}>On Hold</option>
+                <option value="Abandoned" ${p.status === 'Abandoned' ? 'selected' : ''}>Abandoned</option>
+              </select>
+            </div>
+            <div class="pp-card__icons">
+              <button class="pp-star${p.starred ? ' pp-star--on' : ''}" data-id="${p.id}" data-starred="${!!p.starred}" title="Star">${p.starred ? '★' : '☆'}</button>
+              <button class="pp-pin${p.shortlisted ? ' pp-pin--on' : ''}" data-id="${p.id}" data-shortlisted="${!!p.shortlisted}" title="Toggle shortlist">📌</button>
+            </div>
+          </div>
+          <div class="pp-card__title-row${hasExtra ? ' pp-card__title-row--toggle' : ''}" data-action="toggle">
+            <p class="pp-card__title">${esc(p.title)}</p>
+            ${hasExtra ? `<span class="pp-card__chevron">▶</span>` : ''}
+          </div>
+          ${p.year ? `<p class="pp-card__year">📅 ${esc(p.year)}</p>` : ''}
+          <div class="pp-card__extra">
+            ${p.role   ? `<p class="pp-card__meta"><span class="pp-card__meta-label">Role</span> ${esc(p.role)}</p>` : ''}
+            ${p.skills ? `<p class="pp-card__meta"><span class="pp-card__meta-label">Skills</span> ${esc(p.skills)}</p>` : ''}
+            ${p.details ? `<p class="pp-card__details">${esc(p.details)}</p>` : ''}
+          </div>
+          <div class="pp-card__footer">
+            <span class="pp-card__date">${formatDate(p.created_at)}</span>
+            <div class="pp-card__actions">
+              <button class="pp-act pp-act--edit" data-id="${p.id}">Edit</button>
+              <button class="pp-act pp-act--delete" data-id="${p.id}">Delete</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  document.addEventListener('click', e => {
+    const chip = (e.target as Element).closest<HTMLElement>('.filter-chip[data-filter]');
+    if (!chip) return;
+    const filter = chip.dataset.filter!;
+    const value  = chip.dataset.value!;
+    if (filter === 'status') filterStatus = value;
+    if (filter === 'cat')    filterCat    = value;
+    document.querySelectorAll<HTMLElement>(`.filter-chip[data-filter="${filter}"]`).forEach(c =>
+      c.classList.toggle('active', c.dataset.value === value));
+    renderCards();
+  });
+
+  document.addEventListener('change', e => {
+    const target = e.target as HTMLElement;
+    if (target.id === 'bs-sort')    { sortMode = (target as HTMLSelectElement).value; renderCards(); }
+    if (target.id === 'bs-starred') { filterStarred = (target as HTMLInputElement).checked; renderCards(); }
+  });
+
+  cardsEl.addEventListener('change', async e => {
+    const sel = (e.target as HTMLElement).closest<HTMLSelectElement>('.pp-status-sel');
+    if (!sel) return;
+    const id     = Number(sel.dataset.id);
+    const status = sel.value;
+    sel.style.setProperty('--sc', STATUS_COLOR[status] ?? '#3b82f6');
+    await supabase.from('past_projects').update({ status }).eq('id', id).eq('family_id', familyId);
+    const p = allProjects.find(p => p.id === id);
+    if (p) { p.status = status; renderCards(); }
+  });
+
+  cardsEl.addEventListener('click', async e => {
+    const target = e.target as HTMLElement;
+
+    const toggleRow = target.closest('.pp-card__title-row--toggle');
+    if (toggleRow) {
+      toggleRow.closest('.pp-card')?.classList.toggle('pp-card--open');
+      return;
+    }
+
+    const starBtn = target.closest<HTMLElement>('.pp-star');
+    if (starBtn) {
+      const id      = Number(starBtn.dataset.id);
+      const starred = starBtn.dataset.starred !== 'true';
+      await supabase.from('past_projects').update({ starred }).eq('id', id).eq('family_id', familyId);
+      const p = allProjects.find(p => p.id === id);
+      if (p) { p.starred = starred; renderCards(); }
+      return;
+    }
+
+    const pinBtn = target.closest<HTMLElement>('.pp-pin');
+    if (pinBtn) {
+      const id          = Number(pinBtn.dataset.id);
+      const shortlisted = pinBtn.dataset.shortlisted !== 'true';
+      await supabase.from('past_projects').update({ shortlisted }).eq('id', id).eq('family_id', familyId);
+      const p = allProjects.find(p => p.id === id);
+      if (p) { p.shortlisted = shortlisted; renderCards(); }
+      return;
+    }
+
+    if (target.classList.contains('pp-act--delete')) {
+      const id = Number(target.dataset.id);
+      if (!confirm('Delete this project?')) return;
+      await supabase.from('past_projects').delete().eq('id', id).eq('family_id', familyId);
+      allProjects = allProjects.filter(p => p.id !== id);
+      renderCards();
+      return;
+    }
+
+    if (target.classList.contains('pp-act--edit')) {
+      const id      = Number(target.dataset.id);
+      const project = allProjects.find(p => p.id === id);
+      if (!project) return;
+      editingId              = id;
+      titleEl.value          = project.title;
+      categoryEl.value       = project.category ?? '';
+      statusFormEl.value     = project.status   ?? 'Ongoing';
+      yearEl.value           = project.year     ?? '';
+      roleEl.value           = project.role     ?? '';
+      skillsEl.value         = project.skills   ?? '';
+      detailsEl.value        = project.details  ?? '';
+      submitBtn.textContent  = 'Save Changes';
+      submitBtn.classList.add('pp-btn--save');
+      cancelBtn.style.display = 'inline-block';
+      titleEl.focus();
+      titleEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!familyId) return;
+    const title    = titleEl.value.trim();
+    const category = categoryEl.value || null;
+    const status   = statusFormEl.value;
+    const year     = yearEl.value.trim()   || null;
+    const role     = roleEl.value.trim()   || null;
+    const skills   = skillsEl.value.trim() || null;
+    const details  = detailsEl.value.trim() || null;
+    if (!title) return;
+    errorEl.style.display = 'none';
+    submitBtn.disabled = true;
+
+    if (editingId !== null) {
+      const { error } = await supabase.from('past_projects')
+        .update({ title, category, status, year, role, skills, details, updated_at: new Date().toISOString() })
+        .eq('id', editingId).eq('family_id', familyId);
+      if (error) { errorEl.textContent = error.message; errorEl.style.display = 'inline'; }
+      else { resetForm(); await loadProjects(); }
+    } else {
+      const { error } = await supabase.from('past_projects')
+        .insert({ family_id: familyId, title, category, status, year, role, skills, details });
+      if (error) { errorEl.textContent = error.message; errorEl.style.display = 'inline'; }
+      else { resetForm(); await loadProjects(); }
+    }
+    submitBtn.disabled = false;
+  });
+
+  function resetForm() {
+    editingId = null;
+    titleEl.value = ''; categoryEl.value = ''; statusFormEl.value = 'Ongoing';
+    yearEl.value = ''; roleEl.value = ''; skillsEl.value = ''; detailsEl.value = '';
+    submitBtn.textContent = 'Add Project';
+    submitBtn.classList.remove('pp-btn--save');
+    cancelBtn.style.display = 'none';
+  }
+  cancelBtn.addEventListener('click', resetForm);
+
+  document.getElementById('pp-export')!.addEventListener('click', () => {
+    if (!allProjects.length) return;
+    const cell = (v: any) => `"${(v ?? '').toString().replace(/"/g,'""')}"`;
+    const lines = [
+      ['Starred','Category','Project Name','Year','Role','Skills','Status','Details','Date Added'].map(cell).join(','),
+      ...allProjects.map(p => [
+        p.starred ? 'Yes' : 'No', p.category ?? '', p.title,
+        p.year ?? '', p.role ?? '', p.skills ?? '',
+        p.status ?? 'Ongoing', p.details ?? '',
+        new Date(p.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+      ].map(cell).join(','))
+    ];
+    const blob = new Blob([lines.join('\n')], { type:'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'past-projects.csv'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  let pendingImport: any[] = [];
+
+  function showPpError(msg: string) { errorEl.textContent = msg; errorEl.style.display = 'inline'; }
+
+  document.getElementById('pp-import-btn')!.addEventListener('click', () => {
+    (document.getElementById('pp-import-file') as HTMLInputElement).click();
+  });
+
+  document.getElementById('pp-import-file')!.addEventListener('change', async e => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    (e.target as HTMLInputElement).value = '';
+    let parsed: any;
+    try { parsed = JSON.parse(await file.text()); } catch {
+      showPpError('Invalid JSON file — could not parse.'); return;
+    }
+    if (!Array.isArray(parsed)) { showPpError('JSON must be an array of objects.'); return; }
+    const valid = parsed.filter((p: any) => p && typeof p.title === 'string' && p.title.trim());
+    if (!valid.length) { showPpError('No valid items found. Each item needs at least a "title" string.'); return; }
+    pendingImport = valid;
+    const preview = valid.slice(0, 3).map((p: any) => p.title.trim()).join(', ');
+    document.getElementById('pp-import-msg')!.textContent =
+      `${valid.length} item${valid.length !== 1 ? 's' : ''}: ${preview}${valid.length > 3 ? '…' : ''}`;
+    document.getElementById('pp-import-preview')!.style.display = 'flex';
+  });
+
+  document.getElementById('pp-import-confirm')!.addEventListener('click', async () => {
+    if (!familyId || !pendingImport.length) return;
+    const btn = document.getElementById('pp-import-confirm') as HTMLButtonElement;
+    btn.disabled = true; btn.textContent = 'Importing…';
+    const VALID_CATS = new Set(['School','Personal','Research','Competition','Volunteer','Other']);
+    const VALID_STATUSES = new Set(['Ongoing','Completed','On Hold','Abandoned']);
+    const rows = pendingImport.map((p: any) => ({
+      family_id:   familyId,
+      title:       p.title.trim(),
+      category:    VALID_CATS.has(p.category)     ? p.category : null,
+      status:      VALID_STATUSES.has(p.status)   ? p.status   : 'Ongoing',
+      year:        p.year    ? String(p.year).trim()    || null : null,
+      role:        p.role    ? String(p.role).trim()    || null : null,
+      skills:      p.skills  ? String(p.skills).trim()  || null : null,
+      details:     p.details ? String(p.details).trim() || null : null,
+      starred:     !!p.starred,
+      shortlisted: !!p.shortlisted,
+    }));
+    const { error } = await supabase.from('past_projects').insert(rows);
+    btn.disabled = false; btn.textContent = 'Import';
+    document.getElementById('pp-import-preview')!.style.display = 'none';
+    pendingImport = [];
+    if (error) { showPpError('Import failed: ' + error.message); return; }
+    await loadProjects();
+  });
+
+  document.getElementById('pp-import-cancel')!.addEventListener('click', () => {
+    document.getElementById('pp-import-preview')!.style.display = 'none';
+    pendingImport = [];
+  });
+
+  async function loadProjects() {
+    if (!familyId) return;
+    const { data, error } = await supabase.from('past_projects').select('*')
+      .eq('family_id', familyId).order('created_at', { ascending: false });
+    if (error) {
+      cardsEl.innerHTML = '<p class="pp-msg" style="color:var(--sl-color-red)">Failed to load.</p>';
+      return;
+    }
+    allProjects = data ?? [];
+    renderCards();
+  }
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      document.addEventListener('data-loaded', async () => {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (s) {
+          const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', s.user.id).single();
+          familyId = p?.family_id ?? '';
+          await loadProjects();
+        }
+      }, { once: true });
+      return;
+    }
+    const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', session.user.id).single();
+    familyId = p?.family_id ?? '';
+    await loadProjects();
+  }
+
+  init();
+</script>
+
+<style is:global>
+  #pp-wrap { max-width: 100%; }
+
+  .pp-form {
+    display: flex; flex-direction: column; gap: 0.75rem;
+    padding: 1.25rem; border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem; background: var(--sl-color-bg-nav); margin-bottom: 1.5rem;
+  }
+  .pp-form__fields { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 0.75rem; align-items: end; }
+  .pp-form__fields--row2 { grid-template-columns: 1fr 2fr; }
+  .pp-form__field { display: flex; flex-direction: column; gap: 0.25rem; }
+  .pp-label {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--sl-color-gray-2);
+  }
+  .pp-input, .pp-select, .pp-textarea {
+    padding: 0.5rem 0.65rem; border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.375rem; background: var(--sl-color-bg);
+    color: var(--sl-color-text); font-size: 0.875rem; font-family: inherit; width: 100%;
+  }
+  .pp-input:focus, .pp-select:focus, .pp-textarea:focus {
+    outline: 2px solid var(--sl-color-accent); border-color: var(--sl-color-accent);
+  }
+  .pp-textarea { resize: vertical; min-height: 72px; }
+  .pp-form__actions { display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap; }
+  .pp-btn {
+    padding: 0.45rem 1rem; border-radius: 0.375rem; font-size: 0.85rem;
+    font-family: inherit; cursor: pointer; border: 1px solid transparent; white-space: nowrap;
+  }
+  .pp-btn--primary { background: var(--sl-color-accent); color: #fff; border-color: var(--sl-color-accent); }
+  .pp-btn--primary:hover { opacity: 0.88; }
+  .pp-btn--save { background: #16a34a; border-color: #16a34a; color: #fff; }
+  .pp-btn--export { background: transparent; border-color: var(--sl-color-accent); color: var(--sl-color-accent); }
+  .pp-btn--export:hover { background: var(--sl-color-accent); color: #fff; }
+  .pp-btn--cancel { background: transparent; border-color: var(--sl-color-gray-4); color: var(--sl-color-gray-2); }
+  .pp-btn--cancel:hover { border-color: #ef4444; color: #ef4444; }
+  .pp-btn--import { background: transparent; border-color: var(--sl-color-gray-4); color: var(--sl-color-gray-2); }
+  .pp-btn--import:hover { border-color: var(--sl-color-accent); color: var(--sl-color-accent); }
+  .pp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .pp-error { font-size: 0.82rem; color: #ef4444; }
+  .pp-import-preview {
+    display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+    margin-top: 0.5rem; padding: 0.6rem 0.9rem;
+    background: var(--sl-color-bg-nav); border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.4rem; font-size: 0.82rem;
+  }
+  .pp-import-msg { color: var(--sl-color-gray-2); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pp-import-format { margin-top: 0.5rem; font-size: 0.8rem; color: var(--sl-color-gray-2); }
+  .pp-import-format summary {
+    cursor: pointer; user-select: none; color: var(--sl-color-gray-3);
+    font-size: 0.75rem; padding: 0.2rem 0;
+  }
+  .pp-import-format summary:hover { color: var(--sl-color-accent); }
+  .pp-import-pre {
+    margin: 0.4rem 0 0; padding: 0.75rem 1rem;
+    background: var(--sl-color-bg-nav); border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.375rem; font-size: 0.75rem; line-height: 1.6;
+    overflow-x: auto; white-space: pre; color: var(--sl-color-text);
+  }
+
+  .pp-toolbar { display: flex; align-items: center; margin-bottom: 0.65rem; }
+  .pp-count { font-size: 0.82rem; color: var(--sl-color-gray-2); }
+
+  /* Card grid */
+  .pp-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+  .pp-msg   { color: var(--sl-color-gray-2); font-size: 0.9rem; padding: 2rem 0; text-align: center; }
+
+  .pp-card {
+    border: 1px solid var(--sl-color-gray-5); border-radius: 0.5rem;
+    background: var(--sl-color-bg-nav); padding: 0.9rem 1rem;
+    display: flex; flex-direction: column; gap: 0.4rem;
+    border-left: 4px solid var(--cc, #94a3b8);
+    transition: box-shadow 0.15s;
+  }
+  .pp-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .pp-card--abandoned .pp-card__title { opacity: 0.5; text-decoration: line-through; }
+  .pp-card--complete  .pp-card__title { opacity: 0.8; }
+
+  .pp-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+  .pp-card__badges { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; flex: 1; min-width: 0; }
+  .pp-card__icons  { display: flex; gap: 0.15rem; flex-shrink: 0; }
+
+  .pp-cat-badge {
+    font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.45rem;
+    border-radius: 9999px; border: 1px solid transparent; white-space: nowrap;
+  }
+
+  .pp-status-sel {
+    padding: 0.18rem 0.4rem; border-radius: 0.3rem;
+    border: 1px solid var(--sc, #3b82f6); background: transparent;
+    color: var(--sc, #3b82f6); font-size: 0.72rem; font-family: inherit;
+    cursor: pointer; font-weight: 600;
+  }
+  .pp-status-sel:focus { outline: 2px solid var(--sl-color-accent); }
+
+  .pp-star {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.1rem; color: var(--sl-color-gray-4); padding: 0; line-height: 1; transition: color 0.1s;
+  }
+  .pp-star--on, .pp-star:hover { color: #f59e0b; }
+
+  .pp-pin {
+    background: none; border: none; cursor: pointer;
+    font-size: 0.95rem; padding: 0; line-height: 1;
+    opacity: 0.2; filter: grayscale(1); transition: all 0.15s;
+  }
+  .pp-pin--on { opacity: 1; filter: none; }
+  .pp-pin:hover { opacity: 0.75; filter: none; }
+
+  .pp-card__title-row {
+    display: flex; align-items: flex-start; gap: 0.4rem;
+  }
+  .pp-card__title-row--toggle { cursor: pointer; }
+  .pp-card__title-row--toggle:hover .pp-card__title { color: var(--sl-color-accent); }
+
+  .pp-card__title {
+    font-weight: 600; font-size: 0.9rem; color: var(--sl-color-text);
+    line-height: 1.4; margin: 0; flex: 1;
+  }
+  .pp-card__chevron {
+    font-size: 0.65rem; color: var(--sl-color-gray-3); flex-shrink: 0;
+    margin-top: 0.22rem; transition: transform 0.2s;
+  }
+  .pp-card--open .pp-card__chevron { transform: rotate(90deg); }
+
+  .pp-card__year {
+    font-size: 0.75rem; color: var(--sl-color-gray-2); margin: 0;
+  }
+
+  .pp-card__extra {
+    display: none; flex-direction: column; gap: 0.3rem;
+  }
+  .pp-card--open .pp-card__extra { display: flex; }
+
+  .pp-card__meta {
+    font-size: 0.78rem; color: var(--sl-color-gray-2); margin: 0; line-height: 1.4;
+  }
+  .pp-card__meta-label {
+    font-weight: 700; font-size: 0.67rem; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--sl-color-gray-3); margin-right: 0.3rem;
+  }
+  .pp-card__details {
+    font-size: 0.8rem; color: var(--sl-color-gray-2); margin: 0; line-height: 1.5;
+    border-top: 1px solid var(--sl-color-gray-6); padding-top: 0.4rem; margin-top: 0.1rem;
+  }
+
+  .pp-card__footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: auto; padding-top: 0.35rem;
+  }
+  .pp-card__date   { font-size: 0.72rem; color: var(--sl-color-gray-3); }
+  .pp-card__actions { display: flex; gap: 0.3rem; }
+
+  .pp-act {
+    font-size: 0.62rem; background: none; border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.25rem; padding: 0.08rem 0.35rem;
+    cursor: pointer; color: var(--sl-color-text); font-family: inherit;
+  }
+  .pp-act--delete { color: #ef4444; border-color: #ef4444; }
+  .pp-act:hover { opacity: 0.7; }
+
+  @media (max-width: 900px) {
+    .pp-form__fields { grid-template-columns: 2fr 1fr 1fr; }
+    .pp-form__fields--row2 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 600px) {
+    .pp-form__fields, .pp-form__fields--row2 { grid-template-columns: 1fr; }
+    .pp-cards { grid-template-columns: 1fr; }
+  }
+</style>

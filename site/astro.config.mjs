@@ -33,6 +33,8 @@ export default defineConfig({
 						{ label: '🤖 Robotics Ideas', link: '/robotics-ideas/' },
 						{ label: '🇮🇳 India Activities Ideas', link: '/india-ideas/' },
 						{ label: '💡 Ideas Board', link: '/ideas/' },
+						{ label: '🏃 Extra Curriculars', link: '/ec-ideas/' },
+						{ label: '🔧 Past Projects', link: '/past-projects/' },
 					],
 				},
 				{
