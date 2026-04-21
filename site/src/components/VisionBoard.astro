@@ -142,14 +142,14 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   async function loadData(familyId) {
     await Promise.all(SOURCES.map(async s => {
       const { supabase } = await import('./lib/supabase');
-      // Starred items first, then newest
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from(s.table)
         .select('id, title, starred, status')
         .eq('family_id', familyId)
-        .order('starred', { ascending: false })
         .order('created_at', { ascending: false });
-      const rows = data ?? [];
+      if (error) console.error('[VisionBoard]', s.table, error.message);
+      // Sort starred first in JS to avoid boolean-order issues
+      const rows = (data ?? []).sort((a, b) => (b.starred ? 1 : 0) - (a.starred ? 1 : 0));
       dataMap[s.id] = { total: rows.length, items: rows };
     }));
     loadingEl.style.display = 'none';
