@@ -51,6 +51,7 @@ export default defineConfig({
 						{ label: '✅ Family To-Do', link: '/todos/' },
 						{ label: '📓 Notes', link: '/notes/' },
 						{ label: '🔗 Reference Links', link: '/references/' },
+						{ label: '🏫 Colleges Info', link: '/colleges/' },
 					],
 				},
 				{
