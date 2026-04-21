@@ -168,7 +168,10 @@
               <button class="et-pin${t.shortlisted ? ' et-pin--on' : ''}" data-id="${t.id}" data-shortlisted="${!!t.shortlisted}" title="Toggle shortlist">📌</button>
             </div>
           </div>
-          <p class="et-card__title">${esc(t.title)}</p>
+          <div class="et-card__title-row${t.details ? ' et-card__title-row--toggle' : ''}" data-action="toggle">
+            <p class="et-card__title">${esc(t.title)}</p>
+            ${t.details ? `<span class="et-card__chevron">▶</span>` : ''}
+          </div>
           ${t.details ? `<p class="et-card__details">${esc(t.details)}</p>` : ''}
           <div class="et-card__footer">
             <span class="et-card__date">${formatDate(t.created_at)}</span>
@@ -214,6 +217,12 @@
   });
 
   cardsEl.addEventListener('click', async e => {
+    const toggleRow = (e.target as HTMLElement).closest('.et-card__title-row--toggle');
+    if (toggleRow) {
+      toggleRow.closest('.et-card')?.classList.toggle('et-card--open');
+      return;
+    }
+
     const target = e.target as HTMLElement;
 
     const starBtn = target.closest<HTMLElement>('.et-star');
@@ -506,6 +515,20 @@
   .et-card__badges { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; min-width: 0; }
   .et-card__icons  { display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0; }
 
+  .et-card__title-row {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 0.4rem;
+  }
+  .et-card__title-row--toggle { cursor: pointer; }
+  .et-card__title-row--toggle:hover .et-card__title { color: var(--sl-color-accent); }
+
+  .et-card__chevron {
+    font-size: 0.6rem; color: var(--sl-color-gray-3);
+    flex-shrink: 0; margin-top: 0.35rem;
+    transition: transform 0.15s;
+    display: inline-block;
+  }
+  .et-card--open .et-card__chevron { transform: rotate(90deg); }
+
   .et-card__title {
     font-weight: 600; color: var(--sl-color-text);
     line-height: 1.45; font-size: 0.9rem; margin: 0;
@@ -513,8 +536,9 @@
   .et-card__details {
     font-size: 0.78rem; color: var(--sl-color-gray-2);
     line-height: 1.4; margin: 0;
-    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    display: none;
   }
+  .et-card--open .et-card__details { display: block; }
   .et-card__footer {
     display: flex; align-items: center; justify-content: space-between;
     margin-top: auto; padding-top: 0.35rem;
