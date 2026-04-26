@@ -1237,6 +1237,37 @@ li:has(a[href$="/admin/"]) {
   color: #ef4444;
 }
 
+.todo-readonly-notice {
+  font-size: 0.82rem;
+  color: var(--sl-color-gray-3);
+  background: var(--sl-color-bg-sidebar);
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.todo-done-icon {
+  display: inline-block;
+  width: 1.1rem;
+  text-align: center;
+  color: var(--sl-color-gray-3);
+  font-size: 0.9rem;
+}
+
+.sb-readonly-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 9999px;
+  padding: 0.15rem 0.55rem;
+  white-space: nowrap;
+}
+
 /* ── Admin panel ── */
 .admin-status {
   padding: 1rem;

@@ -45,6 +45,8 @@
       : '';
 
     const iv = (v: string) => savedInt === v ? ' active' : '';
+    const chipDisabled = isReadOnly ? ' disabled' : '';
+    const noteReadonly = isReadOnly ? ' readonly' : '';
 
     return `<div class="program-card"
       data-tier="${p.tier}"
@@ -72,12 +74,12 @@
 
       <div class="program-card__interest-row">
         <span class="program-card__interest-label">Interest:</span>
-        <button class="interest-chip${iv('')}" data-iv="">—</button>
-        <button class="interest-chip${iv('applied')}" data-iv="applied">✅ Applied</button>
-        <button class="interest-chip${iv('applying')}" data-iv="applying">🔥 Applying</button>
-        <button class="interest-chip${iv('researching')}" data-iv="researching">👀 Researching</button>
-        <button class="interest-chip${iv('maybe')}" data-iv="maybe">🤔 Maybe</button>
-        <button class="interest-chip${iv('skip')}" data-iv="skip">❌ Skip</button>
+        <button class="interest-chip${iv('')}"${chipDisabled} data-iv="">—</button>
+        <button class="interest-chip${iv('applied')}"${chipDisabled} data-iv="applied">✅ Applied</button>
+        <button class="interest-chip${iv('applying')}"${chipDisabled} data-iv="applying">🔥 Applying</button>
+        <button class="interest-chip${iv('researching')}"${chipDisabled} data-iv="researching">👀 Researching</button>
+        <button class="interest-chip${iv('maybe')}"${chipDisabled} data-iv="maybe">🤔 Maybe</button>
+        <button class="interest-chip${iv('skip')}"${chipDisabled} data-iv="skip">❌ Skip</button>
       </div>
 
       <div class="program-card__body">
@@ -100,7 +102,7 @@
           <textarea class="program-card__user-note"
             data-key="${esc(noteKey)}"
             placeholder="Add your personal notes, reminders, or application status…"
-            rows="2">${esc(savedNote)}</textarea>
+            rows="2"${noteReadonly}>${esc(savedNote)}</textarea>
         </div>
         <div class="program-card__footer">
           <div class="program-card__deadline">⏰ ${esc(p.deadline)}</div>
@@ -109,6 +111,21 @@
       </div>
     </div>`;
   }
+
+  // ── Readonly mode ────────────────────────────────────────────────────────
+  let isReadOnly = document.body.dataset.readonly === 'true';
+
+  document.addEventListener('app-readonly-state', (e: Event) => {
+    isReadOnly = (e as CustomEvent).detail?.isReadOnly === true;
+    if (isReadOnly) {
+      document.querySelectorAll<HTMLButtonElement>('.interest-chip').forEach(btn => {
+        btn.disabled = true;
+      });
+      document.querySelectorAll<HTMLTextAreaElement>('.program-card__user-note').forEach(ta => {
+        ta.readOnly = true;
+      });
+    }
+  });
 
   // ── Program data store (populated after Supabase load) ──────────────────
   let allPrograms: any[] = [];
@@ -218,6 +235,7 @@
   document.addEventListener('click', e => {
     const chip = (e.target as Element).closest<HTMLElement>('.interest-chip');
     if (!chip) return;
+    if (isReadOnly) return;
     const row  = chip.closest('.program-card__interest-row');
     if (!row) return;
     const card = chip.closest<HTMLElement>('.program-card');
@@ -238,6 +256,7 @@
   document.addEventListener('input', e => {
     const ta = e.target as HTMLTextAreaElement;
     if (!ta.classList.contains('program-card__user-note')) return;
+    if (isReadOnly) return;
     if (ta.dataset.key) localStorage.setItem(ta.dataset.key, ta.value);
   });
 

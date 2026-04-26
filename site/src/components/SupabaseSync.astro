@@ -18,6 +18,7 @@
 <!-- Family + sign-out indicator (bottom-right) -->
 <div id="sb-user-bar" class="sb-user-bar" style="display:none">
   <span id="sb-family-badge" class="sb-family-badge"></span>
+  <span id="sb-readonly-badge" class="sb-readonly-badge" style="display:none">View Only</span>
   <button id="sb-signout" class="sb-signout-btn" title="Sign out">Sign Out</button>
 </div>
 
@@ -92,7 +93,8 @@
 
   /* ── Upsert a single field for a program ── */
   async function upsert(programName: string, field: 'note' | 'interest', value: string) {
-    if (!familyId) return;   // not signed in — skip sync
+    if (!familyId) return;
+    if (document.body.dataset.readonly === 'true') return;   // readonly family — no writes
     const { error } = await supabase.from('program_data').upsert(
       {
         program_name: programName,
@@ -145,18 +147,27 @@
       });
     }
 
-    // Get family plan for nav access
+    // Get family plan and readonly flag
     let familyPlan = 'standard';
+    let isReadOnly = false;
     if (familyId) {
       const { data: famData } = await supabase
         .from('families')
-        .select('plan')
+        .select('plan, is_readonly')
         .eq('id', familyId)
         .single();
       familyPlan = famData?.plan ?? 'standard';
+      isReadOnly = famData?.is_readonly === true && !isAdmin;
+    }
+
+    if (isReadOnly) {
+      document.body.dataset.readonly = 'true';
+      const badge = document.getElementById('sb-readonly-badge');
+      if (badge) badge.style.display = '';
     }
 
     hideModal(displayName, familyId);
+    document.dispatchEvent(new CustomEvent('app-readonly-state', { detail: { isReadOnly } }));
     await Promise.all([loadData(), applyNavAccess(familyPlan, isAdmin)]);
   }
 

@@ -53,6 +53,7 @@
   let myFamilyId = '';
   let members: Member[] = [];
   let cachedTodos: Todo[] = [];
+  let isReadOnly = document.body.dataset.readonly === 'true';
 
   /* ── Init ── */
   async function init() {
@@ -106,8 +107,26 @@
 
     show('todo-loading', false);
     show('todo-ui', true);
+    if (isReadOnly) applyReadOnly();
     await loadTodos();
   }
+
+  function applyReadOnly() {
+    const form = document.getElementById('add-todo-form')!;
+    form.style.display = 'none';
+    if (!document.getElementById('todo-readonly-notice')) {
+      const notice = document.createElement('p');
+      notice.id = 'todo-readonly-notice';
+      notice.className = 'todo-readonly-notice';
+      notice.textContent = 'View only — your group cannot add or edit tasks.';
+      form.parentElement!.insertBefore(notice, form);
+    }
+  }
+
+  document.addEventListener('app-readonly-state', (e: Event) => {
+    isReadOnly = (e as CustomEvent).detail?.isReadOnly === true;
+    if (isReadOnly) { applyReadOnly(); loadTodos(); }
+  });
 
   /* ── Load & render todos ── */
   async function loadTodos() {
@@ -172,11 +191,14 @@
   }
 
   function todoItemHtml(t: Todo) {
-    const canDelete = t.created_by === myUserId;
+    const canDelete = !isReadOnly && t.created_by === myUserId;
+    const checkbox = isReadOnly
+      ? `<span class="todo-done-icon">${t.done ? '✓' : '○'}</span>`
+      : `<input class="todo-checkbox" type="checkbox" data-id="${t.id}" ${t.done ? 'checked' : ''} />`;
     return `
       <li class="todo-item ${t.done ? 'todo-item--done' : ''}">
         <label class="todo-item__label">
-          <input class="todo-checkbox" type="checkbox" data-id="${t.id}" ${t.done ? 'checked' : ''} />
+          ${checkbox}
           <span class="todo-item__title">${escHtml(t.title)}</span>
         </label>
         ${canDelete
@@ -216,12 +238,14 @@
 
   /* ── Toggle done ── */
   async function toggleDone(id: string, done: boolean) {
+    if (isReadOnly) return;
     await supabase.from('todos').update({ done, updated_at: new Date().toISOString() }).eq('id', id);
     await loadTodos();
   }
 
   /* ── Delete ── */
   async function deleteTodo(id: string) {
+    if (isReadOnly) return;
     await supabase.from('todos').delete().eq('id', id);
     await loadTodos();
   }
