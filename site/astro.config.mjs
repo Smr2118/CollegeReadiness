@@ -19,6 +19,7 @@ export default defineConfig({
 				{ label: 'Home', link: '/' },
 				{
 					label: 'Programs & Activities',
+					collapsed: true,
 					items: [
 						{ label: '☀️ College Summer Programs', link: '/programs/' },
 						{ label: '💼 Internships', link: '/internships/' },
@@ -28,6 +29,7 @@ export default defineConfig({
 				},
 				{
 					label: 'Brainstorm',
+					collapsed: true,
 					items: [
 						{ label: '✍️ Essay Ideas', link: '/essay-topics/' },
 						{ label: '🤖 Robotics Ideas', link: '/robotics-ideas/' },
@@ -38,6 +40,7 @@ export default defineConfig({
 				},
 				{
 					label: 'Mind Map',
+					collapsed: true,
 					items: [
 						{ label: '🔮 Vision Board', link: '/vision-board/' },
 						{ label: '💡 Ideas Board', link: '/ideas/' },
@@ -45,6 +48,7 @@ export default defineConfig({
 				},
 				{
 					label: 'Shortlists',
+					collapsed: true,
 					items: [
 						{ label: '✍️ Essay Theme', link: '/shortlists/essay-theme/' },
 						{ label: '🤖 Robotics', link: '/shortlists/robotics/' },
@@ -54,6 +58,7 @@ export default defineConfig({
 				},
 				{
 					label: 'Resources',
+					collapsed: true,
 					items: [
 						{ label: '📅 Deadline Calendar', link: '/calendar/' },
 						{ label: '✅ Family To-Do', link: '/todos/' },
@@ -64,6 +69,7 @@ export default defineConfig({
 				},
 				{
 					label: 'Admin',
+					collapsed: true,
 					items: [
 						{ label: '⚙️ Admin Panel', link: '/admin/' },
 					],
