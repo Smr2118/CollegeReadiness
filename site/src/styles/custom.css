@@ -476,6 +476,27 @@ li:has(a[href$="/admin/"]) {
   margin: 0;
 }
 
+.sb-msg--success {
+  color: #16a34a !important;
+}
+
+.sb-text-btn {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--sl-color-accent);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0.4rem 0 0;
+  text-align: center;
+}
+
+.sb-text-btn:hover {
+  opacity: 0.75;
+}
+
 .sb-user-bar {
   position: fixed;
   top: 0.6rem;

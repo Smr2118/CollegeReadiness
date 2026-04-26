@@ -561,6 +561,7 @@
             </td>
             <td style="white-space:nowrap">
               <button class="admin-btn admin-btn--sm save-user-btn" data-uid="${u.user_id}">Save</button>
+              <button class="admin-btn admin-btn--sm reset-pass-btn" data-email="${escAttr(u.email ?? '')}">Reset PW</button>
               <button class="admin-btn admin-btn--sm admin-btn--danger del-user-btn" data-uid="${u.user_id}" data-uname="${escAttr(u.display_name ?? u.email ?? '')}">Del</button>
             </td>
           </tr>`).join('')}
@@ -586,6 +587,18 @@
 
         btn.textContent = err ? 'Error' : '✓ Saved';
         setTimeout(() => { btn.textContent = 'Save'; btn.disabled = false; }, 2000);
+      });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.reset-pass-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const email = btn.dataset.email!;
+        if (!email) { alert('No email address for this user.'); return; }
+        btn.textContent = '…'; btn.disabled = true;
+        const redirectTo = window.location.origin + '/CollegeReadiness/';
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+        btn.textContent = error ? 'Error' : '✓ Sent';
+        setTimeout(() => { btn.textContent = 'Reset PW'; btn.disabled = false; }, 3000);
       });
     });
 
