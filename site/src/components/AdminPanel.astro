@@ -32,6 +32,12 @@
           <label class="admin-label">Display Name</label>
           <input id="fam-name" class="admin-input" type="text" placeholder="Sant Family" required />
         </div>
+        <div class="admin-form__row">
+          <label class="admin-label" style="display:flex;align-items:center;gap:0.5rem">
+            <input id="fam-readonly" type="checkbox" />
+            Read-Only <span class="admin-hint">(demo — blocks all data writes via RLS)</span>
+          </label>
+        </div>
         <button class="admin-btn" type="submit">Create Family</button>
         <p id="fam-msg" class="admin-msg" style="display:none"></p>
       </form>
@@ -482,7 +488,7 @@
 
     families = data;
     el.innerHTML = `<table class="admin-table">
-      <thead><tr><th>ID</th><th>Name</th><th>Plan</th><th>Created</th><th></th></tr></thead>
+      <thead><tr><th>ID</th><th>Name</th><th>Plan</th><th>Read-Only</th><th>Created</th><th></th></tr></thead>
       <tbody>
         ${data.map(f => `
           <tr>
@@ -495,6 +501,12 @@
                 <option value="premium"  ${f.plan === 'premium'  ? 'selected' : ''}>⭐ Premium</option>
               </select>
             </td>
+            <td>
+              <select class="admin-select fam-readonly-sel" data-fid="${f.id}">
+                <option value="false" ${!f.is_readonly ? 'selected' : ''}>No</option>
+                <option value="true"  ${f.is_readonly  ? 'selected' : ''}>Yes — Demo</option>
+              </select>
+            </td>
             <td>${fmt(f.created_at)}</td>
             <td><button class="admin-btn admin-btn--sm fam-save-btn" data-fid="${f.id}">Save</button></td>
           </tr>`).join('')}
@@ -502,10 +514,11 @@
 
     document.querySelectorAll<HTMLButtonElement>('.fam-save-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
-        const fid  = btn.dataset.fid!;
-        const plan = document.querySelector<HTMLSelectElement>(`.fam-plan-sel[data-fid="${fid}"]`)!.value;
+        const fid         = btn.dataset.fid!;
+        const plan        = document.querySelector<HTMLSelectElement>(`.fam-plan-sel[data-fid="${fid}"]`)!.value;
+        const is_readonly = document.querySelector<HTMLSelectElement>(`.fam-readonly-sel[data-fid="${fid}"]`)!.value === 'true';
         btn.textContent = '…'; btn.disabled = true;
-        const { error } = await supabase.from('families').update({ plan }).eq('id', fid);
+        const { error } = await supabase.from('families').update({ plan, is_readonly }).eq('id', fid);
         btn.textContent = error ? 'Error' : '✓';
         setTimeout(() => { btn.textContent = 'Save'; btn.disabled = false; }, 2000);
       });
@@ -516,9 +529,10 @@
 
   document.getElementById('create-family-form')!.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const id   = val('fam-id').toLowerCase().replace(/\s+/g, '-');
-    const name = val('fam-name');
-    const { error } = await supabase.from('families').insert({ id, name });
+    const id          = val('fam-id').toLowerCase().replace(/\s+/g, '-');
+    const name        = val('fam-name');
+    const is_readonly = (document.getElementById('fam-readonly') as HTMLInputElement).checked;
+    const { error }   = await supabase.from('families').insert({ id, name, is_readonly });
     setMsg('fam-msg', error ? `Error: ${error.message}` : `Family "${name}" created.`, !error);
     if (!error) { (e.target as HTMLFormElement).reset(); await loadFamilies(); }
   });
