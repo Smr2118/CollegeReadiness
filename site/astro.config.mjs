@@ -31,6 +31,7 @@ export default defineConfig({
 					label: 'Brainstorm',
 					collapsed: true,
 					items: [
+						{ label: '🎓 Colleges', link: '/college-ideas/' },
 						{ label: '✍️ Essay Ideas', link: '/essay-topics/' },
 						{ label: '🤖 Robotics Ideas', link: '/robotics-ideas/' },
 						{ label: '🇮🇳 India Activities Ideas', link: '/india-ideas/' },

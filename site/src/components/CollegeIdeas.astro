@@ -1,0 +1,626 @@
+---
+---
+
+<div id="coi-wrap">
+
+  <!-- Add / Edit form -->
+  <form id="coi-form" class="coi-form">
+    <div class="coi-form__fields coi-form__fields--row1">
+      <div class="coi-form__field coi-form__field--name">
+        <label class="coi-label" for="coi-name">College Name</label>
+        <input id="coi-name" class="coi-input" type="text"
+          placeholder="e.g. MIT, Stanford, UMich" required />
+      </div>
+      <div class="coi-form__field">
+        <label class="coi-label" for="coi-tier">Tier</label>
+        <select id="coi-tier" class="coi-select">
+          <option value="">— Tier —</option>
+          <option>Dream</option>
+          <option>Reach</option>
+          <option>Target</option>
+          <option>Safety</option>
+        </select>
+      </div>
+      <div class="coi-form__field">
+        <label class="coi-label" for="coi-interest">Interest Level</label>
+        <select id="coi-interest" class="coi-select">
+          <option value="">— Interest —</option>
+          <option>Very High</option>
+          <option>High</option>
+          <option>Medium</option>
+          <option>Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="coi-form__fields coi-form__fields--row2">
+      <div class="coi-form__field">
+        <label class="coi-label" for="coi-course">Course of Study</label>
+        <input id="coi-course" class="coi-input" type="text"
+          placeholder="e.g. Computer Science, Biology" />
+      </div>
+      <div class="coi-form__field">
+        <label class="coi-label" for="coi-scope">Scope for Course</label>
+        <select id="coi-scope" class="coi-select">
+          <option value="">— Scope —</option>
+          <option>Excellent</option>
+          <option>Good</option>
+          <option>Fair</option>
+          <option>Limited</option>
+        </select>
+      </div>
+      <div class="coi-form__field">
+        <label class="coi-label" for="coi-region">Region</label>
+        <input id="coi-region" class="coi-input" type="text"
+          placeholder="e.g. Northeast, West Coast" />
+      </div>
+    </div>
+    <div class="coi-form__field">
+      <label class="coi-label" for="coi-notes">Notes</label>
+      <textarea id="coi-notes" class="coi-textarea"
+        placeholder="Deadlines, fit notes, financial aid, visit plans…" rows="3"></textarea>
+    </div>
+    <div class="coi-form__actions">
+      <button type="submit" class="coi-btn coi-btn--primary" id="coi-submit">Add College</button>
+      <button type="button" class="coi-btn coi-btn--export" id="coi-export">⬇ Export CSV</button>
+      <button type="button" class="coi-btn coi-btn--import" id="coi-import-btn">⬆ Import JSON</button>
+      <input type="file" id="coi-import-file" accept=".json" style="display:none" />
+      <button type="button" class="coi-btn coi-btn--cancel" id="coi-cancel" style="display:none">Cancel</button>
+      <span id="coi-error" class="coi-error" style="display:none"></span>
+    </div>
+    <div id="coi-import-preview" class="coi-import-preview" style="display:none">
+      <span id="coi-import-msg" class="coi-import-msg"></span>
+      <button type="button" class="coi-btn coi-btn--primary" id="coi-import-confirm">Import</button>
+      <button type="button" class="coi-btn coi-btn--cancel" id="coi-import-cancel">Cancel</button>
+    </div>
+    <details class="coi-import-format">
+      <summary>JSON format reference</summary>
+      <pre class="coi-import-pre" is:raw>[
+  {
+    "name": "MIT",                        // required
+    "tier": "Reach",                      // Dream | Reach | Target | Safety
+    "course_of_study": "Computer Science",
+    "interest_level": "High",             // Very High | High | Medium | Low
+    "course_scope": "Excellent",          // Excellent | Good | Fair | Limited
+    "region": "Northeast",
+    "notes": "Early Action deadline Nov 1. Strong robotics research.",
+    "starred": false,
+    "shortlisted": false
+  }
+]</pre>
+    </details>
+  </form>
+
+  <!-- Cards area -->
+  <div class="coi-toolbar">
+    <span id="coi-count" class="coi-count"></span>
+  </div>
+  <div id="coi-cards" class="coi-cards">
+    <p class="coi-msg">Loading…</p>
+  </div>
+</div>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  let familyId  = '';
+  let editingId: number | null = null;
+  let allColleges: any[] = [];
+  let filterTier     = 'all';
+  let filterInterest = 'all';
+  let filterStarred  = false;
+  let sortMode       = 'newest';
+
+  const form        = document.getElementById('coi-form')     as HTMLFormElement;
+  const nameEl      = document.getElementById('coi-name')     as HTMLInputElement;
+  const tierEl      = document.getElementById('coi-tier')     as HTMLSelectElement;
+  const interestEl  = document.getElementById('coi-interest') as HTMLSelectElement;
+  const courseEl    = document.getElementById('coi-course')   as HTMLInputElement;
+  const scopeEl     = document.getElementById('coi-scope')    as HTMLSelectElement;
+  const regionEl    = document.getElementById('coi-region')   as HTMLInputElement;
+  const notesEl     = document.getElementById('coi-notes')    as HTMLTextAreaElement;
+  const submitBtn   = document.getElementById('coi-submit')   as HTMLButtonElement;
+  const cancelBtn   = document.getElementById('coi-cancel')   as HTMLButtonElement;
+  const errorEl     = document.getElementById('coi-error')    as HTMLElement;
+  const cardsEl     = document.getElementById('coi-cards')    as HTMLElement;
+  const countEl     = document.getElementById('coi-count')    as HTMLElement;
+
+  const TIER_COLOR: Record<string, string> = {
+    'Dream':  '#7c3aed',
+    'Reach':  '#ef4444',
+    'Target': '#3b82f6',
+    'Safety': '#22c55e',
+  };
+
+  const INTEREST_COLOR: Record<string, string> = {
+    'Very High': '#8b5cf6',
+    'High':      '#3b82f6',
+    'Medium':    '#f59e0b',
+    'Low':       '#94a3b8',
+  };
+
+  const SCOPE_COLOR: Record<string, string> = {
+    'Excellent': '#22c55e',
+    'Good':      '#3b82f6',
+    'Fair':      '#f59e0b',
+    'Limited':   '#94a3b8',
+  };
+
+  function esc(s: string | null | undefined) {
+    return (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function formatDate(iso: string) {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function visibleColleges() {
+    let list = allColleges.filter(c => {
+      if (filterTier     !== 'all' && c.tier           !== filterTier)     return false;
+      if (filterInterest !== 'all' && c.interest_level !== filterInterest) return false;
+      if (filterStarred  && !c.starred) return false;
+      return true;
+    });
+    const tierOrder = ['Dream', 'Reach', 'Target', 'Safety'];
+    list.sort((a, b) => {
+      if (sortMode === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sortMode === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (sortMode === 'az')     return a.name.localeCompare(b.name);
+      if (sortMode === 'za')     return b.name.localeCompare(a.name);
+      if (sortMode === 'tier')   return tierOrder.indexOf(a.tier ?? 'Reach') - tierOrder.indexOf(b.tier ?? 'Reach');
+      return 0;
+    });
+    return list;
+  }
+
+  function renderCards() {
+    const colleges = visibleColleges();
+    countEl.textContent = `${colleges.length} college${colleges.length !== 1 ? 's' : ''}`;
+
+    if (colleges.length === 0) {
+      cardsEl.innerHTML = '<p class="coi-msg">No colleges match. Try adjusting filters.</p>';
+      return;
+    }
+
+    cardsEl.innerHTML = colleges.map(c => {
+      const tc = TIER_COLOR[c.tier]              ?? '#94a3b8';
+      const ic = INTEREST_COLOR[c.interest_level] ?? '#94a3b8';
+      const sc = SCOPE_COLOR[c.course_scope]      ?? '#94a3b8';
+      const hasDetails = !!(c.notes || c.course_of_study || c.course_scope || c.region);
+      return `
+        <div class="coi-card" style="--tc:${tc}" data-id="${c.id}">
+          <div class="coi-card__top">
+            <div class="coi-card__badges">
+              ${c.tier ? `<span class="coi-tier-badge" style="background:${tc}18;color:${tc};border-color:${tc}40">${esc(c.tier)}</span>` : ''}
+              ${c.interest_level ? `<span class="coi-interest-badge" style="background:${ic}18;color:${ic};border-color:${ic}40">${esc(c.interest_level)}</span>` : ''}
+            </div>
+            <div class="coi-card__icons">
+              <button class="coi-star${c.starred ? ' coi-star--on' : ''}" data-id="${c.id}" data-starred="${!!c.starred}" title="Star">${c.starred ? '★' : '☆'}</button>
+              <button class="coi-pin${c.shortlisted ? ' coi-pin--on' : ''}" data-id="${c.id}" data-shortlisted="${!!c.shortlisted}" title="Shortlist">📌</button>
+            </div>
+          </div>
+          <div class="coi-card__title-row${hasDetails ? ' coi-card__title-row--toggle' : ''}" data-action="toggle">
+            <div class="coi-card__name-block">
+              <p class="coi-card__name">${esc(c.name)}</p>
+              ${c.course_of_study ? `<span class="coi-card__course">📚 ${esc(c.course_of_study)}</span>` : ''}
+            </div>
+            ${hasDetails ? `<span class="coi-card__chevron">▶</span>` : ''}
+          </div>
+          <div class="coi-card__meta">
+            ${c.course_scope ? `<span class="coi-scope-badge" style="background:${sc}18;color:${sc};border-color:${sc}40">Scope: ${esc(c.course_scope)}</span>` : ''}
+            ${c.region ? `<span class="coi-region-tag">📍 ${esc(c.region)}</span>` : ''}
+          </div>
+          ${c.notes ? `<p class="coi-card__notes">${esc(c.notes)}</p>` : ''}
+          <div class="coi-card__footer">
+            <span class="coi-card__date">${formatDate(c.created_at)}</span>
+            <div class="coi-card__actions">
+              <button class="coi-act coi-act--edit"   data-id="${c.id}">Edit</button>
+              <button class="coi-act coi-act--delete" data-id="${c.id}">Delete</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  /* ── Filter chips + sort ── */
+  document.addEventListener('click', e => {
+    const chip = (e.target as Element).closest<HTMLElement>('.filter-chip[data-filter]');
+    if (!chip) return;
+    const filter = chip.dataset.filter!;
+    const value  = chip.dataset.value!;
+    if (filter === 'tier')     filterTier     = value;
+    if (filter === 'interest') filterInterest = value;
+    document.querySelectorAll<HTMLElement>(`.filter-chip[data-filter="${filter}"]`).forEach(c =>
+      c.classList.toggle('active', c.dataset.value === value));
+    renderCards();
+  });
+
+  document.addEventListener('change', e => {
+    const target = e.target as HTMLElement;
+    if (target.id === 'bs-sort')    { sortMode = (target as HTMLSelectElement).value; renderCards(); }
+    if (target.id === 'bs-starred') { filterStarred = (target as HTMLInputElement).checked; renderCards(); }
+  });
+
+  /* ── Card interactions ── */
+  cardsEl.addEventListener('click', async e => {
+    const toggleRow = (e.target as HTMLElement).closest('.coi-card__title-row--toggle');
+    if (toggleRow) {
+      toggleRow.closest('.coi-card')?.classList.toggle('coi-card--open');
+      return;
+    }
+
+    const target = e.target as HTMLElement;
+
+    const starBtn = target.closest<HTMLElement>('.coi-star');
+    if (starBtn) {
+      const id      = Number(starBtn.dataset.id);
+      const starred = starBtn.dataset.starred !== 'true';
+      await supabase.from('college_ideas').update({ starred }).eq('id', id).eq('family_id', familyId);
+      const c = allColleges.find(c => c.id === id);
+      if (c) { c.starred = starred; renderCards(); }
+      return;
+    }
+
+    const pinBtn = target.closest<HTMLElement>('.coi-pin');
+    if (pinBtn) {
+      const id          = Number(pinBtn.dataset.id);
+      const shortlisted = pinBtn.dataset.shortlisted !== 'true';
+      await supabase.from('college_ideas').update({ shortlisted }).eq('id', id).eq('family_id', familyId);
+      const c = allColleges.find(c => c.id === id);
+      if (c) { c.shortlisted = shortlisted; renderCards(); }
+      return;
+    }
+
+    if (target.classList.contains('coi-act--delete')) {
+      const id = Number(target.dataset.id);
+      if (!confirm('Delete this college?')) return;
+      await supabase.from('college_ideas').delete().eq('id', id).eq('family_id', familyId);
+      allColleges = allColleges.filter(c => c.id !== id);
+      renderCards();
+      return;
+    }
+
+    if (target.classList.contains('coi-act--edit')) {
+      const id = Number(target.dataset.id);
+      const c  = allColleges.find(c => c.id === id);
+      if (!c) return;
+      editingId           = id;
+      nameEl.value        = c.name;
+      tierEl.value        = c.tier           ?? '';
+      interestEl.value    = c.interest_level ?? '';
+      courseEl.value      = c.course_of_study ?? '';
+      scopeEl.value       = c.course_scope   ?? '';
+      regionEl.value      = c.region         ?? '';
+      notesEl.value       = c.notes          ?? '';
+      submitBtn.textContent = 'Save Changes';
+      submitBtn.classList.add('coi-btn--save');
+      cancelBtn.style.display = 'inline-block';
+      nameEl.focus();
+      nameEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+
+  /* ── Form submit ── */
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!familyId) return;
+    const name           = nameEl.value.trim();
+    const tier           = tierEl.value     || null;
+    const interest_level = interestEl.value || null;
+    const course_of_study = courseEl.value.trim() || null;
+    const course_scope   = scopeEl.value    || null;
+    const region         = regionEl.value.trim() || null;
+    const notes          = notesEl.value.trim()  || null;
+    if (!name) return;
+    errorEl.style.display = 'none';
+    submitBtn.disabled = true;
+
+    if (editingId !== null) {
+      const { error } = await supabase.from('college_ideas')
+        .update({ name, tier, interest_level, course_of_study, course_scope, region, notes, updated_at: new Date().toISOString() })
+        .eq('id', editingId).eq('family_id', familyId);
+      if (error) { errorEl.textContent = error.message; errorEl.style.display = 'inline'; }
+      else { resetForm(); await loadColleges(); }
+    } else {
+      const { error } = await supabase.from('college_ideas')
+        .insert({ family_id: familyId, name, tier, interest_level, course_of_study, course_scope, region, notes });
+      if (error) { errorEl.textContent = error.message; errorEl.style.display = 'inline'; }
+      else { resetForm(); await loadColleges(); }
+    }
+    submitBtn.disabled = false;
+  });
+
+  function resetForm() {
+    editingId = null;
+    nameEl.value = ''; tierEl.value = ''; interestEl.value = '';
+    courseEl.value = ''; scopeEl.value = ''; regionEl.value = ''; notesEl.value = '';
+    submitBtn.textContent = 'Add College';
+    submitBtn.classList.remove('coi-btn--save');
+    cancelBtn.style.display = 'none';
+  }
+  cancelBtn.addEventListener('click', resetForm);
+
+  /* ── Export CSV ── */
+  document.getElementById('coi-export')!.addEventListener('click', () => {
+    if (!allColleges.length) return;
+    const cell = (v: any) => `"${(v ?? '').toString().replace(/"/g, '""')}"`;
+    const lines = [
+      ['Starred', 'Name', 'Tier', 'Interest Level', 'Course of Study', 'Course Scope', 'Region', 'Notes', 'Date'].map(cell).join(','),
+      ...allColleges.map(c => [
+        c.starred ? 'Yes' : 'No', c.name, c.tier ?? '', c.interest_level ?? '',
+        c.course_of_study ?? '', c.course_scope ?? '', c.region ?? '', c.notes ?? '',
+        new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      ].map(cell).join(','))
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'college-ideas.csv'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  /* ── Import JSON ── */
+  let pendingImport: any[] = [];
+
+  function showError(msg: string) { errorEl.textContent = msg; errorEl.style.display = 'inline'; }
+
+  document.getElementById('coi-import-btn')!.addEventListener('click', () => {
+    (document.getElementById('coi-import-file') as HTMLInputElement).click();
+  });
+
+  document.getElementById('coi-import-file')!.addEventListener('change', async e => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    (e.target as HTMLInputElement).value = '';
+    let parsed: any;
+    try { parsed = JSON.parse(await file.text()); } catch {
+      showError('Invalid JSON file — could not parse.'); return;
+    }
+    if (!Array.isArray(parsed)) { showError('JSON must be an array of objects.'); return; }
+    const valid = parsed.filter((c: any) => c && typeof c.name === 'string' && c.name.trim());
+    if (!valid.length) { showError('No valid items found. Each item needs at least a "name" string.'); return; }
+    pendingImport = valid;
+    const preview = valid.slice(0, 3).map((c: any) => c.name.trim()).join(', ');
+    document.getElementById('coi-import-msg')!.textContent =
+      `${valid.length} college${valid.length !== 1 ? 's' : ''}: ${preview}${valid.length > 3 ? '…' : ''}`;
+    document.getElementById('coi-import-preview')!.style.display = 'flex';
+  });
+
+  document.getElementById('coi-import-confirm')!.addEventListener('click', async () => {
+    if (!familyId || !pendingImport.length) return;
+    const btn = document.getElementById('coi-import-confirm') as HTMLButtonElement;
+    btn.disabled = true; btn.textContent = 'Importing…';
+    const VALID_TIERS     = new Set(['Dream', 'Reach', 'Target', 'Safety']);
+    const VALID_INTERESTS = new Set(['Very High', 'High', 'Medium', 'Low']);
+    const VALID_SCOPES    = new Set(['Excellent', 'Good', 'Fair', 'Limited']);
+    const rows = pendingImport.map((c: any) => ({
+      family_id:       familyId,
+      name:            c.name.trim(),
+      tier:            VALID_TIERS.has(c.tier)             ? c.tier           : null,
+      interest_level:  VALID_INTERESTS.has(c.interest_level) ? c.interest_level : null,
+      course_of_study: c.course_of_study ? String(c.course_of_study).trim() || null : null,
+      course_scope:    VALID_SCOPES.has(c.course_scope)    ? c.course_scope   : null,
+      region:          c.region ? String(c.region).trim() || null : null,
+      notes:           c.notes  ? String(c.notes).trim()  || null : null,
+      starred:         !!c.starred,
+      shortlisted:     !!c.shortlisted,
+    }));
+    const { error } = await supabase.from('college_ideas').insert(rows);
+    btn.disabled = false; btn.textContent = 'Import';
+    document.getElementById('coi-import-preview')!.style.display = 'none';
+    pendingImport = [];
+    if (error) { showError('Import failed: ' + error.message); return; }
+    await loadColleges();
+  });
+
+  document.getElementById('coi-import-cancel')!.addEventListener('click', () => {
+    document.getElementById('coi-import-preview')!.style.display = 'none';
+    pendingImport = [];
+  });
+
+  /* ── Load ── */
+  async function loadColleges() {
+    if (!familyId) return;
+    const { data, error } = await supabase.from('college_ideas').select('*')
+      .eq('family_id', familyId).order('created_at', { ascending: false });
+    if (error) {
+      cardsEl.innerHTML = '<p class="coi-msg" style="color:var(--sl-color-red)">Failed to load.</p>';
+      return;
+    }
+    allColleges = data ?? [];
+    renderCards();
+  }
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      document.addEventListener('data-loaded', async () => {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (s) {
+          const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', s.user.id).single();
+          familyId = p?.family_id ?? '';
+          await loadColleges();
+        }
+      }, { once: true });
+      return;
+    }
+    const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', session.user.id).single();
+    familyId = p?.family_id ?? '';
+    await loadColleges();
+  }
+
+  init();
+</script>
+
+<style is:global>
+  #coi-wrap { max-width: 100%; }
+
+  /* ── Form ── */
+  .coi-form {
+    display: flex; flex-direction: column; gap: 0.75rem;
+    padding: 1.25rem; border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem; background: var(--sl-color-bg-nav); margin-bottom: 1.5rem;
+  }
+  .coi-form__fields {
+    display: grid; gap: 0.75rem; align-items: end;
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+  .coi-form__field  { display: flex; flex-direction: column; gap: 0.25rem; }
+  .coi-label {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--sl-color-gray-2);
+  }
+  .coi-input, .coi-select, .coi-textarea {
+    padding: 0.5rem 0.65rem; border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.375rem; background: var(--sl-color-bg);
+    color: var(--sl-color-text); font-size: 0.875rem; font-family: inherit; width: 100%;
+  }
+  .coi-input:focus, .coi-select:focus, .coi-textarea:focus {
+    outline: 2px solid var(--sl-color-accent); border-color: var(--sl-color-accent);
+  }
+  .coi-textarea { resize: vertical; min-height: 72px; }
+  .coi-form__actions { display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap; }
+  .coi-btn {
+    padding: 0.45rem 1rem; border-radius: 0.375rem; font-size: 0.85rem;
+    font-family: inherit; cursor: pointer; border: 1px solid transparent; white-space: nowrap;
+  }
+  .coi-btn--primary { background: var(--sl-color-accent); color: #fff; border-color: var(--sl-color-accent); }
+  .coi-btn--primary:hover { opacity: 0.88; }
+  .coi-btn--save    { background: #16a34a; border-color: #16a34a; color: #fff; }
+  .coi-btn--export  { background: transparent; border-color: var(--sl-color-accent); color: var(--sl-color-accent); }
+  .coi-btn--export:hover { background: var(--sl-color-accent); color: #fff; }
+  .coi-btn--cancel  { background: transparent; border-color: var(--sl-color-gray-4); color: var(--sl-color-gray-2); }
+  .coi-btn--cancel:hover { border-color: #ef4444; color: #ef4444; }
+  .coi-btn--import  { background: transparent; border-color: var(--sl-color-gray-4); color: var(--sl-color-gray-2); }
+  .coi-btn--import:hover { border-color: var(--sl-color-accent); color: var(--sl-color-accent); }
+  .coi-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .coi-error { font-size: 0.82rem; color: #ef4444; }
+  .coi-import-preview {
+    display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+    margin-top: 0.5rem; padding: 0.6rem 0.9rem;
+    background: var(--sl-color-bg-nav); border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.4rem; font-size: 0.82rem;
+  }
+  .coi-import-msg { color: var(--sl-color-gray-2); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .coi-import-format { margin-top: 0.5rem; font-size: 0.8rem; color: var(--sl-color-gray-2); }
+  .coi-import-format summary {
+    cursor: pointer; user-select: none; color: var(--sl-color-gray-3); font-size: 0.75rem; padding: 0.2rem 0;
+  }
+  .coi-import-format summary:hover { color: var(--sl-color-accent); }
+  .coi-import-pre {
+    margin: 0.4rem 0 0; padding: 0.75rem 1rem;
+    background: var(--sl-color-bg-nav); border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.375rem; font-size: 0.75rem; line-height: 1.6;
+    overflow-x: auto; white-space: pre; color: var(--sl-color-text);
+  }
+
+  /* ── Toolbar ── */
+  .coi-toolbar { display: flex; align-items: center; margin-bottom: 0.65rem; }
+  .coi-count { font-size: 0.82rem; color: var(--sl-color-gray-2); }
+
+  /* ── Cards ── */
+  .coi-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 1rem;
+  }
+  .coi-msg { padding: 2rem; text-align: center; color: var(--sl-color-gray-2); }
+
+  .coi-card {
+    border: 1px solid var(--sl-color-gray-5);
+    border-left: 4px solid var(--tc, #94a3b8);
+    border-radius: 0.5rem;
+    background: var(--sl-color-bg-nav);
+    padding: 0.85rem 1rem;
+    display: flex; flex-direction: column; gap: 0.45rem;
+    transition: box-shadow 0.15s;
+  }
+  .coi-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+  .coi-card__top {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  }
+  .coi-card__badges { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; min-width: 0; }
+  .coi-card__icons  { display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0; }
+
+  .coi-tier-badge, .coi-interest-badge, .coi-scope-badge {
+    font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.45rem;
+    border-radius: 9999px; border: 1px solid transparent; white-space: nowrap;
+  }
+
+  .coi-card__title-row {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 0.4rem;
+  }
+  .coi-card__title-row--toggle { cursor: pointer; }
+  .coi-card__title-row--toggle:hover .coi-card__name { color: var(--sl-color-accent); }
+
+  .coi-card__name-block { display: flex; flex-direction: column; gap: 0.08rem; min-width: 0; }
+  .coi-card__name {
+    font-weight: 700; color: var(--sl-color-text);
+    line-height: 1.3; font-size: 0.95rem; margin: 0;
+  }
+  .coi-card__course {
+    font-size: 0.75rem; color: var(--sl-color-gray-3);
+  }
+
+  .coi-card__chevron {
+    font-size: 0.6rem; color: var(--sl-color-gray-3);
+    flex-shrink: 0; margin-top: 0.35rem;
+    transition: transform 0.15s; display: inline-block;
+  }
+  .coi-card--open .coi-card__chevron { transform: rotate(90deg); }
+
+  .coi-card__meta {
+    display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;
+  }
+  .coi-region-tag {
+    font-size: 0.72rem; color: var(--sl-color-gray-3);
+  }
+
+  .coi-card__notes {
+    font-size: 0.78rem; color: var(--sl-color-gray-2);
+    line-height: 1.4; margin: 0;
+    display: none;
+  }
+  .coi-card--open .coi-card__notes { display: block; }
+
+  .coi-card__footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: auto; padding-top: 0.35rem;
+    border-top: 1px solid var(--sl-color-gray-6);
+  }
+  .coi-card__date    { font-size: 0.75rem; color: var(--sl-color-gray-3); white-space: nowrap; }
+  .coi-card__actions { display: flex; gap: 0.25rem; }
+
+  /* ── Star ── */
+  .coi-star {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.1rem; color: var(--sl-color-gray-4);
+    padding: 0; line-height: 1; transition: color 0.1s;
+  }
+  .coi-star--on, .coi-star:hover { color: #f59e0b; }
+
+  /* ── Pin ── */
+  .coi-pin {
+    background: none; border: none; cursor: pointer;
+    font-size: 0.95rem; padding: 0; line-height: 1;
+    opacity: 0.2; filter: grayscale(1); transition: all 0.15s;
+  }
+  .coi-pin--on { opacity: 1; filter: none; }
+  .coi-pin:hover { opacity: 0.75; filter: none; }
+
+  /* ── Actions ── */
+  .coi-act {
+    font-size: 0.62rem; background: none; border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.2rem; padding: 0.08rem 0.35rem;
+    cursor: pointer; color: var(--sl-color-text); font-family: inherit;
+  }
+  .coi-act--delete { color: #ef4444; border-color: #ef4444; }
+  .coi-act:hover { opacity: 0.7; }
+
+  @media (max-width: 900px) {
+    .coi-form__fields { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) {
+    .coi-form__fields { grid-template-columns: 1fr; }
+    .coi-cards { grid-template-columns: 1fr; }
+  }
+</style>
