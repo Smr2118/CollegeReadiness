@@ -1,0 +1,219 @@
+---
+---
+
+<div id="cosl-wrap">
+  <p class="cosl-hint">Colleges pinned 📌 in <strong>Brainstorm → Colleges</strong> appear here.</p>
+  <div class="cosl-toolbar">
+    <span id="cosl-count" class="cosl-count"></span>
+  </div>
+  <div class="cosl-table-wrap">
+    <table class="cosl-table">
+      <thead>
+        <tr>
+          <th class="cosl-th cosl-th--name">College</th>
+          <th class="cosl-th cosl-th--tier">Tier</th>
+          <th class="cosl-th cosl-th--interest">Interest</th>
+          <th class="cosl-th cosl-th--scope">Scope</th>
+          <th class="cosl-th cosl-th--region">Region</th>
+          <th class="cosl-th cosl-th--date">Added</th>
+          <th class="cosl-th cosl-th--actions"></th>
+        </tr>
+      </thead>
+      <tbody id="cosl-tbody">
+        <tr><td colspan="7" class="cosl-td-msg">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  let familyId = '';
+  let items: any[] = [];
+
+  const tbody   = document.getElementById('cosl-tbody')!  as HTMLElement;
+  const countEl = document.getElementById('cosl-count')!  as HTMLElement;
+
+  const TIER_COLOR: Record<string, string> = {
+    'Dream':  '#7c3aed',
+    'Reach':  '#ef4444',
+    'Target': '#3b82f6',
+    'Safety': '#22c55e',
+  };
+
+  const INTEREST_COLOR: Record<string, string> = {
+    'Very High': '#8b5cf6',
+    'High':      '#3b82f6',
+    'Medium':    '#f59e0b',
+    'Low':       '#94a3b8',
+  };
+
+  const SCOPE_COLOR: Record<string, string> = {
+    'Excellent': '#22c55e',
+    'Good':      '#3b82f6',
+    'Fair':      '#f59e0b',
+    'Limited':   '#94a3b8',
+  };
+
+  function esc(s: string | null | undefined) {
+    return (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function formatDate(iso: string) {
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  function badge(label: string, color: string) {
+    return `<span class="cosl-badge" style="background:${color}18;color:${color};border-color:${color}40">${esc(label)}</span>`;
+  }
+
+  function render() {
+    const tierOrder = ['Dream', 'Reach', 'Target', 'Safety'];
+    const sorted = [...items].sort((a, b) => {
+      const ta = tierOrder.indexOf(a.tier ?? '');
+      const tb = tierOrder.indexOf(b.tier ?? '');
+      if (ta !== tb) return (ta === -1 ? 99 : ta) - (tb === -1 ? 99 : tb);
+      return a.name.localeCompare(b.name);
+    });
+
+    countEl.textContent = `${sorted.length} college${sorted.length !== 1 ? 's' : ''}`;
+
+    if (sorted.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="cosl-td-msg">No colleges shortlisted yet — pin 📌 colleges in Brainstorm → Colleges to add them here.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = sorted.map(c => {
+      const tc = TIER_COLOR[c.tier] ?? '';
+      const ic = INTEREST_COLOR[c.interest_level] ?? '';
+      const sc = SCOPE_COLOR[c.course_scope] ?? '';
+      return `
+        <tr class="cosl-row" data-id="${c.id}">
+          <td class="cosl-td cosl-td--name">
+            <span class="cosl-name">${esc(c.name)}</span>
+            ${c.course_of_study ? `<span class="cosl-sub">📚 ${esc(c.course_of_study)}</span>` : ''}
+            ${c.notes ? `<span class="cosl-notes">${esc(c.notes)}</span>` : ''}
+          </td>
+          <td class="cosl-td cosl-td--tier">
+            ${c.tier ? badge(c.tier, tc) : '<span class="cosl-none">—</span>'}
+          </td>
+          <td class="cosl-td cosl-td--interest">
+            ${c.interest_level ? badge(c.interest_level, ic) : '<span class="cosl-none">—</span>'}
+          </td>
+          <td class="cosl-td cosl-td--scope">
+            ${c.course_scope ? badge(c.course_scope, sc) : '<span class="cosl-none">—</span>'}
+          </td>
+          <td class="cosl-td cosl-td--region">
+            ${c.region ? `<span class="cosl-region">📍 ${esc(c.region)}</span>` : '<span class="cosl-none">—</span>'}
+          </td>
+          <td class="cosl-td cosl-td--date">${formatDate(c.created_at)}</td>
+          <td class="cosl-td cosl-td--actions">
+            <button class="cosl-remove" data-id="${c.id}">📌 Remove</button>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  tbody.addEventListener('click', async e => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('.cosl-remove');
+    if (!btn) return;
+    const id = Number(btn.dataset.id);
+    await supabase.from('college_ideas').update({ shortlisted: false }).eq('id', id).eq('family_id', familyId);
+    items = items.filter(c => c.id !== id);
+    render();
+  });
+
+  async function load() {
+    const { data, error } = await supabase.from('college_ideas')
+      .select('*').eq('family_id', familyId).eq('shortlisted', true)
+      .order('created_at', { ascending: false });
+    if (error) {
+      tbody.innerHTML = '<tr><td colspan="7" class="cosl-td-msg" style="color:var(--sl-color-red)">Failed to load.</td></tr>';
+      return;
+    }
+    items = data ?? [];
+    render();
+  }
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      document.addEventListener('data-loaded', async () => {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (s) {
+          const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', s.user.id).single();
+          familyId = p?.family_id ?? '';
+          await load();
+        }
+      }, { once: true });
+      return;
+    }
+    const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', session.user.id).single();
+    familyId = p?.family_id ?? '';
+    await load();
+  }
+
+  init();
+</script>
+
+<style>
+  #cosl-wrap { max-width: 100%; }
+
+  .cosl-hint {
+    font-size: 0.85rem; color: var(--sl-color-gray-2);
+    margin-bottom: 1rem; padding: 0.65rem 0.9rem;
+    background: var(--sl-color-bg-nav); border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.4rem;
+  }
+  .cosl-toolbar { margin-bottom: 0.65rem; }
+  .cosl-count { font-size: 0.82rem; color: var(--sl-color-gray-2); }
+
+  .cosl-table-wrap { overflow-x: auto; }
+  .cosl-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .cosl-th {
+    padding: 0.45rem 0.75rem; text-align: left; font-size: 0.68rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--sl-color-gray-2);
+    border-bottom: 2px solid var(--sl-color-gray-5); white-space: nowrap;
+  }
+  .cosl-th--tier     { width: 80px; }
+  .cosl-th--interest { width: 90px; }
+  .cosl-th--scope    { width: 90px; }
+  .cosl-th--region   { width: 120px; }
+  .cosl-th--date     { width: 88px; }
+  .cosl-th--actions  { width: 100px; }
+
+  .cosl-td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--sl-color-gray-6); vertical-align: middle; }
+  .cosl-td--name  { vertical-align: top; padding-top: 0.65rem; }
+  .cosl-td--date  { white-space: nowrap; color: var(--sl-color-gray-3); font-size: 0.8rem; }
+  .cosl-td-msg    { padding: 2rem; text-align: center; color: var(--sl-color-gray-2); }
+
+  .cosl-row:hover { background: var(--sl-color-gray-7, rgba(0,0,0,0.02)); }
+
+  .cosl-name {
+    display: block; font-weight: 700; color: var(--sl-color-text);
+    line-height: 1.3; font-size: 0.9rem;
+  }
+  .cosl-sub {
+    display: block; font-size: 0.75rem; color: var(--sl-color-gray-3); margin-top: 0.1rem;
+  }
+  .cosl-notes {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; font-size: 0.76rem; color: var(--sl-color-gray-2);
+    margin-top: 0.2rem; line-height: 1.4;
+  }
+  .cosl-region { font-size: 0.8rem; color: var(--sl-color-gray-2); }
+  .cosl-none   { color: var(--sl-color-gray-4); }
+
+  .cosl-badge {
+    display: inline-block;
+    font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.45rem;
+    border-radius: 9999px; border: 1px solid transparent; white-space: nowrap;
+  }
+
+  .cosl-remove {
+    font-size: 0.72rem; background: none; border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.25rem; padding: 0.15rem 0.55rem;
+    cursor: pointer; color: var(--sl-color-gray-2); font-family: inherit;
+    white-space: nowrap;
+  }
+  .cosl-remove:hover { border-color: #ef4444; color: #ef4444; }
+</style>

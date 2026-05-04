@@ -51,6 +51,7 @@ export default defineConfig({
 					label: 'Shortlists',
 					collapsed: true,
 					items: [
+						{ label: '🎓 Colleges', link: '/shortlists/colleges/' },
 						{ label: '✍️ Essay Theme', link: '/shortlists/essay-theme/' },
 						{ label: '🤖 Robotics', link: '/shortlists/robotics/' },
 						{ label: '🏆 Extra Curriculars', link: '/shortlists/extracurriculars/' },
