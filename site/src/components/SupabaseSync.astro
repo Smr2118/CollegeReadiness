@@ -142,12 +142,24 @@
 
     const userRank = PLAN_RANK[familyPlan] ?? 0;
 
+    // Hide individual nav links — use closest('li') so we only hide the
+    // direct item, not ancestor <li> elements that wrap entire groups.
     rules.forEach((rule: { path: string; min_plan: string }) => {
       const minRank = PLAN_RANK[rule.min_plan] ?? 0;
       if (userRank < minRank) {
-        document.querySelectorAll<HTMLElement>(`li:has(a[href$="${rule.path}"])`).forEach(el => {
-          el.style.display = 'none';
+        document.querySelectorAll<HTMLAnchorElement>(`a[href$="${rule.path}"]`).forEach(a => {
+          const li = a.closest('li');
+          if (li) li.style.display = 'none';
         });
+      }
+    });
+
+    // Hide group headers whose every child link is now hidden
+    document.querySelectorAll<HTMLDetailsElement>('nav details').forEach(details => {
+      const children = Array.from(details.querySelectorAll<HTMLElement>(':scope > ul > li'));
+      if (children.length > 0 && children.every(li => li.style.display === 'none')) {
+        const groupLi = details.closest('li');
+        if (groupLi) groupLi.style.display = 'none';
       }
     });
   }
