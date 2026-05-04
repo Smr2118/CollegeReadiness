@@ -645,18 +645,35 @@
 
   /* ── Nav Access ── */
   const ALL_NAV_LINKS = [
-    { path: '/',                  label: 'Home' },
-    { path: '/programs/',         label: '☀️ College Summer Programs' },
-    { path: '/internships/',      label: '💼 Internships' },
-    { path: '/extracurriculars/', label: '🏆 Extra Curriculars' },
-    { path: '/india-activities/', label: '🇮🇳 India Activities' },
-    { path: '/calendar/',         label: '📅 Deadline Calendar' },
-    { path: '/todos/',            label: '✅ Family To-Do' },
-    { path: '/notes/',            label: '📓 Notes' },
-    { path: '/essay-topics/',     label: '✍️ Essay Ideas' },
-    { path: '/robotics-ideas/',   label: '🤖 Robotics Ideas' },
-    { path: '/ideas/',            label: '💡 Ideas Board' },
-    { path: '/references/',       label: '🔗 Reference Links' },
+    { path: '/',                           label: 'Home',                         group: '' },
+    // Programs & Activities
+    { path: '/programs/',                  label: '☀️ College Summer Programs',   group: 'Programs & Activities' },
+    { path: '/internships/',               label: '💼 Internships',               group: 'Programs & Activities' },
+    { path: '/extracurriculars/',          label: '🏆 Extra Curriculars',         group: 'Programs & Activities' },
+    { path: '/india-activities/',          label: '🇮🇳 India Activities',          group: 'Programs & Activities' },
+    // Brainstorm
+    { path: '/college-ideas/',             label: '🎓 Colleges',                  group: 'Brainstorm' },
+    { path: '/essay-topics/',              label: '✍️ Essay Ideas',               group: 'Brainstorm' },
+    { path: '/robotics-ideas/',            label: '🤖 Robotics Ideas',            group: 'Brainstorm' },
+    { path: '/india-ideas/',               label: '🇮🇳 India Activities Ideas',    group: 'Brainstorm' },
+    { path: '/ec-ideas/',                  label: '🏃 Extra Curriculars',         group: 'Brainstorm' },
+    { path: '/past-projects/',             label: '🔧 Past Projects',             group: 'Brainstorm' },
+    // Mind Map
+    { path: '/vision-board/',              label: '🔮 Vision Board',              group: 'Mind Map' },
+    { path: '/ideas/',                     label: '💡 Ideas Board',               group: 'Mind Map' },
+    // Shortlists
+    { path: '/shortlists/essay-theme/',    label: '✍️ Essay Theme',               group: 'Shortlists' },
+    { path: '/shortlists/robotics/',       label: '🤖 Robotics',                  group: 'Shortlists' },
+    { path: '/shortlists/extracurriculars/', label: '🏆 Extra Curriculars',       group: 'Shortlists' },
+    { path: '/shortlists/volunteering/',   label: '🤝 Volunteering',              group: 'Shortlists' },
+    // Resources
+    { path: '/calendar/',                  label: '📅 Deadline Calendar',         group: 'Resources' },
+    { path: '/todos/',                     label: '✅ Family To-Do',              group: 'Resources' },
+    { path: '/notes/',                     label: '📓 Notes',                     group: 'Resources' },
+    { path: '/references/',                label: '🔗 Reference Links',           group: 'Resources' },
+    { path: '/colleges/',                  label: '🏫 Colleges Info',             group: 'Resources' },
+    // Admin
+    { path: '/admin/',                     label: '⚙️ Admin Panel',               group: 'Admin' },
   ];
 
   async function loadNavAccess() {
@@ -664,28 +681,34 @@
     const ruleMap = new Map((data ?? []).map((r: any) => [r.path, r.min_plan]));
     const el = document.getElementById('nav-access-list')!;
 
+    let prevGroup = '';
+    const rows = ALL_NAV_LINKS.map(link => {
+      const cur = ruleMap.get(link.path) ?? 'standard';
+      let groupRow = '';
+      if (link.group && link.group !== prevGroup) {
+        prevGroup = link.group;
+        groupRow = `<tr class="nav-group-row"><td colspan="4">${escCell(link.group)}</td></tr>`;
+      }
+      return groupRow + `
+        <tr>
+          <td style="padding-left:${link.group ? '1.25rem' : '0'}">${escCell(link.label)}</td>
+          <td><code>${escCell(link.path)}</code></td>
+          <td>
+            <select class="admin-select nav-plan-sel" data-path="${escAttr(link.path)}" style="font-size:0.85rem">
+              <option value="standard" ${cur === 'standard' ? 'selected' : ''}>🌐 Standard (all)</option>
+              <option value="basic"    ${cur === 'basic'    ? 'selected' : ''}>🔹 Basic+</option>
+              <option value="premium"  ${cur === 'premium'  ? 'selected' : ''}>⭐ Premium only</option>
+            </select>
+          </td>
+          <td>
+            <button class="admin-btn admin-btn--sm nav-save-btn" data-path="${escAttr(link.path)}">Save</button>
+          </td>
+        </tr>`;
+    }).join('');
+
     el.innerHTML = `<table class="admin-table">
       <thead><tr><th>Link</th><th>Path</th><th>Minimum Plan</th><th></th></tr></thead>
-      <tbody>
-        ${ALL_NAV_LINKS.map(link => {
-          const cur = ruleMap.get(link.path) ?? 'standard';
-          return `
-          <tr>
-            <td>${escCell(link.label)}</td>
-            <td><code>${escCell(link.path)}</code></td>
-            <td>
-              <select class="admin-select nav-plan-sel" data-path="${escAttr(link.path)}" style="font-size:0.85rem">
-                <option value="standard" ${cur === 'standard' ? 'selected' : ''}>🌐 Standard (all)</option>
-                <option value="basic"    ${cur === 'basic'    ? 'selected' : ''}>🔹 Basic+</option>
-                <option value="premium"  ${cur === 'premium'  ? 'selected' : ''}>⭐ Premium only</option>
-              </select>
-            </td>
-            <td>
-              <button class="admin-btn admin-btn--sm nav-save-btn" data-path="${escAttr(link.path)}">Save</button>
-            </td>
-          </tr>`;
-        }).join('')}
-      </tbody></table>`;
+      <tbody>${rows}</tbody></table>`;
 
     document.querySelectorAll<HTMLButtonElement>('.nav-save-btn').forEach(btn => {
       btn.addEventListener('click', async () => {

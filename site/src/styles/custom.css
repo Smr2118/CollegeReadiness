@@ -1496,3 +1496,14 @@ li:has(a[href$="/admin/"]) {
 }
 
 .admin-table tr:last-child td { border-bottom: none; }
+
+.nav-group-row td {
+  background: var(--sl-color-bg-nav);
+  color: var(--sl-color-gray-2);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.45rem 0.75rem 0.3rem;
+  border-bottom: 1px solid var(--sl-color-gray-5);
+}
