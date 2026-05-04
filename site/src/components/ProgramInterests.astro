@@ -4,6 +4,8 @@
 <div id="pri-wrap">
 
   <!-- Add / Edit form -->
+  <details id="pri-form-wrap" class="pri-form-wrap">
+    <summary id="pri-form-toggle" class="pri-form-toggle">+ Add Program</summary>
   <form id="pri-form" class="pri-form">
     <div class="pri-form__fields pri-form__fields--row1">
       <div class="pri-form__field pri-form__field--name">
@@ -90,6 +92,7 @@
       <span id="pri-error" class="pri-error" style="display:none"></span>
     </div>
   </form>
+  </details>
 
   <!-- Cards area -->
   <div class="pri-toolbar">
@@ -345,6 +348,8 @@
       submitBtn.textContent = 'Save Changes';
       submitBtn.classList.add('pri-btn--save');
       cancelBtn.style.display = 'inline-block';
+      formWrap.open = true;
+      formToggle.textContent = '✏️ Edit Program';
       nameEl.focus();
       nameEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -385,6 +390,9 @@
     submitBtn.disabled = false;
   });
 
+  const formWrap   = document.getElementById('pri-form-wrap')   as HTMLDetailsElement;
+  const formToggle = document.getElementById('pri-form-toggle') as HTMLElement;
+
   function resetForm() {
     editingId = null;
     nameEl.value = ''; interestEl.value = ''; aiRiskEl.value = '';
@@ -394,6 +402,8 @@
     submitBtn.textContent = 'Add Program';
     submitBtn.classList.remove('pri-btn--save');
     cancelBtn.style.display = 'none';
+    formWrap.open = false;
+    formToggle.textContent = '+ Add Program';
   }
   cancelBtn.addEventListener('click', resetForm);
 
@@ -456,11 +466,27 @@
 <style is:global>
   #pri-wrap { max-width: 100%; }
 
+  /* ── Form toggle ── */
+  .pri-form-wrap { margin-bottom: 1.5rem; }
+  .pri-form-wrap > summary { list-style: none; }
+  .pri-form-wrap > summary::-webkit-details-marker { display: none; }
+  .pri-form-toggle {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    cursor: pointer; user-select: none;
+    font-size: 0.875rem; font-weight: 600;
+    color: var(--sl-color-accent);
+    padding: 0.4rem 0.9rem;
+    border: 1px solid var(--sl-color-accent);
+    border-radius: 0.375rem;
+    transition: background 0.15s, color 0.15s;
+  }
+  .pri-form-toggle:hover { background: var(--sl-color-accent); color: #fff; }
+
   /* ── Form ── */
   .pri-form {
     display: flex; flex-direction: column; gap: 0.75rem;
     padding: 1.25rem; border: 1px solid var(--sl-color-gray-5);
-    border-radius: 0.5rem; background: var(--sl-color-bg-nav); margin-bottom: 1.5rem;
+    border-radius: 0.5rem; background: var(--sl-color-bg-nav); margin-top: 0.65rem;
   }
   .pri-form__fields {
     display: grid; gap: 0.75rem; align-items: end;
