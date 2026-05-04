@@ -1,0 +1,638 @@
+---
+---
+
+<div id="pri-wrap">
+
+  <!-- Add / Edit form -->
+  <form id="pri-form" class="pri-form">
+    <div class="pri-form__fields pri-form__fields--row1">
+      <div class="pri-form__field pri-form__field--name">
+        <label class="pri-label" for="pri-name">Program / Field of Study</label>
+        <input id="pri-name" class="pri-input" type="text"
+          placeholder="e.g. Robotics, Finance, Business Studies, Law" required />
+      </div>
+      <div class="pri-form__field">
+        <label class="pri-label" for="pri-interest">Interest Level</label>
+        <select id="pri-interest" class="pri-select">
+          <option value="">— Interest —</option>
+          <option>Very High</option>
+          <option>High</option>
+          <option>Medium</option>
+          <option>Low</option>
+        </select>
+      </div>
+      <div class="pri-form__field">
+        <label class="pri-label" for="pri-ai-risk">AI Risk</label>
+        <select id="pri-ai-risk" class="pri-select">
+          <option value="">— AI Risk —</option>
+          <option value="High">High — field largely automatable</option>
+          <option value="Medium">Medium — partial automation likely</option>
+          <option value="Low">Low — AI as a tool, not replacement</option>
+          <option value="Minimal">Minimal — human-first field</option>
+        </select>
+      </div>
+    </div>
+    <div class="pri-form__fields pri-form__fields--row2">
+      <div class="pri-form__field">
+        <label class="pri-label" for="pri-prospects">Job Prospects</label>
+        <select id="pri-prospects" class="pri-select">
+          <option value="">— Prospects —</option>
+          <option>Excellent</option>
+          <option>Good</option>
+          <option>Fair</option>
+          <option>Limited</option>
+        </select>
+      </div>
+      <div class="pri-form__field">
+        <label class="pri-label" for="pri-years">Years of Study</label>
+        <select id="pri-years" class="pri-select">
+          <option value="">— Years —</option>
+          <option value="2">2 years</option>
+          <option value="3">3 years</option>
+          <option value="4">4 years</option>
+          <option value="5">5 years</option>
+          <option value="6+">6+ years</option>
+        </select>
+      </div>
+      <div class="pri-form__field">
+        <label class="pri-label" for="pri-difficulty">Admission Difficulty</label>
+        <select id="pri-difficulty" class="pri-select">
+          <option value="">— Difficulty —</option>
+          <option>Very Hard</option>
+          <option>Hard</option>
+          <option>Moderate</option>
+          <option>Accessible</option>
+        </select>
+      </div>
+    </div>
+    <div class="pri-form__field">
+      <label class="pri-label" for="pri-colleges">Best Colleges
+        <span class="pri-label-hint">(from your Colleges list — hold Ctrl/⌘ to select multiple)</span>
+      </label>
+      <select id="pri-colleges" class="pri-select pri-select--multi" multiple size="5">
+        <option disabled>Loading colleges…</option>
+      </select>
+    </div>
+    <div class="pri-form__field">
+      <label class="pri-label" for="pri-tips">What Helps with Admission</label>
+      <textarea id="pri-tips" class="pri-textarea"
+        placeholder="Portfolio, competitions, research experience, relevant coursework, skills to highlight…" rows="3"></textarea>
+    </div>
+    <div class="pri-form__field">
+      <label class="pri-label" for="pri-notes">Notes</label>
+      <textarea id="pri-notes" class="pri-textarea"
+        placeholder="General thoughts, related programs, salary range, lifestyle notes…" rows="2"></textarea>
+    </div>
+    <div class="pri-form__actions">
+      <button type="submit" class="pri-btn pri-btn--primary" id="pri-submit">Add Program</button>
+      <button type="button" class="pri-btn pri-btn--export" id="pri-export">⬇ Export CSV</button>
+      <button type="button" class="pri-btn pri-btn--cancel" id="pri-cancel" style="display:none">Cancel</button>
+      <span id="pri-error" class="pri-error" style="display:none"></span>
+    </div>
+  </form>
+
+  <!-- Cards area -->
+  <div class="pri-toolbar">
+    <span id="pri-count" class="pri-count"></span>
+  </div>
+  <div id="pri-cards" class="pri-cards">
+    <p class="pri-msg">Loading…</p>
+  </div>
+</div>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  let familyId  = '';
+  let editingId: number | null = null;
+  let allPrograms: any[] = [];
+  let filterInterest    = 'all';
+  let filterAiRisk      = 'all';
+  let filterStarred     = false;
+  let sortMode          = 'newest';
+
+  const form         = document.getElementById('pri-form')       as HTMLFormElement;
+  const nameEl       = document.getElementById('pri-name')       as HTMLInputElement;
+  const interestEl   = document.getElementById('pri-interest')   as HTMLSelectElement;
+  const aiRiskEl     = document.getElementById('pri-ai-risk')    as HTMLSelectElement;
+  const prospectsEl  = document.getElementById('pri-prospects')  as HTMLSelectElement;
+  const yearsEl      = document.getElementById('pri-years')      as HTMLSelectElement;
+  const difficultyEl = document.getElementById('pri-difficulty') as HTMLSelectElement;
+  const collegesEl   = document.getElementById('pri-colleges')   as HTMLSelectElement;
+  const tipsEl       = document.getElementById('pri-tips')       as HTMLTextAreaElement;
+  const notesEl      = document.getElementById('pri-notes')      as HTMLTextAreaElement;
+  const submitBtn    = document.getElementById('pri-submit')     as HTMLButtonElement;
+  const cancelBtn    = document.getElementById('pri-cancel')     as HTMLButtonElement;
+  const errorEl      = document.getElementById('pri-error')      as HTMLElement;
+  const cardsEl      = document.getElementById('pri-cards')      as HTMLElement;
+  const countEl      = document.getElementById('pri-count')      as HTMLElement;
+
+  const INTEREST_COLOR: Record<string,string> = {
+    'Very High': '#7c3aed',
+    'High':      '#3b82f6',
+    'Medium':    '#f59e0b',
+    'Low':       '#94a3b8',
+  };
+  const AI_RISK_COLOR: Record<string,string> = {
+    'High':    '#ef4444',
+    'Medium':  '#f97316',
+    'Low':     '#22c55e',
+    'Minimal': '#94a3b8',
+  };
+  const PROSPECTS_COLOR: Record<string,string> = {
+    'Excellent': '#22c55e',
+    'Good':      '#3b82f6',
+    'Fair':      '#f59e0b',
+    'Limited':   '#ef4444',
+  };
+  const DIFFICULTY_COLOR: Record<string,string> = {
+    'Very Hard':  '#ef4444',
+    'Hard':       '#f97316',
+    'Moderate':   '#3b82f6',
+    'Accessible': '#22c55e',
+  };
+
+  function esc(s: string | null | undefined) {
+    return (s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function formatDate(iso: string) {
+    return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  }
+  function badge(label: string, color: string) {
+    return `<span class="pri-badge" style="background:${color}18;color:${color};border-color:${color}40">${esc(label)}</span>`;
+  }
+
+  async function loadCollegeOptions() {
+    if (!familyId) return;
+    const { data } = await supabase.from('college_ideas')
+      .select('name').eq('family_id', familyId).order('name');
+    collegesEl.innerHTML = '';
+    if (!data?.length) {
+      collegesEl.innerHTML = '<option disabled>No colleges added yet — add some in Brainstorm → Colleges</option>';
+      return;
+    }
+    data.forEach((c: any) => {
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = c.name;
+      collegesEl.appendChild(opt);
+    });
+  }
+
+  function getSelectedColleges(): string[] {
+    return Array.from(collegesEl.selectedOptions).map(o => o.value);
+  }
+
+  function setSelectedColleges(names: string[] | null) {
+    const set = new Set(names ?? []);
+    Array.from(collegesEl.options).forEach(o => { o.selected = set.has(o.value); });
+  }
+
+  function visiblePrograms() {
+    let list = allPrograms.filter(p => {
+      if (filterInterest !== 'all' && p.interest_level !== filterInterest) return false;
+      if (filterAiRisk   !== 'all' && p.ai_risk        !== filterAiRisk)   return false;
+      if (filterStarred  && !p.starred) return false;
+      return true;
+    });
+    list.sort((a, b) => {
+      if (sortMode === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      if (sortMode === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (sortMode === 'az')     return a.name.localeCompare(b.name);
+      if (sortMode === 'za')     return b.name.localeCompare(a.name);
+      return 0;
+    });
+    return list;
+  }
+
+  function renderCards() {
+    const programs = visiblePrograms();
+    countEl.textContent = `${programs.length} program${programs.length !== 1 ? 's' : ''}`;
+
+    if (programs.length === 0) {
+      cardsEl.innerHTML = '<p class="pri-msg">No programs match. Try adjusting filters.</p>';
+      return;
+    }
+
+    cardsEl.innerHTML = programs.map(p => {
+      const ic  = INTEREST_COLOR[p.interest_level]       ?? '#94a3b8';
+      const arc = AI_RISK_COLOR[p.ai_risk]               ?? '#94a3b8';
+      const pc  = PROSPECTS_COLOR[p.job_prospects]       ?? '#94a3b8';
+      const dc  = DIFFICULTY_COLOR[p.admission_difficulty] ?? '#94a3b8';
+      const colleges: string[] = p.best_colleges ?? [];
+      const visibleColleges = colleges.slice(0, 3);
+      const extraCount = colleges.length - 3;
+      const collegeTags = visibleColleges.map(c =>
+        `<span class="pri-college-tag">${esc(c)}</span>`
+      ).join('') + (extraCount > 0 ? `<span class="pri-college-more">+${extraCount} more</span>` : '');
+
+      const hasDetails = !!(p.admission_tips || p.notes);
+
+      return `
+        <div class="pri-card" style="--ic:${ic}" data-id="${p.id}">
+          <div class="pri-card__top">
+            <div class="pri-card__badges">
+              ${p.interest_level ? badge(p.interest_level, ic) : ''}
+              ${p.ai_risk ? `<span class="pri-badge pri-badge--ai" style="background:${arc}18;color:${arc};border-color:${arc}40">AI: ${esc(p.ai_risk)}</span>` : ''}
+            </div>
+            <div class="pri-card__icons">
+              <button class="pri-star${p.starred ? ' pri-star--on' : ''}" data-id="${p.id}" data-starred="${!!p.starred}" title="Star">${p.starred ? '★' : '☆'}</button>
+              <button class="pri-pin${p.shortlisted ? ' pri-pin--on' : ''}" data-id="${p.id}" data-shortlisted="${!!p.shortlisted}" title="Shortlist">📌</button>
+            </div>
+          </div>
+
+          <div class="pri-card__title-row${hasDetails ? ' pri-card__title-row--toggle' : ''}" data-action="toggle">
+            <p class="pri-card__name">${esc(p.name)}</p>
+            ${hasDetails ? `<span class="pri-card__chevron">▶</span>` : ''}
+          </div>
+
+          <div class="pri-card__meta">
+            ${p.job_prospects      ? badge(p.job_prospects, pc) : ''}
+            ${p.admission_difficulty ? `<span class="pri-badge" style="background:${dc}18;color:${dc};border-color:${dc}40">${esc(p.admission_difficulty)} admission</span>` : ''}
+            ${p.years_of_study     ? `<span class="pri-years-tag">${esc(p.years_of_study)} yr${p.years_of_study === '1' ? '' : 's'}</span>` : ''}
+          </div>
+
+          ${colleges.length ? `<div class="pri-card__colleges">${collegeTags}</div>` : ''}
+
+          <div class="pri-card__expandable">
+            ${p.admission_tips ? `<div class="pri-card__tips"><span class="pri-card__tips-label">Admission tips:</span> ${esc(p.admission_tips)}</div>` : ''}
+            ${p.notes          ? `<p class="pri-card__notes">${esc(p.notes)}</p>` : ''}
+          </div>
+
+          <div class="pri-card__footer">
+            <span class="pri-card__date">${formatDate(p.created_at)}</span>
+            <div class="pri-card__actions">
+              <button class="pri-act pri-act--edit"   data-id="${p.id}">Edit</button>
+              <button class="pri-act pri-act--delete" data-id="${p.id}">Delete</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  /* ── Filter chips + sort ── */
+  document.addEventListener('click', e => {
+    const chip = (e.target as Element).closest<HTMLElement>('.filter-chip[data-filter]');
+    if (!chip) return;
+    const filter = chip.dataset.filter!;
+    const value  = chip.dataset.value!;
+    if (filter === 'interest') filterInterest = value;
+    if (filter === 'airisk')   filterAiRisk   = value;
+    document.querySelectorAll<HTMLElement>(`.filter-chip[data-filter="${filter}"]`).forEach(c =>
+      c.classList.toggle('active', c.dataset.value === value));
+    renderCards();
+  });
+
+  document.addEventListener('change', e => {
+    const target = e.target as HTMLElement;
+    if (target.id === 'bs-sort')    { sortMode = (target as HTMLSelectElement).value; renderCards(); }
+    if (target.id === 'bs-starred') { filterStarred = (target as HTMLInputElement).checked; renderCards(); }
+  });
+
+  /* ── Card interactions ── */
+  cardsEl.addEventListener('click', async e => {
+    const toggleRow = (e.target as HTMLElement).closest('.pri-card__title-row--toggle');
+    if (toggleRow) {
+      toggleRow.closest('.pri-card')?.classList.toggle('pri-card--open');
+      return;
+    }
+
+    const target = e.target as HTMLElement;
+
+    const starBtn = target.closest<HTMLElement>('.pri-star');
+    if (starBtn) {
+      const id      = Number(starBtn.dataset.id);
+      const starred = starBtn.dataset.starred !== 'true';
+      await supabase.from('program_interests').update({ starred }).eq('id', id).eq('family_id', familyId);
+      const p = allPrograms.find(p => p.id === id);
+      if (p) { p.starred = starred; renderCards(); }
+      return;
+    }
+
+    const pinBtn = target.closest<HTMLElement>('.pri-pin');
+    if (pinBtn) {
+      const id          = Number(pinBtn.dataset.id);
+      const shortlisted = pinBtn.dataset.shortlisted !== 'true';
+      await supabase.from('program_interests').update({ shortlisted }).eq('id', id).eq('family_id', familyId);
+      const p = allPrograms.find(p => p.id === id);
+      if (p) { p.shortlisted = shortlisted; renderCards(); }
+      return;
+    }
+
+    if (target.classList.contains('pri-act--delete')) {
+      const id = Number(target.dataset.id);
+      if (!confirm('Delete this program?')) return;
+      await supabase.from('program_interests').delete().eq('id', id).eq('family_id', familyId);
+      allPrograms = allPrograms.filter(p => p.id !== id);
+      renderCards();
+      return;
+    }
+
+    if (target.classList.contains('pri-act--edit')) {
+      const id = Number(target.dataset.id);
+      const p  = allPrograms.find(p => p.id === id);
+      if (!p) return;
+      editingId              = id;
+      nameEl.value           = p.name;
+      interestEl.value       = p.interest_level       ?? '';
+      aiRiskEl.value         = p.ai_risk              ?? '';
+      prospectsEl.value      = p.job_prospects        ?? '';
+      yearsEl.value          = p.years_of_study       ?? '';
+      difficultyEl.value     = p.admission_difficulty ?? '';
+      tipsEl.value           = p.admission_tips       ?? '';
+      notesEl.value          = p.notes                ?? '';
+      setSelectedColleges(p.best_colleges);
+      submitBtn.textContent = 'Save Changes';
+      submitBtn.classList.add('pri-btn--save');
+      cancelBtn.style.display = 'inline-block';
+      nameEl.focus();
+      nameEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+
+  /* ── Form submit ── */
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!familyId) return;
+    const name                = nameEl.value.trim();
+    const interest_level      = interestEl.value       || null;
+    const ai_risk             = aiRiskEl.value         || null;
+    const job_prospects       = prospectsEl.value      || null;
+    const years_of_study      = yearsEl.value          || null;
+    const admission_difficulty = difficultyEl.value    || null;
+    const best_colleges       = getSelectedColleges();
+    const admission_tips      = tipsEl.value.trim()    || null;
+    const notes               = notesEl.value.trim()   || null;
+    if (!name) return;
+    errorEl.style.display = 'none';
+    submitBtn.disabled = true;
+
+    const payload = { name, interest_level, ai_risk, job_prospects, years_of_study,
+                      admission_difficulty, best_colleges, admission_tips, notes };
+
+    if (editingId !== null) {
+      const { error } = await supabase.from('program_interests')
+        .update({ ...payload, updated_at: new Date().toISOString() })
+        .eq('id', editingId).eq('family_id', familyId);
+      if (error) { errorEl.textContent = error.message; errorEl.style.display = 'inline'; }
+      else { resetForm(); await loadPrograms(); }
+    } else {
+      const { error } = await supabase.from('program_interests')
+        .insert({ family_id: familyId, ...payload });
+      if (error) { errorEl.textContent = error.message; errorEl.style.display = 'inline'; }
+      else { resetForm(); await loadPrograms(); }
+    }
+    submitBtn.disabled = false;
+  });
+
+  function resetForm() {
+    editingId = null;
+    nameEl.value = ''; interestEl.value = ''; aiRiskEl.value = '';
+    prospectsEl.value = ''; yearsEl.value = ''; difficultyEl.value = '';
+    tipsEl.value = ''; notesEl.value = '';
+    Array.from(collegesEl.options).forEach(o => { o.selected = false; });
+    submitBtn.textContent = 'Add Program';
+    submitBtn.classList.remove('pri-btn--save');
+    cancelBtn.style.display = 'none';
+  }
+  cancelBtn.addEventListener('click', resetForm);
+
+  /* ── Export CSV ── */
+  document.getElementById('pri-export')!.addEventListener('click', () => {
+    if (!allPrograms.length) return;
+    const cell = (v: any) => `"${(v ?? '').toString().replace(/"/g,'""')}"`;
+    const lines = [
+      ['Starred','Program','Interest','AI Risk','Job Prospects','Years','Admission Difficulty','Best Colleges','Admission Tips','Notes','Date'].map(cell).join(','),
+      ...allPrograms.map(p => [
+        p.starred ? 'Yes' : 'No', p.name,
+        p.interest_level ?? '', p.ai_risk ?? '', p.job_prospects ?? '',
+        p.years_of_study ?? '', p.admission_difficulty ?? '',
+        (p.best_colleges ?? []).join('; '),
+        p.admission_tips ?? '', p.notes ?? '',
+        new Date(p.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+      ].map(cell).join(','))
+    ];
+    const blob = new Blob([lines.join('\n')], { type:'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'program-interests.csv'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  /* ── Load ── */
+  async function loadPrograms() {
+    if (!familyId) return;
+    const { data, error } = await supabase.from('program_interests').select('*')
+      .eq('family_id', familyId).order('created_at', { ascending: false });
+    if (error) {
+      cardsEl.innerHTML = '<p class="pri-msg" style="color:var(--sl-color-red)">Failed to load.</p>';
+      return;
+    }
+    allPrograms = data ?? [];
+    renderCards();
+  }
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      document.addEventListener('data-loaded', async () => {
+        const { data: { session: s } } = await supabase.auth.getSession();
+        if (s) {
+          const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', s.user.id).single();
+          familyId = p?.family_id ?? '';
+          await Promise.all([loadCollegeOptions(), loadPrograms()]);
+        }
+      }, { once: true });
+      return;
+    }
+    const { data: p } = await supabase.from('user_profiles').select('family_id').eq('user_id', session.user.id).single();
+    familyId = p?.family_id ?? '';
+    await Promise.all([loadCollegeOptions(), loadPrograms()]);
+  }
+
+  init();
+</script>
+
+<style is:global>
+  #pri-wrap { max-width: 100%; }
+
+  /* ── Form ── */
+  .pri-form {
+    display: flex; flex-direction: column; gap: 0.75rem;
+    padding: 1.25rem; border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem; background: var(--sl-color-bg-nav); margin-bottom: 1.5rem;
+  }
+  .pri-form__fields {
+    display: grid; gap: 0.75rem; align-items: end;
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+  .pri-form__field  { display: flex; flex-direction: column; gap: 0.25rem; }
+  .pri-label {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--sl-color-gray-2);
+  }
+  .pri-label-hint {
+    font-size: 0.68rem; font-weight: 400; text-transform: none;
+    letter-spacing: 0; color: var(--sl-color-gray-3); margin-left: 0.3rem;
+  }
+  .pri-input, .pri-select, .pri-textarea {
+    padding: 0.5rem 0.65rem; border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.375rem; background: var(--sl-color-bg);
+    color: var(--sl-color-text); font-size: 0.875rem; font-family: inherit; width: 100%;
+  }
+  .pri-input:focus, .pri-select:focus, .pri-textarea:focus {
+    outline: 2px solid var(--sl-color-accent); border-color: var(--sl-color-accent);
+  }
+  .pri-select--multi {
+    padding: 0.25rem; height: auto;
+    min-height: 7rem;
+  }
+  .pri-select--multi option {
+    padding: 0.3rem 0.5rem; border-radius: 0.2rem; cursor: pointer;
+  }
+  .pri-select--multi option:checked {
+    background: var(--sl-color-accent); color: #fff;
+  }
+  .pri-textarea { resize: vertical; min-height: 72px; }
+  .pri-form__actions { display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap; }
+  .pri-btn {
+    padding: 0.45rem 1rem; border-radius: 0.375rem; font-size: 0.85rem;
+    font-family: inherit; cursor: pointer; border: 1px solid transparent; white-space: nowrap;
+  }
+  .pri-btn--primary { background: var(--sl-color-accent); color: #fff; border-color: var(--sl-color-accent); }
+  .pri-btn--primary:hover { opacity: 0.88; }
+  .pri-btn--save    { background: #16a34a; border-color: #16a34a; color: #fff; }
+  .pri-btn--export  { background: transparent; border-color: var(--sl-color-accent); color: var(--sl-color-accent); }
+  .pri-btn--export:hover { background: var(--sl-color-accent); color: #fff; }
+  .pri-btn--cancel  { background: transparent; border-color: var(--sl-color-gray-4); color: var(--sl-color-gray-2); }
+  .pri-btn--cancel:hover { border-color: #ef4444; color: #ef4444; }
+  .pri-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .pri-error { font-size: 0.82rem; color: #ef4444; }
+
+  /* ── Toolbar ── */
+  .pri-toolbar { display: flex; align-items: center; margin-bottom: 0.65rem; }
+  .pri-count { font-size: 0.82rem; color: var(--sl-color-gray-2); }
+
+  /* ── Cards ── */
+  .pri-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+  .pri-msg { padding: 2rem; text-align: center; color: var(--sl-color-gray-2); }
+
+  .pri-card {
+    border: 1px solid var(--sl-color-gray-5);
+    border-left: 4px solid var(--ic, #94a3b8);
+    border-radius: 0.5rem;
+    background: var(--sl-color-bg-nav);
+    padding: 0.85rem 1rem;
+    display: flex; flex-direction: column; gap: 0.45rem;
+    transition: box-shadow 0.15s;
+  }
+  .pri-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+  .pri-card__top {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  }
+  .pri-card__badges { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; min-width: 0; }
+  .pri-card__icons  { display: flex; align-items: center; gap: 0.25rem; flex-shrink: 0; }
+
+  .pri-badge {
+    font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.45rem;
+    border-radius: 9999px; border: 1px solid transparent; white-space: nowrap;
+  }
+
+  .pri-card__title-row {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 0.4rem;
+  }
+  .pri-card__title-row--toggle { cursor: pointer; }
+  .pri-card__title-row--toggle:hover .pri-card__name { color: var(--sl-color-accent); }
+
+  .pri-card__name {
+    font-weight: 700; color: var(--sl-color-text);
+    line-height: 1.3; font-size: 1rem; margin: 0; flex: 1;
+  }
+  .pri-card__chevron {
+    font-size: 0.6rem; color: var(--sl-color-gray-3);
+    flex-shrink: 0; margin-top: 0.38rem;
+    transition: transform 0.15s; display: inline-block;
+  }
+  .pri-card--open .pri-card__chevron { transform: rotate(90deg); }
+
+  .pri-card__meta {
+    display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;
+  }
+  .pri-years-tag {
+    font-size: 0.68rem; font-weight: 600; padding: 0.12rem 0.45rem;
+    border-radius: 9999px; border: 1px solid var(--sl-color-gray-4);
+    color: var(--sl-color-gray-2); white-space: nowrap;
+  }
+
+  .pri-card__colleges {
+    display: flex; flex-wrap: wrap; gap: 0.3rem;
+  }
+  .pri-college-tag {
+    font-size: 0.68rem; padding: 0.1rem 0.45rem; border-radius: 9999px;
+    background: var(--sl-color-gray-6); color: var(--sl-color-gray-1);
+    border: 1px solid var(--sl-color-gray-5); font-weight: 500; white-space: nowrap;
+  }
+  .pri-college-more {
+    font-size: 0.68rem; color: var(--sl-color-gray-3); padding: 0.1rem 0.25rem; align-self: center;
+  }
+
+  .pri-card__expandable {
+    display: none; flex-direction: column; gap: 0.4rem;
+  }
+  .pri-card--open .pri-card__expandable { display: flex; }
+
+  .pri-card__tips {
+    font-size: 0.78rem; color: var(--sl-color-gray-2); line-height: 1.4;
+  }
+  .pri-card__tips-label {
+    font-weight: 600; color: var(--sl-color-gray-1);
+  }
+  .pri-card__notes {
+    font-size: 0.78rem; color: var(--sl-color-gray-2); line-height: 1.4; margin: 0;
+  }
+
+  .pri-card__footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: auto; padding-top: 0.35rem;
+    border-top: 1px solid var(--sl-color-gray-6);
+  }
+  .pri-card__date    { font-size: 0.75rem; color: var(--sl-color-gray-3); white-space: nowrap; }
+  .pri-card__actions { display: flex; gap: 0.25rem; }
+
+  /* ── Star / Pin ── */
+  .pri-star {
+    background: none; border: none; cursor: pointer;
+    font-size: 1.1rem; color: var(--sl-color-gray-4);
+    padding: 0; line-height: 1; transition: color 0.1s;
+  }
+  .pri-star--on, .pri-star:hover { color: #f59e0b; }
+  .pri-pin {
+    background: none; border: none; cursor: pointer;
+    font-size: 0.95rem; padding: 0; line-height: 1;
+    opacity: 0.2; filter: grayscale(1); transition: all 0.15s;
+  }
+  .pri-pin--on { opacity: 1; filter: none; }
+  .pri-pin:hover { opacity: 0.75; filter: none; }
+
+  /* ── Actions ── */
+  .pri-act {
+    font-size: 0.62rem; background: none; border: 1px solid var(--sl-color-gray-4);
+    border-radius: 0.2rem; padding: 0.08rem 0.35rem;
+    cursor: pointer; color: var(--sl-color-text); font-family: inherit;
+  }
+  .pri-act--delete { color: #ef4444; border-color: #ef4444; }
+  .pri-act:hover { opacity: 0.7; }
+
+  @media (max-width: 900px) {
+    .pri-form__fields { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) {
+    .pri-form__fields { grid-template-columns: 1fr; }
+    .pri-cards { grid-template-columns: 1fr; }
+  }
+</style>

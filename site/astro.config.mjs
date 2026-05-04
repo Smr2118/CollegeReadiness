@@ -32,6 +32,7 @@ export default defineConfig({
 					collapsed: true,
 					items: [
 						{ label: '🎓 Colleges', link: '/college-ideas/' },
+						{ label: '📖 Programs of Interest', link: '/programs-of-interest/' },
 						{ label: '✍️ Essay Ideas', link: '/essay-topics/' },
 						{ label: '🤖 Robotics Ideas', link: '/robotics-ideas/' },
 						{ label: '🇮🇳 India Activities Ideas', link: '/india-ideas/' },
@@ -52,6 +53,7 @@ export default defineConfig({
 					collapsed: true,
 					items: [
 						{ label: '🎓 Colleges', link: '/shortlists/colleges/' },
+						{ label: '📖 Programs of Interest', link: '/shortlists/programs/' },
 						{ label: '✍️ Essay Theme', link: '/shortlists/essay-theme/' },
 						{ label: '🤖 Robotics', link: '/shortlists/robotics/' },
 						{ label: '🏆 Extra Curriculars', link: '/shortlists/extracurriculars/' },
