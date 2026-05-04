@@ -24,8 +24,8 @@ Deno.serve(async (req) => {
     if (caller.user_metadata?.role !== 'admin') return json({ error: 'Forbidden' }, 403)
 
     const { user_id, role } = await req.json()
-    if (!user_id || !['admin', 'member'].includes(role))
-      return json({ error: 'user_id and role (admin|member) are required' }, 400)
+    if (!user_id || !['admin', 'member', 'family_head'].includes(role))
+      return json({ error: 'user_id and role (admin|member|family_head) are required' }, 400)
 
     // Update auth metadata so the JWT reflects the new role immediately on next login
     const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
