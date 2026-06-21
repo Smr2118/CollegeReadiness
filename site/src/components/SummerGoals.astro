@@ -1,0 +1,367 @@
+---
+---
+
+<div id="sg-loading" class="sg-status">Loading…</div>
+<div id="sg-denied" class="sg-status" style="display:none">Please sign in to view goals.</div>
+
+<div id="sg-ui" style="display:none">
+
+  <!-- Add goal form -->
+  <form id="sg-add-form" class="sg-form">
+    <h3 class="sg-form__heading">Add a Goal</h3>
+
+    <div class="sg-form__field">
+      <label class="sg-form__label" for="sg-title">Title <span class="sg-required">*</span></label>
+      <input id="sg-title" class="sg-form__input" type="text"
+        placeholder="e.g. Complete robotics project" required autocomplete="off" />
+    </div>
+
+    <div class="sg-form__field">
+      <label class="sg-form__label" for="sg-description">Description</label>
+      <textarea id="sg-description" class="sg-form__textarea"
+        placeholder="What does this involve?" rows="2"></textarea>
+    </div>
+
+    <div class="sg-form__2col">
+      <div class="sg-form__field">
+        <label class="sg-form__label" for="sg-end-date">End Date</label>
+        <input id="sg-end-date" class="sg-form__date" type="date" />
+      </div>
+      <div class="sg-form__field">
+        <label class="sg-form__label" for="sg-category">Useful For</label>
+        <select id="sg-category" class="sg-form__select">
+          <option value="college_readiness">College Readiness</option>
+          <option value="passion_project">Passion Project</option>
+          <option value="extra_curriculars">Extra Curriculars</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sg-form__field">
+      <label class="sg-form__label">Subtasks</label>
+      <div class="sg-subtask-add-row">
+        <input id="sg-new-subtask" class="sg-form__input" type="text"
+          placeholder="Add a subtask… (press Enter or +)" autocomplete="off" />
+        <button type="button" id="sg-add-subtask-btn" class="sg-icon-btn" title="Add subtask">+</button>
+      </div>
+      <ul id="sg-pending-subtasks" class="sg-pending-list"></ul>
+    </div>
+
+    <p id="sg-error" class="sg-form-error" style="display:none"></p>
+
+    <div class="sg-form__actions">
+      <button type="submit" class="sg-primary-btn">Save Goal</button>
+    </div>
+  </form>
+
+  <!-- Goal cards -->
+  <div id="sg-goals" class="sg-goals"></div>
+
+</div>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  interface Subtask {
+    id: string;
+    goal_id: string;
+    title: string;
+    done: boolean;
+    created_at: string;
+  }
+
+  interface Goal {
+    id: string;
+    title: string;
+    description: string | null;
+    end_date: string | null;
+    category: string;
+    done: boolean;
+    created_by: string;
+    created_at: string;
+    summer_goal_subtasks: Subtask[];
+  }
+
+  let myUserId = '';
+  let myFamilyId = '';
+  const pendingSubtasks: string[] = [];
+
+  const CATEGORY_LABELS: Record<string, string> = {
+    college_readiness: 'College Readiness',
+    passion_project:   'Passion Project',
+    extra_curriculars: 'Extra Curriculars',
+  };
+
+  /* ── Init ── */
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+        if (event === 'SIGNED_IN' && s) {
+          subscription.unsubscribe();
+          show('sg-loading', true);
+          show('sg-denied', false);
+          init();
+        }
+      });
+      show('sg-loading', false);
+      show('sg-denied', true);
+      return;
+    }
+
+    myUserId = session.user.id;
+
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('family_id')
+      .eq('user_id', myUserId)
+      .single();
+
+    myFamilyId = profile?.family_id ?? session.user.user_metadata?.family_id ?? '';
+
+    show('sg-loading', false);
+    show('sg-ui', true);
+    await loadGoals();
+  }
+
+  /* ── Load goals ── */
+  async function loadGoals() {
+    const { data, error } = await supabase
+      .from('summer_goals')
+      .select('*, summer_goal_subtasks(*)')
+      .eq('family_id', myFamilyId)
+      .order('done', { ascending: true })
+      .order('end_date', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false });
+
+    const container = document.getElementById('sg-goals')!;
+    if (error) { container.innerHTML = `<p class="sg-error-msg">Error: ${error.message}</p>`; return; }
+
+    const goals: Goal[] = (data ?? []).map(g => ({
+      ...g,
+      summer_goal_subtasks: [...(g.summer_goal_subtasks ?? [])].sort(
+        (a: Subtask, b: Subtask) => a.created_at.localeCompare(b.created_at)
+      ),
+    }));
+
+    if (!goals.length) {
+      container.innerHTML = '<p class="sg-empty">No goals yet — add one above!</p>';
+      return;
+    }
+
+    container.innerHTML = goals.map(goalHtml).join('');
+    attachListeners(container);
+  }
+
+  /* ── Render helpers ── */
+  function goalHtml(g: Goal): string {
+    const subs     = g.summer_goal_subtasks ?? [];
+    const doneSubs = subs.filter(s => s.done).length;
+
+    return `
+      <div class="sg-goal${g.done ? ' sg-goal--done' : ''}" data-id="${g.id}">
+        <div class="sg-goal__header">
+          <label class="sg-goal__check-label">
+            <input class="sg-goal-done-cb" type="checkbox" data-id="${g.id}"${g.done ? ' checked' : ''} />
+            <span class="sg-goal__title">${esc(g.title)}</span>
+          </label>
+          <div class="sg-goal__meta">
+            <span class="sg-badge sg-badge--${g.category}">${CATEGORY_LABELS[g.category] ?? g.category}</span>
+            ${g.end_date ? `<span class="sg-date ${dateClass(g.end_date)}">${fmtDate(g.end_date)}${daysLeft(g.end_date)}</span>` : ''}
+            <button class="sg-del-btn" data-id="${g.id}" title="Delete goal">✕</button>
+          </div>
+        </div>
+        ${g.description ? `<p class="sg-goal__desc">${esc(g.description)}</p>` : ''}
+        <div class="sg-goal__subtasks">
+          ${subs.length ? `
+            <ul class="sg-subtask-list">
+              ${subs.map(subtaskHtml).join('')}
+            </ul>
+            <p class="sg-progress">${doneSubs} of ${subs.length} subtask${subs.length === 1 ? '' : 's'} done</p>
+          ` : ''}
+          <div class="sg-subtask-add-row sg-subtask-add-row--inline">
+            <input class="sg-form__input sg-inline-input" type="text"
+              placeholder="Add subtask…" data-goal-id="${g.id}" autocomplete="off" />
+            <button type="button" class="sg-icon-btn sg-add-sub-btn" data-goal-id="${g.id}" title="Add subtask">+</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function subtaskHtml(s: Subtask): string {
+    return `
+      <li class="sg-subtask${s.done ? ' sg-subtask--done' : ''}">
+        <label class="sg-subtask__label">
+          <input class="sg-sub-cb" type="checkbox" data-sub-id="${s.id}"${s.done ? ' checked' : ''} />
+          <span>${esc(s.title)}</span>
+        </label>
+        <button class="sg-del-sub-btn" data-sub-id="${s.id}" title="Remove">✕</button>
+      </li>`;
+  }
+
+  /* ── Attach event listeners ── */
+  function attachListeners(container: HTMLElement) {
+    container.querySelectorAll<HTMLInputElement>('.sg-goal-done-cb').forEach(cb =>
+      cb.addEventListener('change', () => toggleGoal(cb.dataset.id!, cb.checked))
+    );
+    container.querySelectorAll<HTMLInputElement>('.sg-sub-cb').forEach(cb =>
+      cb.addEventListener('change', () => toggleSub(cb.dataset.subId!, cb.checked))
+    );
+    container.querySelectorAll<HTMLButtonElement>('.sg-del-btn').forEach(btn =>
+      btn.addEventListener('click', () => deleteGoal(btn.dataset.id!))
+    );
+    container.querySelectorAll<HTMLButtonElement>('.sg-del-sub-btn').forEach(btn =>
+      btn.addEventListener('click', () => deleteSub(btn.dataset.subId!))
+    );
+    container.querySelectorAll<HTMLButtonElement>('.sg-add-sub-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const inp = container.querySelector<HTMLInputElement>(`.sg-inline-input[data-goal-id="${btn.dataset.goalId}"]`)!;
+        addInlineSub(btn.dataset.goalId!, inp);
+      });
+    });
+    container.querySelectorAll<HTMLInputElement>('.sg-inline-input').forEach(inp => {
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); addInlineSub(inp.dataset.goalId!, inp); }
+      });
+    });
+  }
+
+  /* ── CRUD ── */
+  async function toggleGoal(id: string, done: boolean) {
+    await supabase.from('summer_goals').update({ done, updated_at: new Date().toISOString() }).eq('id', id);
+    await loadGoals();
+  }
+
+  async function toggleSub(id: string, done: boolean) {
+    await supabase.from('summer_goal_subtasks').update({ done }).eq('id', id);
+    await loadGoals();
+  }
+
+  async function deleteGoal(id: string) {
+    if (!confirm('Delete this goal and all its subtasks?')) return;
+    await supabase.from('summer_goals').delete().eq('id', id);
+    await loadGoals();
+  }
+
+  async function deleteSub(id: string) {
+    await supabase.from('summer_goal_subtasks').delete().eq('id', id);
+    await loadGoals();
+  }
+
+  async function addInlineSub(goalId: string, inp: HTMLInputElement) {
+    const title = inp.value.trim();
+    if (!title) return;
+    const { error } = await supabase.from('summer_goal_subtasks').insert({
+      goal_id: goalId, family_id: myFamilyId, title, done: false,
+    });
+    if (!error) { inp.value = ''; await loadGoals(); }
+  }
+
+  /* ── Pending subtasks (new goal form) ── */
+  function renderPending() {
+    const ul = document.getElementById('sg-pending-subtasks')!;
+    ul.innerHTML = pendingSubtasks.map((s, i) => `
+      <li class="sg-pending-item">
+        <span>${esc(s)}</span>
+        <button type="button" class="sg-remove-pending" data-i="${i}" title="Remove">✕</button>
+      </li>`).join('');
+    ul.querySelectorAll<HTMLButtonElement>('.sg-remove-pending').forEach(btn =>
+      btn.addEventListener('click', () => {
+        pendingSubtasks.splice(Number(btn.dataset.i), 1);
+        renderPending();
+      })
+    );
+  }
+
+  function addPendingSub() {
+    const inp = document.getElementById('sg-new-subtask') as HTMLInputElement;
+    const val = inp.value.trim();
+    if (!val) return;
+    pendingSubtasks.push(val);
+    inp.value = '';
+    renderPending();
+    inp.focus();
+  }
+
+  document.getElementById('sg-add-subtask-btn')!.addEventListener('click', addPendingSub);
+  document.getElementById('sg-new-subtask')!.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addPendingSub(); }
+  });
+
+  /* ── Submit new goal ── */
+  document.getElementById('sg-add-form')!.addEventListener('submit', async e => {
+    e.preventDefault();
+    const titleEl = document.getElementById('sg-title') as HTMLInputElement;
+    const descEl  = document.getElementById('sg-description') as HTMLTextAreaElement;
+    const dateEl  = document.getElementById('sg-end-date') as HTMLInputElement;
+    const catEl   = document.getElementById('sg-category') as HTMLSelectElement;
+    const errEl   = document.getElementById('sg-error')!;
+    errEl.style.display = 'none';
+
+    const { data: goal, error } = await supabase
+      .from('summer_goals')
+      .insert({
+        family_id:   myFamilyId,
+        created_by:  myUserId,
+        title:       titleEl.value.trim(),
+        description: descEl.value.trim() || null,
+        end_date:    dateEl.value || null,
+        category:    catEl.value,
+        done:        false,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      errEl.textContent = error.message;
+      errEl.style.display = 'block';
+      return;
+    }
+
+    if (pendingSubtasks.length && goal) {
+      await supabase.from('summer_goal_subtasks').insert(
+        pendingSubtasks.map(title => ({ goal_id: goal.id, family_id: myFamilyId, title, done: false }))
+      );
+    }
+
+    pendingSubtasks.length = 0;
+    renderPending();
+    titleEl.value = '';
+    descEl.value  = '';
+    dateEl.value  = '';
+    catEl.value   = 'college_readiness';
+    await loadGoals();
+  });
+
+  /* ── Date helpers ── */
+  function fmtDate(d: string): string {
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  function daysLeft(d: string): string {
+    const diff = Math.ceil((new Date(d + 'T00:00:00').getTime() - Date.now()) / 86400000);
+    if (diff < 0)  return ' (overdue)';
+    if (diff === 0) return ' (today)';
+    if (diff === 1) return ' (1 day left)';
+    return ` (${diff} days)`;
+  }
+
+  function dateClass(d: string): string {
+    const diff = Math.ceil((new Date(d + 'T00:00:00').getTime() - Date.now()) / 86400000);
+    if (diff < 0)  return 'sg-date--overdue';
+    if (diff <= 7) return 'sg-date--soon';
+    return 'sg-date--ok';
+  }
+
+  /* ── Utility ── */
+  function show(id: string, visible: boolean) {
+    (document.getElementById(id) as HTMLElement).style.display = visible ? '' : 'none';
+  }
+
+  function esc(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  init();
+</script>

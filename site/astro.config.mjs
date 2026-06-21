@@ -61,6 +61,13 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'Goals & Tasks',
+					collapsed: true,
+					items: [
+						{ label: '☀️ Summer 2026', link: '/goals/summer-2026/' },
+					],
+				},
+				{
 					label: 'Resources',
 					collapsed: true,
 					items: [
