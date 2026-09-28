@@ -42,8 +42,10 @@
     const savedInt    = localStorage.getItem(interestKey) ?? '';
     const iv = (v: string) => savedInt === v ? ' active' : '';
     const chipDisabled = isReadOnly ? ' disabled' : '';
+    const daysUntil = (parseDeadline(p.deadline) - Date.now()) / 86_400_000;
+    const soonClass = daysUntil > 0 && daysUntil <= 30 ? ' program-card--deadline-soon' : '';
 
-    return `<div class="program-card"
+    return `<div class="program-card${soonClass}"
       data-tier="${p.tier}"
       data-category="${esc(p.category)}"
       data-status="${esc(p.status)}"

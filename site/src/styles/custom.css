@@ -228,6 +228,12 @@ li:has(a[href$="/admin/"]) {
 .program-card[data-tier="3"] { border-left-color: #22c55e; }
 .program-card[data-tier="4"] { border-left-color: var(--sl-color-gray-4); }
 
+/* deadline within 30 days */
+.program-card--deadline-soon {
+  border-left-color: #f59e0b !important;
+  background: #fffbeb;
+}
+
 
 .program-card__name {
   font-size: 1.1rem;
