@@ -105,10 +105,15 @@
       priority: '🚨 Priority', deadline: '⏰ Deadline Note',
       info: 'ℹ️ Info', warning: '⚠️ Note', conflict: '⚡ Conflict', nextyear: '📅 Next Year'
     };
+    const toBullets = (text: string) => {
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length <= 1) return `<p>${esc(text)}</p>`;
+      return `<ul class="prog-modal__bullets">${lines.map(l => `<li>${esc(l)}</li>`).join('')}</ul>`;
+    };
     const noteHtml = p.note ? `
       <div class="prog-modal__note prog-modal__note--${esc(p.note_type ?? 'info')}">
         <div class="prog-modal__note-label">${noteTypeLabel[p.note_type ?? 'info'] ?? 'ℹ️ Note'}</div>
-        <p>${esc(p.note)}</p>
+        ${toBullets(p.note)}
       </div>` : '';
 
     const applyBtn = p.url && p.url.startsWith('http')
@@ -140,7 +145,7 @@
 
       <div class="prog-modal__section">
         <h3 class="prog-modal__section-title">About</h3>
-        <p class="prog-modal__desc">${esc(p.description)}</p>
+        ${toBullets(p.description ?? '')}
       </div>
 
       ${noteHtml}
