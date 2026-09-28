@@ -61,7 +61,7 @@
         <div class="program-card__toggle-left">
           <p class="program-card__name">${esc(p.name)}</p>
           <p class="program-card__org">${esc(p.org)}</p>
-          ${p.note_type === 'warning' ? `<span class="program-card__fit-badge">${p.status === 'conflict' ? '⛔ Not eligible' : '⚠️ Reduced fit'}</span>` : ''}
+          <span class="program-card__fit-badge"${p.note_type !== 'warning' ? ' style="visibility:hidden"' : ''}>${p.status === 'conflict' ? '⛔ Not eligible' : '⚠️ Reduced fit'}</span>
         </div>
         <div class="program-card__toggle-right">
           <span class="badge badge--${esc(p.status)}">${esc(statusLabel[p.status] ?? p.status)}</span>
