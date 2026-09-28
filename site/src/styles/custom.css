@@ -243,6 +243,17 @@ li:has(a[href$="/admin/"]) {
   margin: 0;
 }
 
+.program-card__fit-badge {
+  display: inline-block;
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #92400e;
+  background: #fef3c7;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
 .program-card__desc {
   font-size: 0.85rem;
   color: var(--sl-color-gray-2);

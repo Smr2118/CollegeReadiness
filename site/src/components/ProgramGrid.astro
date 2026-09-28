@@ -54,12 +54,14 @@
       data-org="${esc((p.org ?? '').toLowerCase())}"
       data-deadline="${esc(p.deadline ?? '')}"
       data-interest="${esc(savedInt)}"
-      data-interest-key="${esc(interestKey)}">
+      data-interest-key="${esc(interestKey)}"
+      data-note-type="${esc(p.note_type ?? '')}">
 
       <button class="program-card__toggle" data-open-name="${esc(p.name)}">
         <div class="program-card__toggle-left">
           <p class="program-card__name">${esc(p.name)}</p>
           <p class="program-card__org">${esc(p.org)}</p>
+          ${p.note_type === 'warning' ? `<span class="program-card__fit-badge">${p.status === 'conflict' ? '⛔ Not eligible' : '⚠️ Reduced fit'}</span>` : ''}
         </div>
         <div class="program-card__toggle-right">
           <span class="badge badge--${esc(p.status)}">${esc(statusLabel[p.status] ?? p.status)}</span>
@@ -256,11 +258,22 @@
   }
 
   const interestOrder: Record<string,number> = { applied:0, applying:1, researching:2, maybe:3, '':4, skip:5 };
+  const fitOrder: Record<string,number> = { priority: 0, info: 1, warning: 2 };
 
   function sortCards() {
     const grid = document.getElementById('pg-grid')!;
     const cards = Array.from(grid.querySelectorAll('.program-card'));
-    if (sortBy === 'default') { originalOrder.forEach(c => grid.appendChild(c)); return; }
+    if (sortBy === 'default') {
+      const origIdx = new Map(originalOrder.map((el, i) => [el as HTMLElement, i]));
+      cards.sort((a, b) => {
+        const fa = fitOrder[(a as HTMLElement).dataset.noteType ?? ''] ?? 1;
+        const fb = fitOrder[(b as HTMLElement).dataset.noteType ?? ''] ?? 1;
+        if (fa !== fb) return fa - fb;
+        return (origIdx.get(a as HTMLElement) ?? 99) - (origIdx.get(b as HTMLElement) ?? 99);
+      });
+      cards.forEach(c => grid.appendChild(c));
+      return;
+    }
     if (sortBy === 'deadline') {
       cards.sort((a,b) => parseDeadline((a as HTMLElement).dataset.deadline) - parseDeadline((b as HTMLElement).dataset.deadline));
     } else if (sortBy === 'interest') {
