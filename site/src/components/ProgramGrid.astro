@@ -1,6 +1,11 @@
 ---
-// Programs are now loaded from Supabase at runtime — no build-time import
+// Programs are loaded from Supabase at runtime — filtered by season
 ---
+
+<!-- Archived banner (shown when viewing 2026) -->
+<div class="archived-banner" id="pg-archived-banner" style="display:none">
+  Viewing archived Summer 2026 programs — reference only.
+</div>
 
 <p class="results-count" id="pg-count">Loading…</p>
 
@@ -12,41 +17,31 @@
   No programs match your filters. Try broadening your search.
 </p>
 
+<!-- Full-screen modal -->
+<div id="pg-modal" class="prog-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="pg-modal-title">
+  <div class="prog-modal__backdrop" id="pg-modal-backdrop"></div>
+  <div class="prog-modal__panel">
+    <button class="prog-modal__close" id="pg-modal-close" aria-label="Close">✕</button>
+    <div class="prog-modal__body" id="pg-modal-body"></div>
+  </div>
+</div>
+
 <script>
   import { supabase } from '../lib/supabase';
 
-  // ── Card template ────────────────────────────────────────────────────────
   function esc(s: string | null | undefined): string {
     return (s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
+  // ── Compact card (header + interest row only) ────────────────────────────
   function makeCard(p: any): string {
     const statusLabel: Record<string,string> = {
-      open:'Open', closed:'Closed', nextyear:'Apply Next Year', conflict:'Conflict'
+      open:'Open', closed:'Closed', nextyear:'Next Year', conflict:'Conflict'
     };
-    const tierLabel: Record<number,string> = {
-      1:'T1 – Elite', 2:'T2 – Highly Selective', 3:'T3 – Moderate', 4:'T4 – Accessible'
-    };
-    const r = Math.round(p.rating ?? 0);
-    const stars = '★'.repeat(r) + '☆'.repeat(5 - r);
-    const costKey = (p.cost ?? '').toLowerCase().replace('/','').replace(' ','');
     const interestKey = `pc-interest-${p.name}`;
-    const noteKey     = `pc-note-${p.name}`;
-    const savedNote   = localStorage.getItem(noteKey) ?? '';
     const savedInt    = localStorage.getItem(interestKey) ?? '';
-
-    const tagsHtml = (p.tags ?? []).map((t: string) =>
-      `<span class="badge badge--tag">${esc(t)}</span>`).join('');
-    const noteHtml = p.note
-      ? `<div class="program-card__note program-card__note--${esc(p.note_type ?? 'info')}">${esc(p.note)}</div>`
-      : '';
-    const applyBtn = p.url && p.url.startsWith('http')
-      ? `<a class="btn-link" href="${esc(p.url)}" target="_blank" rel="noopener">Apply →</a>`
-      : '';
-
     const iv = (v: string) => savedInt === v ? ' active' : '';
     const chipDisabled = isReadOnly ? ' disabled' : '';
-    const noteReadonly = isReadOnly ? ' readonly' : '';
 
     return `<div class="program-card"
       data-tier="${p.tier}"
@@ -61,7 +56,7 @@
       data-interest="${esc(savedInt)}"
       data-interest-key="${esc(interestKey)}">
 
-      <button class="program-card__toggle" aria-expanded="false">
+      <button class="program-card__toggle" data-open-name="${esc(p.name)}">
         <div class="program-card__toggle-left">
           <p class="program-card__name">${esc(p.name)}</p>
           <p class="program-card__org">${esc(p.org)}</p>
@@ -81,56 +76,140 @@
         <button class="interest-chip${iv('maybe')}"${chipDisabled} data-iv="maybe">🤔 Maybe</button>
         <button class="interest-chip${iv('skip')}"${chipDisabled} data-iv="skip">❌ Skip</button>
       </div>
-
-      <div class="program-card__body">
-        <div class="program-card__meta">
-          <span class="badge badge--tier${p.tier}">${esc(tierLabel[p.tier] ?? '')}</span>
-          <span class="badge badge--${esc(costKey)}">${esc(p.cost)}</span>
-          <span class="badge badge--format">${esc(p.format)}</span>
-          <span class="badge badge--format">📅 ${esc(p.duration)}</span>
-          <span class="badge badge--format">🎓 ${esc(p.grades)}</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:0.75rem;font-size:0.78rem;color:var(--sl-color-gray-2)">
-          <span class="stars">${stars}</span>
-          <span>Selectivity: ${esc(p.selectivity_label)}</span>
-        </div>
-        <p class="program-card__desc">${esc(p.description)}</p>
-        ${noteHtml}
-        <div class="program-card__tags">${tagsHtml}</div>
-        <div class="program-card__notes-section">
-          <label class="program-card__notes-label">My Notes</label>
-          <textarea class="program-card__user-note"
-            data-key="${esc(noteKey)}"
-            placeholder="Add your personal notes, reminders, or application status…"
-            rows="2"${noteReadonly}>${esc(savedNote)}</textarea>
-        </div>
-        <div class="program-card__footer">
-          <div class="program-card__deadline">⏰ ${esc(p.deadline)}</div>
-          ${applyBtn}
-        </div>
-      </div>
     </div>`;
   }
+
+  // ── Modal body ────────────────────────────────────────────────────────────
+  function makeModalBody(p: any): string {
+    const statusLabel: Record<string,string> = {
+      open:'Open', closed:'Closed', nextyear:'Apply Next Year', conflict:'Conflict'
+    };
+    const tierLabel: Record<number,string> = {
+      1:'T1 – Elite', 2:'T2 – Highly Selective', 3:'T3 – Moderate', 4:'T4 – Accessible'
+    };
+    const r = Math.round(p.rating ?? 0);
+    const stars = '★'.repeat(r) + '☆'.repeat(5 - r);
+    const costKey = (p.cost ?? '').toLowerCase().replace('/','').replace(' ','');
+    const interestKey = `pc-interest-${p.name}`;
+    const noteKey     = `pc-note-${p.name}`;
+    const savedNote   = localStorage.getItem(noteKey) ?? '';
+    const savedInt    = localStorage.getItem(interestKey) ?? '';
+    const iv = (v: string) => savedInt === v ? ' active' : '';
+    const chipDisabled = isReadOnly ? ' disabled' : '';
+    const noteReadonly = isReadOnly ? ' readonly' : '';
+
+    const tagsHtml = (p.tags ?? []).map((t: string) =>
+      `<span class="badge badge--tag">${esc(t)}</span>`).join('');
+
+    const noteTypeLabel: Record<string,string> = {
+      priority: '🚨 Priority', deadline: '⏰ Deadline Note',
+      info: 'ℹ️ Info', warning: '⚠️ Note', conflict: '⚡ Conflict', nextyear: '📅 Next Year'
+    };
+    const noteHtml = p.note ? `
+      <div class="prog-modal__note prog-modal__note--${esc(p.note_type ?? 'info')}">
+        <div class="prog-modal__note-label">${noteTypeLabel[p.note_type ?? 'info'] ?? 'ℹ️ Note'}</div>
+        <p>${esc(p.note)}</p>
+      </div>` : '';
+
+    const applyBtn = p.url && p.url.startsWith('http')
+      ? `<a class="prog-modal__apply-btn" href="${esc(p.url)}" target="_blank" rel="noopener">Apply →</a>`
+      : '';
+
+    return `
+      <div class="prog-modal__header">
+        <div>
+          <h2 class="prog-modal__title" id="pg-modal-title">${esc(p.name)}</h2>
+          <p class="prog-modal__org">${esc(p.org)}</p>
+        </div>
+        <span class="badge badge--${esc(p.status)} prog-modal__status">${esc(statusLabel[p.status] ?? p.status)}</span>
+      </div>
+
+      <div class="prog-modal__meta">
+        <span class="badge badge--tier${p.tier}">${esc(tierLabel[p.tier] ?? '')}</span>
+        <span class="badge badge--${esc(costKey)}">${esc(p.cost)}</span>
+        <span class="badge badge--format">${esc(p.format)}</span>
+        <span class="badge badge--format">📅 ${esc(p.duration)}</span>
+        <span class="badge badge--format">🎓 ${esc(p.grades)}</span>
+      </div>
+
+      <div class="prog-modal__stars">
+        <span class="stars">${stars}</span>
+        <span>${esc(p.selectivity_label)}</span>
+        <span class="prog-modal__impact">· College Impact: <strong>${esc(p.college_impact_label)}</strong></span>
+      </div>
+
+      <div class="prog-modal__section">
+        <h3 class="prog-modal__section-title">About</h3>
+        <p class="prog-modal__desc">${esc(p.description)}</p>
+      </div>
+
+      ${noteHtml}
+
+      ${tagsHtml ? `<div class="prog-modal__tags">${tagsHtml}</div>` : ''}
+
+      <div class="prog-modal__section">
+        <h3 class="prog-modal__section-title">My Interest</h3>
+        <div class="prog-modal__interest-row" data-interest-key="${esc(interestKey)}">
+          <button class="interest-chip${iv('')}"${chipDisabled} data-iv="">—</button>
+          <button class="interest-chip${iv('applied')}"${chipDisabled} data-iv="applied">✅ Applied</button>
+          <button class="interest-chip${iv('applying')}"${chipDisabled} data-iv="applying">🔥 Applying</button>
+          <button class="interest-chip${iv('researching')}"${chipDisabled} data-iv="researching">👀 Researching</button>
+          <button class="interest-chip${iv('maybe')}"${chipDisabled} data-iv="maybe">🤔 Maybe</button>
+          <button class="interest-chip${iv('skip')}"${chipDisabled} data-iv="skip">❌ Skip</button>
+        </div>
+      </div>
+
+      <div class="prog-modal__section">
+        <h3 class="prog-modal__section-title">My Notes</h3>
+        <textarea class="program-card__user-note prog-modal__notes"
+          data-key="${esc(noteKey)}"
+          placeholder="Add your notes, application status, reminders…"
+          rows="4"${noteReadonly}>${esc(savedNote)}</textarea>
+      </div>
+
+      <div class="prog-modal__footer">
+        <span class="prog-modal__deadline">⏰ ${esc(p.deadline)}</span>
+        ${applyBtn}
+      </div>`;
+  }
+
+  // ── Modal open / close ───────────────────────────────────────────────────
+  let activeModalName = '';
+
+  function openModal(name: string) {
+    const p = allPrograms.find(x => x.name === name);
+    if (!p) return;
+    activeModalName = name;
+
+    document.getElementById('pg-modal-body')!.innerHTML = makeModalBody(p);
+    const modal = document.getElementById('pg-modal')!;
+    modal.style.display = '';
+    document.body.style.overflow = 'hidden';
+    document.getElementById('pg-modal-close')?.focus();
+  }
+
+  function closeModal() {
+    document.getElementById('pg-modal')!.style.display = 'none';
+    document.body.style.overflow = '';
+    activeModalName = '';
+  }
+
+  document.getElementById('pg-modal-close')!.addEventListener('click', closeModal);
+  document.getElementById('pg-modal-backdrop')!.addEventListener('click', closeModal);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
   // ── Readonly mode ────────────────────────────────────────────────────────
   let isReadOnly = document.body.dataset.readonly === 'true';
 
   document.addEventListener('app-readonly-state', (e: Event) => {
     isReadOnly = (e as CustomEvent).detail?.isReadOnly === true;
-    if (isReadOnly) {
-      document.querySelectorAll<HTMLButtonElement>('.interest-chip').forEach(btn => {
-        btn.disabled = true;
-      });
-      document.querySelectorAll<HTMLTextAreaElement>('.program-card__user-note').forEach(ta => {
-        ta.readOnly = true;
-      });
-    }
   });
 
-  // ── Program data store (populated after Supabase load) ──────────────────
+  // ── Program data store ───────────────────────────────────────────────────
   let allPrograms: any[] = [];
+  let currentSeason = 'Summer 2027';
 
-  // ── State ────────────────────────────────────────────────────────────────
+  // ── Filter state ─────────────────────────────────────────────────────────
   const active: Record<string, Set<string>> = {
     status:   new Set(['open']),
     tier:     new Set(['all']),
@@ -139,9 +218,29 @@
     category: new Set(['all']),
     interest: new Set(['all']),
   };
-  let query   = '';
-  let sortBy  = 'default';
+  let query  = '';
+  let sortBy = 'default';
   let originalOrder: Element[] = [];
+
+  function resetFilterState() {
+    active.status   = new Set(['open']);
+    active.tier     = new Set(['all']);
+    active.cost     = new Set(['all']);
+    active.format   = new Set(['all']);
+    active.category = new Set(['all']);
+    active.interest = new Set(['all']);
+    query  = '';
+    sortBy = 'default';
+    document.querySelectorAll<HTMLElement>('.filter-chip').forEach(c => {
+      const f = c.dataset.filter!;
+      const v = c.dataset.value!;
+      c.classList.toggle('active', active[f]?.has(v) ?? false);
+    });
+    const searchEl = document.getElementById('pg-search') as HTMLInputElement | null;
+    if (searchEl) searchEl.value = '';
+    const sortEl = document.getElementById('pg-sort') as HTMLSelectElement | null;
+    if (sortEl) sortEl.value = 'default';
+  }
 
   // ── Filter / Sort ────────────────────────────────────────────────────────
   function parseDeadline(text: string | null | undefined): number {
@@ -170,9 +269,9 @@
   }
 
   function applyFilters() {
-    const grid     = document.getElementById('pg-grid')!;
-    const countEl  = document.getElementById('pg-count')!;
-    const emptyEl  = document.getElementById('pg-empty')!;
+    const grid    = document.getElementById('pg-grid')!;
+    const countEl = document.getElementById('pg-count')!;
+    const emptyEl = document.getElementById('pg-empty')!;
     let visible = 0;
     grid.querySelectorAll<HTMLElement>('.program-card').forEach(el => {
       const matches =
@@ -195,58 +294,113 @@
 
   function refresh() { sortCards(); applyFilters(); }
 
-  // ── Load from Supabase ───────────────────────────────────────────────────
-  async function init() {
+  // ── Load season from Supabase ────────────────────────────────────────────
+  async function loadSeason(season: string) {
+    currentSeason = season;
+    const grid = document.getElementById('pg-grid')!;
+    grid.innerHTML = '<p id="pg-loading" style="color:var(--sl-color-gray-2);padding:2rem 0">Loading programs…</p>';
+    document.getElementById('pg-count')!.textContent = 'Loading…';
+    document.getElementById('pg-empty')!.style.display = 'none';
+    document.getElementById('pg-archived-banner')!.style.display = season === 'Summer 2026' ? '' : 'none';
+
     const { data, error } = await supabase
       .from('programs')
       .select('*')
+      .eq('season', season)
       .order('sort_order', { ascending: true });
 
-    const grid    = document.getElementById('pg-grid')!;
-    const loadMsg = document.getElementById('pg-loading');
-    loadMsg?.remove();
+    document.getElementById('pg-loading')?.remove();
 
-    if (error || !data) {
-      grid.innerHTML = '<p style="color:var(--sl-color-red)">Failed to load programs. Please refresh.</p>';
+    if (error) {
+      grid.innerHTML = `<p style="color:var(--sl-color-red)">Failed to load programs: ${error.message}</p>`;
       return;
     }
 
-    allPrograms    = data;
+    if (!data || data.length === 0) {
+      grid.innerHTML = '';
+      document.getElementById('pg-count')!.textContent = '0 programs';
+      const emptyEl = document.getElementById('pg-empty')!;
+      emptyEl.textContent = season === 'Summer 2027'
+        ? 'No programs added yet for Summer 2027. Use the Admin Panel → Programs to add new programs.'
+        : 'No archived programs found for this season.';
+      emptyEl.style.display = '';
+      return;
+    }
+
+    allPrograms   = data;
     grid.innerHTML = data.map(makeCard).join('');
     originalOrder  = Array.from(grid.querySelectorAll('.program-card'));
-
     document.getElementById('pg-count')!.textContent = `${data.length} programs`;
+    resetFilterState();
     refresh();
     document.dispatchEvent(new Event('data-loaded'));
   }
 
+  // ── Season switcher ──────────────────────────────────────────────────────
+  document.querySelectorAll<HTMLButtonElement>('.season-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const season = btn.dataset.season!;
+      if (season === currentSeason) return;
+      document.querySelectorAll<HTMLButtonElement>('.season-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.season === season);
+      });
+      loadSeason(season);
+    });
+  });
+
   // ── Event delegation ─────────────────────────────────────────────────────
 
-  // Toggle expand / collapse
+  // Card header → open modal
   document.addEventListener('click', e => {
     const btn = (e.target as Element).closest<HTMLButtonElement>('.program-card__toggle');
     if (!btn) return;
-    const expanded = btn.getAttribute('aria-expanded') === 'true';
-    btn.setAttribute('aria-expanded', String(!expanded));
-    btn.closest('.program-card')?.classList.toggle('is-expanded', !expanded);
+    openModal(btn.dataset.openName!);
   });
 
-  // Interest chips
+  // Interest chips (card row OR modal row)
   document.addEventListener('click', e => {
     const chip = (e.target as Element).closest<HTMLElement>('.interest-chip');
     if (!chip) return;
     if (isReadOnly) return;
-    const row  = chip.closest('.program-card__interest-row');
-    if (!row) return;
-    const card = chip.closest<HTMLElement>('.program-card');
-    if (!card) return;
-    const val         = chip.dataset.iv ?? '';
-    const interestKey = card.dataset.interestKey!;
-    card.dataset.interest = val;
+
+    // Find the interest key from closest container (card or modal row)
+    const container = chip.closest<HTMLElement>('.program-card__interest-row, .prog-modal__interest-row');
+    if (!container) return;
+
+    let interestKey = '';
+    let cardEl: HTMLElement | null = null;
+
+    if (container.classList.contains('program-card__interest-row')) {
+      cardEl = chip.closest<HTMLElement>('.program-card');
+      interestKey = cardEl?.dataset.interestKey ?? '';
+    } else {
+      interestKey = container.dataset.interestKey ?? '';
+      // find matching card in grid
+      const progName = interestKey.replace('pc-interest-', '').toLowerCase();
+      cardEl = document.querySelector<HTMLElement>(`.program-card[data-interest-key="pc-interest-${progName}"]`) ??
+               document.querySelector<HTMLElement>(`.program-card[data-name="${progName}"]`);
+    }
+
+    if (!interestKey) return;
+    const val = chip.dataset.iv ?? '';
     localStorage.setItem(interestKey, val);
-    row.querySelectorAll<HTMLElement>('.interest-chip').forEach(b => {
-      b.classList.toggle('active', b.dataset.iv === val);
-    });
+
+    // Update card data attribute + card chips
+    if (cardEl) {
+      cardEl.dataset.interest = val;
+      cardEl.querySelectorAll<HTMLElement>('.interest-chip').forEach(b => {
+        b.classList.toggle('active', b.dataset.iv === val);
+      });
+    }
+
+    // Update modal chips if open
+    const modalRow = document.querySelector<HTMLElement>('.prog-modal__interest-row');
+    if (modalRow && modalRow.dataset.interestKey === interestKey) {
+      modalRow.querySelectorAll<HTMLElement>('.interest-chip').forEach(b => {
+        b.classList.toggle('active', b.dataset.iv === val);
+      });
+    }
+
     document.dispatchEvent(new CustomEvent('interest-changed', {
       detail: { programName: interestKey.replace('pc-interest-', ''), interest: val }
     }));
@@ -260,7 +414,7 @@
     if (ta.dataset.key) localStorage.setItem(ta.dataset.key, ta.value);
   });
 
-  // Filter chips (multi-select; "All" clears others)
+  // Filter chips
   document.addEventListener('click', e => {
     const chip = (e.target as Element).closest<HTMLElement>('.filter-chip[data-filter]');
     if (!chip) return;
@@ -269,8 +423,7 @@
     const current = active[filter];
 
     if (value === 'all') {
-      current.clear();
-      current.add('all');
+      current.clear(); current.add('all');
     } else {
       current.delete('all');
       if (current.has(value)) {
@@ -291,8 +444,7 @@
   document.addEventListener('change', e => {
     const sel = e.target as HTMLSelectElement;
     if (sel.id !== 'pg-sort') return;
-    sortBy = sel.value;
-    refresh();
+    sortBy = sel.value; refresh();
   });
 
   // Search (debounced)
@@ -301,13 +453,9 @@
     const el = e.target as HTMLInputElement;
     if (el.id !== 'pg-search') return;
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      query = el.value.toLowerCase().trim();
-      applyFilters();
-    }, 200);
+    debounceTimer = setTimeout(() => { query = el.value.toLowerCase().trim(); applyFilters(); }, 200);
   });
 
-  // Re-filter when Supabase user data loads (interest sync, etc.)
   document.addEventListener('interest-changed', applyFilters);
   document.addEventListener('data-loaded', refresh);
 
@@ -319,45 +467,33 @@
 
   document.addEventListener('click', e => {
     if ((e.target as Element).id !== 'pg-export') return;
-
     const grid = document.getElementById('pg-grid')!;
     const visibleNames = new Set(
       Array.from(grid.querySelectorAll<HTMLElement>('.program-card'))
         .filter(el => el.style.display !== 'none')
         .map(el => el.dataset.name ?? '')
     );
-
-    const tierLabel: Record<number, string> = {
-      1: 'T1 – Elite', 2: 'T2 – Highly Selective', 3: 'T3 – Moderate', 4: 'T4 – Accessible'
+    const tierLabel: Record<number,string> = {
+      1:'T1 – Elite', 2:'T2 – Highly Selective', 3:'T3 – Moderate', 4:'T4 – Accessible'
     };
-
-    const rows = allPrograms.filter(p =>
-      visibleNames.has((p.name ?? '').toLowerCase())
-    );
-
-    const headers = ['Name', 'Org', 'Status', 'Tier', 'Cost', 'Format', 'Duration',
-                     'Grades', 'Deadline', 'Category', 'Tags', 'My Interest', 'URL', 'Description'];
-
+    const rows = allPrograms.filter(p => visibleNames.has((p.name ?? '').toLowerCase()));
+    const headers = ['Name','Org','Status','Tier','Cost','Format','Duration','Grades',
+                     'Deadline','Category','Tags','My Interest','Season','URL','Description'];
     const lines = [
       headers.map(csvCell).join(','),
       ...rows.map(p => {
         const interest = localStorage.getItem(`pc-interest-${p.name}`) ?? '';
-        return [
-          p.name, p.org, p.status, tierLabel[p.tier] ?? p.tier,
-          p.cost, p.format, p.duration, p.grades, p.deadline,
-          p.category, (p.tags ?? []).join('; '), interest, p.url, p.description
-        ].map(csvCell).join(',');
+        return [p.name, p.org, p.status, tierLabel[p.tier] ?? p.tier, p.cost, p.format,
+                p.duration, p.grades, p.deadline, p.category, (p.tags ?? []).join('; '),
+                interest, p.season ?? '', p.url, p.description].map(csvCell).join(',');
       })
     ];
-
     const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    a.href     = url;
-    a.download = 'summer-programs.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    a.href = url; a.download = `summer-programs-${currentSeason.replace(' ','-')}.csv`;
+    a.click(); URL.revokeObjectURL(url);
   });
 
-  init();
+  loadSeason('Summer 2027');
 </script>

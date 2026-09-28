@@ -1,0 +1,16 @@
+{
+  "name": "college-readiness-scripts",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "seed": "tsx seed-programs.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.55.0",
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}

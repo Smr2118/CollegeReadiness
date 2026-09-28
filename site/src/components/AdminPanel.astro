@@ -219,6 +219,13 @@
               <label class="admin-label">Sort Order</label>
               <input id="prog-sort-order" class="admin-input" type="number" min="0" value="0" />
             </div>
+            <div class="admin-form__row">
+              <label class="admin-label">Season</label>
+              <select id="prog-season" class="admin-select">
+                <option value="Summer 2027">Summer 2027 (Active)</option>
+                <option value="Summer 2026">Summer 2026 (Archived)</option>
+              </select>
+            </div>
             <div class="admin-form__row" style="grid-column:1/-1">
               <label class="admin-label">Tags <span class="admin-hint">(comma-separated)</span></label>
               <input id="prog-tags" class="admin-input" type="text" placeholder="MIT, Research, Residential" />
@@ -431,18 +438,20 @@
   async function loadPrograms() {
     const { data, error } = await supabase
       .from('programs')
-      .select('id, name, org, tier, status, deadline, access_level, sort_order')
+      .select('id, name, org, tier, status, deadline, access_level, sort_order, season')
+      .order('season', { ascending: false })
       .order('sort_order', { ascending: true });
     const el = document.getElementById('programs-list')!;
     if (error || !data?.length) { el.textContent = error?.message ?? 'No programs yet.'; return; }
 
     el.innerHTML = `<table class="admin-table">
-      <thead><tr><th>Name</th><th>Org</th><th>Tier</th><th>Status</th><th>Access</th><th>Deadline</th><th></th></tr></thead>
+      <thead><tr><th>Name</th><th>Org</th><th>Season</th><th>Tier</th><th>Status</th><th>Access</th><th>Deadline</th><th></th></tr></thead>
       <tbody>
         ${data.map(p => `
           <tr>
             <td>${escCell(p.name)}</td>
             <td style="font-size:0.8rem;color:var(--sl-color-gray-2)">${escCell(p.org)}</td>
+            <td style="font-size:0.8rem;white-space:nowrap;color:${p.season === 'Summer 2026' ? 'var(--sl-color-gray-3)' : 'inherit'}">${escCell(p.season ?? '—')}</td>
             <td>T${p.tier}</td>
             <td>
               <select class="admin-select prog-status-sel" data-pid="${p.id}" style="font-size:0.8rem;padding:0.2rem 0.4rem">
@@ -516,6 +525,7 @@
     setSelect('prog-note-type',           data.note_type ?? '');
     setSelect('prog-access-level',        data.access_level ?? 'public');
     setInput('prog-sort-order',           String(data.sort_order ?? 0));
+    setSelect('prog-season',              data.season ?? 'Summer 2027');
     setInput('prog-tags',                 (data.tags ?? []).join(', '));
 
     document.getElementById('program-form-title')!.textContent = `✏️ Edit: ${data.name}`;
@@ -564,6 +574,7 @@
       note_type:            val('prog-note-type') || null,
       access_level:         val('prog-access-level') || 'public',
       sort_order:           parseInt(val('prog-sort-order')) || 0,
+      season:               (document.getElementById('prog-season') as HTMLSelectElement).value || 'Summer 2027',
       tags,
       updated_at:           new Date().toISOString(),
     };

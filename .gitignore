@@ -2,3 +2,6 @@ push.sh
 stage.sh
 .DS_Store
 .idea/
+.env
+.env.*
+scripts/out/
