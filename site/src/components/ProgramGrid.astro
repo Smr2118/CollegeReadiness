@@ -71,12 +71,14 @@
 
       <div class="program-card__interest-row">
         <span class="program-card__interest-label">Interest:</span>
-        <button class="interest-chip${iv('')}"${chipDisabled} data-iv="">—</button>
-        <button class="interest-chip${iv('applied')}"${chipDisabled} data-iv="applied">✅ Applied</button>
-        <button class="interest-chip${iv('applying')}"${chipDisabled} data-iv="applying">🔥 Applying</button>
-        <button class="interest-chip${iv('researching')}"${chipDisabled} data-iv="researching">👀 Researching</button>
-        <button class="interest-chip${iv('maybe')}"${chipDisabled} data-iv="maybe">🤔 Maybe</button>
-        <button class="interest-chip${iv('skip')}"${chipDisabled} data-iv="skip">❌ Skip</button>
+        <select class="interest-select"${chipDisabled} data-interest-key="${esc(interestKey)}">
+          <option value="">—</option>
+          <option value="applied"${savedInt === 'applied' ? ' selected' : ''}>✅ Applied</option>
+          <option value="applying"${savedInt === 'applying' ? ' selected' : ''}>🔥 Applying</option>
+          <option value="researching"${savedInt === 'researching' ? ' selected' : ''}>👀 Researching</option>
+          <option value="maybe"${savedInt === 'maybe' ? ' selected' : ''}>🤔 Maybe</option>
+          <option value="skip"${savedInt === 'skip' ? ' selected' : ''}>❌ Skip</option>
+        </select>
       </div>
     </div>`;
   }
@@ -156,13 +158,15 @@
 
       <div class="prog-modal__section">
         <h3 class="prog-modal__section-title">My Interest</h3>
-        <div class="prog-modal__interest-row" data-interest-key="${esc(interestKey)}">
-          <button class="interest-chip${iv('')}"${chipDisabled} data-iv="">—</button>
-          <button class="interest-chip${iv('applied')}"${chipDisabled} data-iv="applied">✅ Applied</button>
-          <button class="interest-chip${iv('applying')}"${chipDisabled} data-iv="applying">🔥 Applying</button>
-          <button class="interest-chip${iv('researching')}"${chipDisabled} data-iv="researching">👀 Researching</button>
-          <button class="interest-chip${iv('maybe')}"${chipDisabled} data-iv="maybe">🤔 Maybe</button>
-          <button class="interest-chip${iv('skip')}"${chipDisabled} data-iv="skip">❌ Skip</button>
+        <div class="prog-modal__interest-row">
+          <select class="interest-select"${chipDisabled} data-interest-key="${esc(interestKey)}">
+            <option value="">—</option>
+            <option value="applied"${savedInt === 'applied' ? ' selected' : ''}>✅ Applied</option>
+            <option value="applying"${savedInt === 'applying' ? ' selected' : ''}>🔥 Applying</option>
+            <option value="researching"${savedInt === 'researching' ? ' selected' : ''}>👀 Researching</option>
+            <option value="maybe"${savedInt === 'maybe' ? ' selected' : ''}>🤔 Maybe</option>
+            <option value="skip"${savedInt === 'skip' ? ' selected' : ''}>❌ Skip</option>
+          </select>
         </div>
       </div>
 
@@ -375,48 +379,29 @@
     openModal(btn.dataset.openName!);
   });
 
-  // Interest chips (card row OR modal row)
-  document.addEventListener('click', e => {
-    const chip = (e.target as Element).closest<HTMLElement>('.interest-chip');
-    if (!chip) return;
+  // Interest select (card row OR modal row)
+  document.addEventListener('change', e => {
+    const sel = (e.target as Element).closest<HTMLSelectElement>('.interest-select');
+    if (!sel) return;
     if (isReadOnly) return;
 
-    // Find the interest key from closest container (card or modal row)
-    const container = chip.closest<HTMLElement>('.program-card__interest-row, .prog-modal__interest-row');
-    if (!container) return;
-
-    let interestKey = '';
-    let cardEl: HTMLElement | null = null;
-
-    if (container.classList.contains('program-card__interest-row')) {
-      cardEl = chip.closest<HTMLElement>('.program-card');
-      interestKey = cardEl?.dataset.interestKey ?? '';
-    } else {
-      interestKey = container.dataset.interestKey ?? '';
-      // find matching card in grid
-      const progName = interestKey.replace('pc-interest-', '').toLowerCase();
-      cardEl = document.querySelector<HTMLElement>(`.program-card[data-interest-key="pc-interest-${progName}"]`) ??
-               document.querySelector<HTMLElement>(`.program-card[data-name="${progName}"]`);
-    }
-
+    const interestKey = sel.dataset.interestKey ?? '';
     if (!interestKey) return;
-    const val = chip.dataset.iv ?? '';
+    const val = sel.value;
     localStorage.setItem(interestKey, val);
 
-    // Update card data attribute + card chips
+    // Update card data-interest + sync its select
+    const cardEl = document.querySelector<HTMLElement>(`.program-card[data-interest-key="${interestKey}"]`);
     if (cardEl) {
       cardEl.dataset.interest = val;
-      cardEl.querySelectorAll<HTMLElement>('.interest-chip').forEach(b => {
-        b.classList.toggle('active', b.dataset.iv === val);
-      });
+      const cardSel = cardEl.querySelector<HTMLSelectElement>('.interest-select');
+      if (cardSel && cardSel !== sel) cardSel.value = val;
     }
 
-    // Update modal chips if open
-    const modalRow = document.querySelector<HTMLElement>('.prog-modal__interest-row');
-    if (modalRow && modalRow.dataset.interestKey === interestKey) {
-      modalRow.querySelectorAll<HTMLElement>('.interest-chip').forEach(b => {
-        b.classList.toggle('active', b.dataset.iv === val);
-      });
+    // Sync modal select if open
+    const modalSel = document.querySelector<HTMLSelectElement>('.prog-modal__interest-row .interest-select');
+    if (modalSel && modalSel.dataset.interestKey === interestKey && modalSel !== sel) {
+      modalSel.value = val;
     }
 
     document.dispatchEvent(new CustomEvent('interest-changed', {
