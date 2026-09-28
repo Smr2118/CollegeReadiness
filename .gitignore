@@ -5,3 +5,4 @@ stage.sh
 .env
 .env.*
 scripts/out/
+scripts/node_modules/
