@@ -1,8 +1,8 @@
 ---
 ---
 
-<div id="ce-loading" class="ce-status">Loading…</div>
-<div id="ce-denied"  class="ce-status" style="display:none">Please sign in to view.</div>
+<div id="ce-loading" class="ce-status-msg">Loading…</div>
+<div id="ce-denied"  class="ce-status-msg" style="display:none">Please sign in to view.</div>
 
 <div id="ce-ui" style="display:none">
 
@@ -11,86 +11,74 @@
     <strong>Strategy:</strong> Plan to send 15–20 emails to get 1–2 yeses. Each email should name a specific paper you read, explain what interested you, and offer to help — even with small tasks. Generic emails are ignored; specificity gets replies.
   </div>
 
-  <!-- College cards -->
+  <!-- Compact college cards -->
   <div class="ce-colleges">
-
-    <div class="ce-college ce-college--rutgers">
+    <button class="ce-college ce-college--rutgers" data-college="Rutgers">
       <div class="ce-college__header">
         <span class="ce-college__name">Rutgers University</span>
         <span class="ce-college__sub">New Brunswick · ~40 min</span>
       </div>
-      <div class="ce-college__body">
-        <p class="ce-college__note">Large R1 research university — volume strategy, be hyper-specific about their work</p>
-        <ul class="ce-college__depts">
-          <li>Computer Science</li>
-          <li>ECE (Electrical & Computer Engineering)</li>
-          <li>Cell Biology & Neuroscience</li>
-          <li>Chemistry & Chemical Biology</li>
-          <li>Physics & Astronomy</li>
-        </ul>
-        <a href="https://research.rutgers.edu/researcher-search" target="_blank" rel="noopener" class="ce-college__link">Find Faculty ↗</a>
-      </div>
       <div class="ce-college__footer">
-        <span id="ce-count-Rutgers" class="ce-college__count">0 contacted</span>
+        <span id="ce-count-Rutgers" class="ce-college__count">0 / 5 depts emailed</span>
+        <span class="ce-college__arrow">›</span>
       </div>
-    </div>
+    </button>
 
-    <div class="ce-college ce-college--njit">
+    <button class="ce-college ce-college--njit" data-college="NJIT">
       <div class="ce-college__header">
         <span class="ce-college__name">NJIT</span>
         <span class="ce-college__sub">Newark · ~30 min</span>
       </div>
-      <div class="ce-college__body">
-        <p class="ce-college__note">Mid-size, active research labs, professors are approachable</p>
-        <ul class="ce-college__depts">
-          <li>Computer Science</li>
-          <li>Data Science & AI</li>
-          <li>ECE & Computer Engineering</li>
-          <li>Biomedical Engineering</li>
-        </ul>
-        <a href="https://cs.njit.edu/research" target="_blank" rel="noopener" class="ce-college__link">Find Faculty ↗</a>
-      </div>
       <div class="ce-college__footer">
-        <span id="ce-count-NJIT" class="ce-college__count">0 contacted</span>
+        <span id="ce-count-NJIT" class="ce-college__count">0 / 4 depts emailed</span>
+        <span class="ce-college__arrow">›</span>
       </div>
-    </div>
+    </button>
 
-    <div class="ce-college ce-college--stevens">
+    <button class="ce-college ce-college--stevens" data-college="Stevens">
       <div class="ce-college__header">
         <span class="ce-college__name">Stevens Institute</span>
         <span class="ce-college__sub">Hoboken · ~45 min</span>
       </div>
-      <div class="ce-college__body">
-        <p class="ce-college__note">Small school — excellent professor access and research engagement</p>
-        <ul class="ce-college__depts">
-          <li>Computer Science & AI</li>
-          <li>Electrical Engineering</li>
-          <li>Biomedical Engineering</li>
-          <li>Cybersecurity & Systems</li>
-        </ul>
-        <a href="https://research.stevens.edu" target="_blank" rel="noopener" class="ce-college__link">Find Faculty ↗</a>
-      </div>
       <div class="ce-college__footer">
-        <span id="ce-count-Stevens" class="ce-college__count">0 contacted</span>
+        <span id="ce-count-Stevens" class="ce-college__count">0 / 4 depts emailed</span>
+        <span class="ce-college__arrow">›</span>
       </div>
-    </div>
-
+    </button>
   </div>
 
-  <!-- Tracker -->
+  <!-- Department modal -->
+  <div id="ce-dept-modal" class="ce-dept-modal" style="display:none" role="dialog" aria-modal="true">
+    <div class="ce-dept-modal__backdrop" id="ce-dept-backdrop"></div>
+    <div class="ce-dept-modal__panel" id="ce-dept-panel">
+      <div class="ce-dept-modal__header" id="ce-dept-header">
+        <div>
+          <p class="ce-dept-modal__title" id="ce-dept-title"></p>
+          <p class="ce-dept-modal__sub"   id="ce-dept-sub"></p>
+        </div>
+        <button class="ce-dept-modal__close" id="ce-dept-close" aria-label="Close">✕</button>
+      </div>
+      <p class="ce-dept-modal__note" id="ce-dept-note"></p>
+      <div class="ce-dept-modal__list" id="ce-dept-list"></div>
+      <div class="ce-dept-modal__footer">
+        <a id="ce-dept-link" href="#" target="_blank" rel="noopener" class="ce-dept-modal__link">Find Faculty ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Professor log -->
   <div class="ce-tracker">
     <div class="ce-tracker__header">
       <h2 class="ce-tracker__title">Professor Log</h2>
       <button id="ce-add-btn" class="ce-btn ce-btn--primary" style="display:none">+ Add Contact</button>
     </div>
 
-    <!-- Add / Edit form -->
     <div id="ce-form-wrap" class="ce-form-wrap" style="display:none">
       <form id="ce-form" class="ce-form">
         <input type="hidden" id="ce-edit-id" />
         <div class="ce-form__row">
           <label class="ce-form__label">College
-            <select id="ce-college" class="ce-form__input" required>
+            <select id="ce-college-sel" class="ce-form__input" required>
               <option value="">— select —</option>
               <option value="Rutgers">Rutgers</option>
               <option value="NJIT">NJIT</option>
@@ -126,7 +114,7 @@
             placeholder="What you wrote, next steps, follow-up reminders…"></textarea>
         </label>
         <div class="ce-form__actions">
-          <button type="submit" class="ce-btn ce-btn--primary" id="ce-save-btn">Save</button>
+          <button type="submit" class="ce-btn ce-btn--primary">Save</button>
           <button type="button" class="ce-btn ce-btn--ghost" id="ce-cancel-btn">Cancel</button>
           <p id="ce-form-error" class="ce-form__error" style="display:none"></p>
         </div>
@@ -143,70 +131,123 @@
   import { supabase } from '../lib/supabase';
 
   interface Contact {
-    id: string;
-    college: string;
-    professor: string;
-    department: string | null;
-    research_area: string | null;
-    email_date: string | null;
-    status: string;
-    notes: string | null;
+    id: string; college: string; professor: string;
+    department: string | null; research_area: string | null;
+    email_date: string | null; status: string; notes: string | null;
   }
+
+  const COLLEGES: Record<string, { name: string; sub: string; note: string; link: string; color: string; depts: string[] }> = {
+    Rutgers: {
+      name: 'Rutgers University', sub: 'New Brunswick · ~40 min',
+      note: 'Large R1 — volume strategy, be hyper-specific about their exact paper or project',
+      link: 'https://research.rutgers.edu/researcher-search',
+      color: '#cc0033',
+      depts: ['Computer Science', 'ECE', 'Cell Biology & Neuroscience', 'Chemistry & Chemical Biology', 'Physics & Astronomy'],
+    },
+    NJIT: {
+      name: 'NJIT', sub: 'Newark · ~30 min',
+      note: 'Mid-size, active research labs, professors are approachable',
+      link: 'https://cs.njit.edu/research',
+      color: '#005596',
+      depts: ['Computer Science', 'Data Science & AI', 'ECE & Computer Engineering', 'Biomedical Engineering'],
+    },
+    Stevens: {
+      name: 'Stevens Institute', sub: 'Hoboken · ~45 min',
+      note: 'Small school — excellent professor access and strong AI/systems research',
+      link: 'https://research.stevens.edu',
+      color: '#8B1C1C',
+      depts: ['Computer Science & AI', 'Electrical Engineering', 'Biomedical Engineering', 'Cybersecurity & Systems'],
+    },
+  };
 
   let familyId = '';
   let contacts: Contact[] = [];
   let isReadOnly = document.body.dataset.readonly === 'true';
 
   const statusLabel: Record<string, string> = {
-    drafting:    '✍️ Drafting',
-    sent:        '📤 Sent',
-    no_response: '🔇 No Response',
-    responded:   '✉️ Responded',
-    meeting:     '🤝 Meeting',
+    drafting: '✍️ Drafting', sent: '📤 Sent',
+    no_response: '🔇 No Response', responded: '✉️ Responded', meeting: '🤝 Meeting',
   };
 
   function show(id: string, v: boolean) {
     const el = document.getElementById(id);
     if (el) el.style.display = v ? '' : 'none';
   }
-
   function esc(s: string | null | undefined) {
     return (s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  /* ── Render ── */
+  /* ── Dept emailed (localStorage) ── */
+  function deptKey(college: string, dept: string) { return `ce-dept-${college}-${dept}`; }
+  function isDeptEmailed(college: string, dept: string) { return localStorage.getItem(deptKey(college, dept)) === '1'; }
+  function setDeptEmailed(college: string, dept: string, v: boolean) {
+    if (v) localStorage.setItem(deptKey(college, dept), '1');
+    else   localStorage.removeItem(deptKey(college, dept));
+  }
+
+  function updateCardCounts() {
+    Object.entries(COLLEGES).forEach(([key, col]) => {
+      const emailed = col.depts.filter(d => isDeptEmailed(key, d)).length;
+      const el = document.getElementById(`ce-count-${key}`);
+      if (el) el.textContent = `${emailed} / ${col.depts.length} depts emailed`;
+    });
+  }
+
+  /* ── Department modal ── */
+  let activeCollege = '';
+
+  function openDeptModal(college: string) {
+    const col = COLLEGES[college];
+    if (!col) return;
+    activeCollege = college;
+
+    document.getElementById('ce-dept-title')!.textContent = col.name;
+    document.getElementById('ce-dept-sub')!.textContent   = col.sub;
+    document.getElementById('ce-dept-note')!.textContent  = col.note;
+    (document.getElementById('ce-dept-link') as HTMLAnchorElement).href = col.link;
+
+    const header = document.getElementById('ce-dept-header')!;
+    header.style.background = col.color;
+
+    const list = document.getElementById('ce-dept-list')!;
+    list.innerHTML = col.depts.map(dept => {
+      const checked = isDeptEmailed(college, dept);
+      return `<label class="ce-dept-item${checked ? ' ce-dept-item--checked' : ''}">
+        <input type="checkbox" ${checked ? 'checked' : ''} data-college="${esc(college)}" data-dept="${esc(dept)}" />
+        <span>${esc(dept)}</span>
+      </label>`;
+    }).join('');
+
+    document.getElementById('ce-dept-modal')!.style.display = '';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeDeptModal() {
+    document.getElementById('ce-dept-modal')!.style.display = 'none';
+    document.body.style.overflow = '';
+    activeCollege = '';
+  }
+
+  /* ── Professor log render ── */
   function renderList() {
-    const list = document.getElementById('ce-list')!;
+    const list  = document.getElementById('ce-list')!;
     const empty = document.getElementById('ce-empty')!;
 
-    // update college counts
-    const counts: Record<string, number> = { Rutgers: 0, NJIT: 0, Stevens: 0 };
-    contacts.forEach(c => { if (counts[c.college] !== undefined) counts[c.college]++; });
-    Object.entries(counts).forEach(([college, n]) => {
-      const el = document.getElementById(`ce-count-${college}`);
-      if (el) el.textContent = `${n} contacted`;
-    });
+    updateCardCounts();
 
-    if (contacts.length === 0) {
-      list.innerHTML = '';
-      empty.style.display = '';
-      return;
-    }
+    if (contacts.length === 0) { list.innerHTML = ''; empty.style.display = ''; return; }
     empty.style.display = 'none';
 
-    const colleges = ['Rutgers', 'NJIT', 'Stevens'];
     let html = '';
-    colleges.forEach(college => {
+    ['Rutgers','NJIT','Stevens'].forEach(college => {
       const group = contacts.filter(c => c.college === college);
-      if (group.length === 0) return;
-      html += `<div class="ce-group">
-        <h3 class="ce-group__title">${esc(college)}</h3>
-        <div class="ce-group__rows">`;
+      if (!group.length) return;
+      html += `<div class="ce-group"><h3 class="ce-group__title">${esc(college)}</h3><div class="ce-group__rows">`;
       group.forEach(c => {
         const editBtns = !isReadOnly ? `
           <button class="ce-row__btn" data-edit="${esc(c.id)}">Edit</button>
           <button class="ce-row__btn ce-row__btn--danger" data-delete="${esc(c.id)}">Delete</button>` : '';
-        html += `<div class="ce-row" data-id="${esc(c.id)}">
+        html += `<div class="ce-row">
           <div class="ce-row__main">
             <span class="ce-row__professor">${esc(c.professor)}</span>
             ${c.department ? `<span class="ce-row__dept">${esc(c.department)}</span>` : ''}
@@ -227,30 +268,22 @@
 
   /* ── Form ── */
   function openForm(c?: Contact) {
-    const editId = document.getElementById('ce-edit-id') as HTMLInputElement;
-    editId.value = c?.id ?? '';
-    (document.getElementById('ce-college') as HTMLSelectElement).value = c?.college ?? '';
-    (document.getElementById('ce-professor') as HTMLInputElement).value = c?.professor ?? '';
-    (document.getElementById('ce-department') as HTMLInputElement).value = c?.department ?? '';
-    (document.getElementById('ce-research') as HTMLInputElement).value = c?.research_area ?? '';
-    (document.getElementById('ce-date') as HTMLInputElement).value = c?.email_date ?? '';
-    (document.getElementById('ce-status') as HTMLSelectElement).value = c?.status ?? 'drafting';
-    (document.getElementById('ce-notes') as HTMLTextAreaElement).value = c?.notes ?? '';
+    (document.getElementById('ce-edit-id')      as HTMLInputElement).value   = c?.id ?? '';
+    (document.getElementById('ce-college-sel')  as HTMLSelectElement).value  = c?.college ?? '';
+    (document.getElementById('ce-professor')    as HTMLInputElement).value   = c?.professor ?? '';
+    (document.getElementById('ce-department')   as HTMLInputElement).value   = c?.department ?? '';
+    (document.getElementById('ce-research')     as HTMLInputElement).value   = c?.research_area ?? '';
+    (document.getElementById('ce-date')         as HTMLInputElement).value   = c?.email_date ?? '';
+    (document.getElementById('ce-status')       as HTMLSelectElement).value  = c?.status ?? 'drafting';
+    (document.getElementById('ce-notes')        as HTMLTextAreaElement).value = c?.notes ?? '';
     show('ce-form-error', false);
     show('ce-form-wrap', true);
     document.getElementById('ce-professor')?.focus();
   }
 
-  function closeForm() {
-    show('ce-form-wrap', false);
-  }
-
   /* ── CRUD ── */
   async function loadContacts() {
-    const { data, error } = await supabase
-      .from('professor_outreach')
-      .select('*')
-      .order('created_at', { ascending: true });
+    const { data, error } = await supabase.from('professor_outreach').select('*').order('created_at');
     if (error) { console.error(error); return; }
     contacts = data ?? [];
     renderList();
@@ -260,33 +293,23 @@
     e.preventDefault();
     const errEl = document.getElementById('ce-form-error')!;
     errEl.style.display = 'none';
-
     const editId = (document.getElementById('ce-edit-id') as HTMLInputElement).value;
     const payload = {
       family_id:    familyId,
-      college:      (document.getElementById('ce-college') as HTMLSelectElement).value,
-      professor:    (document.getElementById('ce-professor') as HTMLInputElement).value.trim(),
-      department:   (document.getElementById('ce-department') as HTMLInputElement).value.trim() || null,
-      research_area:(document.getElementById('ce-research') as HTMLInputElement).value.trim() || null,
-      email_date:   (document.getElementById('ce-date') as HTMLInputElement).value || null,
-      status:       (document.getElementById('ce-status') as HTMLSelectElement).value,
-      notes:        (document.getElementById('ce-notes') as HTMLTextAreaElement).value.trim() || null,
+      college:      (document.getElementById('ce-college-sel')  as HTMLSelectElement).value,
+      professor:    (document.getElementById('ce-professor')    as HTMLInputElement).value.trim(),
+      department:   (document.getElementById('ce-department')   as HTMLInputElement).value.trim() || null,
+      research_area:(document.getElementById('ce-research')     as HTMLInputElement).value.trim() || null,
+      email_date:   (document.getElementById('ce-date')         as HTMLInputElement).value || null,
+      status:       (document.getElementById('ce-status')       as HTMLSelectElement).value,
+      notes:        (document.getElementById('ce-notes')        as HTMLTextAreaElement).value.trim() || null,
       updated_at:   new Date().toISOString(),
     };
-
-    let error;
-    if (editId) {
-      ({ error } = await supabase.from('professor_outreach').update(payload).eq('id', editId));
-    } else {
-      ({ error } = await supabase.from('professor_outreach').insert(payload));
-    }
-
-    if (error) {
-      errEl.textContent = error.message;
-      errEl.style.display = '';
-      return;
-    }
-    closeForm();
+    const { error } = editId
+      ? await supabase.from('professor_outreach').update(payload).eq('id', editId)
+      : await supabase.from('professor_outreach').insert(payload);
+    if (error) { errEl.textContent = error.message; errEl.style.display = ''; return; }
+    show('ce-form-wrap', false);
     await loadContacts();
   }
 
@@ -299,68 +322,59 @@
   /* ── Init ── */
   async function init() {
     const { data: { session } } = await supabase.auth.getSession();
-
     if (!session) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
-        if (event === 'SIGNED_IN' && s) {
-          subscription.unsubscribe();
-          show('ce-loading', true);
-          show('ce-denied', false);
-          init();
-        }
+        if (event === 'SIGNED_IN' && s) { subscription.unsubscribe(); show('ce-loading', true); show('ce-denied', false); init(); }
       });
-      show('ce-loading', false);
-      show('ce-denied', true);
-      return;
+      show('ce-loading', false); show('ce-denied', true); return;
     }
-
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('family_id')
-      .eq('user_id', session.user.id)
-      .single();
-
+    const { data: profile } = await supabase.from('user_profiles').select('family_id').eq('user_id', session.user.id).single();
     familyId = profile?.family_id ?? '';
-    show('ce-loading', false);
-    show('ce-ui', true);
+    show('ce-loading', false); show('ce-ui', true);
     if (!isReadOnly) show('ce-add-btn', true);
-
+    updateCardCounts();
     await loadContacts();
   }
 
-  /* ── Event wiring ── */
+  /* ── Events ── */
   document.addEventListener('app-readonly-state', (e: Event) => {
     isReadOnly = (e as CustomEvent).detail?.isReadOnly === true;
     show('ce-add-btn', !isReadOnly);
   });
 
-  document.getElementById('ce-add-btn')?.addEventListener('click', () => openForm());
-  document.getElementById('ce-cancel-btn')?.addEventListener('click', closeForm);
-  document.getElementById('ce-form')?.addEventListener('submit', saveContact as EventListener);
-
-  document.getElementById('ce-list')?.addEventListener('click', e => {
-    const target = e.target as HTMLElement;
-    const editId = target.dataset.edit;
-    const delId  = target.dataset.delete;
-    if (editId) {
-      const c = contacts.find(x => x.id === editId);
-      if (c) openForm(c);
-    } else if (delId) {
-      deleteContact(delId);
-    }
+  // College card click → open dept modal
+  document.querySelectorAll<HTMLButtonElement>('.ce-college[data-college]').forEach(btn => {
+    btn.addEventListener('click', () => openDeptModal(btn.dataset.college!));
   });
 
-  // also handle clicks on dynamically rendered list (event delegation from parent)
+  document.getElementById('ce-dept-close')?.addEventListener('click', closeDeptModal);
+  document.getElementById('ce-dept-backdrop')?.addEventListener('click', closeDeptModal);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && activeCollege) closeDeptModal(); });
+
+  // Dept checkbox toggle
+  document.getElementById('ce-dept-list')?.addEventListener('change', e => {
+    const cb = e.target as HTMLInputElement;
+    if (cb.type !== 'checkbox') return;
+    const college = cb.dataset.college!;
+    const dept    = cb.dataset.dept!;
+    setDeptEmailed(college, dept, cb.checked);
+    const label = cb.closest<HTMLElement>('.ce-dept-item');
+    if (label) label.classList.toggle('ce-dept-item--checked', cb.checked);
+    updateCardCounts();
+  });
+
+  document.getElementById('ce-add-btn')?.addEventListener('click', () => openForm());
+  document.getElementById('ce-cancel-btn')?.addEventListener('click', () => show('ce-form-wrap', false));
+  document.getElementById('ce-form')?.addEventListener('submit', saveContact as EventListener);
+
   document.addEventListener('click', e => {
     const target = (e.target as HTMLElement).closest<HTMLElement>('[data-edit],[data-delete]');
     if (!target) return;
-    const editId = target.dataset.edit;
-    const delId  = target.dataset.delete;
-    if (editId) {
-      const c = contacts.find(x => x.id === editId);
+    if (target.dataset.edit) {
+      const c = contacts.find(x => x.id === target.dataset.edit);
       if (c) openForm(c);
-    } else if (delId) {
-      deleteContact(delId);
+    } else if (target.dataset.delete) {
+      deleteContact(target.dataset.delete);
     }
   });
 
