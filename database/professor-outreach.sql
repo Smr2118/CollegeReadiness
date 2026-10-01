@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS public.professor_outreach (
   id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  family_id     UUID        NOT NULL REFERENCES public.families(id) ON DELETE CASCADE,
+  family_id     TEXT        NOT NULL REFERENCES public.families(id) ON DELETE CASCADE,
   college       TEXT        NOT NULL,
   professor     TEXT        NOT NULL,
   department    TEXT,
