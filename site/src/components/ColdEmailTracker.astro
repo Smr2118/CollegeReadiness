@@ -342,9 +342,10 @@
     show('ce-add-btn', !isReadOnly);
   });
 
-  // College card click → open dept modal
-  document.querySelectorAll<HTMLButtonElement>('.ce-college[data-college]').forEach(btn => {
-    btn.addEventListener('click', () => openDeptModal(btn.dataset.college!));
+  // College card click → open dept modal (delegated so it works regardless of timing)
+  document.addEventListener('click', e => {
+    const card = (e.target as HTMLElement).closest<HTMLElement>('.ce-college[data-college]');
+    if (card) openDeptModal(card.dataset.college!);
   });
 
   document.getElementById('ce-dept-close')?.addEventListener('click', closeDeptModal);
