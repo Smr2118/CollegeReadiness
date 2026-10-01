@@ -25,6 +25,7 @@ export default defineConfig({
 						{ label: '💼 Internships', link: '/internships/' },
 						{ label: '🏆 Extra Curriculars', link: '/extracurriculars/' },
 						{ label: '🇮🇳 India Activities', link: '/india-activities/' },
+						{ label: '📧 Cold Emailing', link: '/cold-emailing/' },
 					],
 				},
 				{
