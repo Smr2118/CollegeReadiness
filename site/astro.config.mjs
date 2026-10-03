@@ -39,6 +39,7 @@ export default defineConfig({
 						{ label: '🇮🇳 India Activities Ideas', link: '/india-ideas/' },
 						{ label: '🏃 Extra Curriculars', link: '/ec-ideas/' },
 						{ label: '🔧 Past Projects', link: '/past-projects/' },
+							{ label: '🧭 Career Counselor', link: '/career/' },
 					],
 				},
 				{

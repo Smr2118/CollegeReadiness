@@ -2564,3 +2564,142 @@ li:has(a[href$="/admin/"]) {
   font-size: 0.9rem;
   margin-top: 1rem;
 }
+
+/* ── Career Counselor chat ── */
+
+.cc-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.cc-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 480px;
+  overflow-y: auto;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: var(--sl-color-bg);
+  scroll-behavior: smooth;
+}
+
+.cc-bubble {
+  max-width: 82%;
+  border-radius: 1rem;
+  padding: 0.65rem 0.9rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.cc-bubble--user {
+  align-self: flex-end;
+  background: var(--sl-color-accent);
+  color: #fff;
+  border-bottom-right-radius: 0.25rem;
+}
+
+.cc-bubble--assistant {
+  align-self: flex-start;
+  background: var(--sl-color-gray-6);
+  color: var(--sl-color-text);
+  border-bottom-left-radius: 0.25rem;
+}
+
+.cc-bubble__text strong { font-weight: 700; }
+
+/* Typing indicator */
+.cc-bubble--typing {
+  padding: 0.65rem 1rem;
+}
+
+.cc-typing-dots {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+  height: 1rem;
+}
+
+.cc-typing-dots span {
+  display: block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--sl-color-gray-3);
+  animation: cc-dot-bounce 1.2s infinite ease-in-out;
+}
+.cc-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.cc-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes cc-dot-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+  40%            { transform: translateY(-0.35rem); opacity: 1; }
+}
+
+.cc-input-area {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.cc-input {
+  flex: 1;
+  resize: none;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: var(--sl-color-bg);
+  color: var(--sl-color-text);
+  line-height: 1.4;
+}
+
+.cc-input:focus {
+  outline: none;
+  border-color: var(--sl-color-accent);
+}
+
+.cc-input:disabled { opacity: 0.5; }
+
+.cc-send-btn {
+  padding: 0.55rem 1.1rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: var(--sl-color-accent);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.cc-send-btn:hover:not(:disabled) { opacity: 0.85; }
+.cc-send-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.cc-footer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cc-reset-btn {
+  background: none;
+  border: none;
+  color: var(--sl-color-gray-3);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.cc-reset-btn:hover { color: var(--sl-color-text); }
+
+.cc-status-text {
+  font-size: 0.8rem;
+  color: #dc2626;
+}

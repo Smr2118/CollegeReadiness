@@ -1,0 +1,143 @@
+---
+---
+<div class="cc-wrapper">
+  <div class="cc-messages" id="cc-messages">
+    <div class="cc-bubble cc-bubble--assistant">
+      <div class="cc-bubble__text">
+        Hi! I'm your college and career counselor. I'm here to help you explore fields of study and careers that could be a great fit for you.<br><br>
+        Let's start simple — <strong>what's something you genuinely enjoy?</strong> It could be a school subject, a hobby, or anything you find yourself doing for hours without noticing the time.
+      </div>
+    </div>
+  </div>
+
+  <div class="cc-input-area">
+    <textarea id="cc-input" class="cc-input" placeholder="Type your answer…" rows="2"></textarea>
+    <button id="cc-send" class="cc-send-btn">Send</button>
+  </div>
+
+  <div class="cc-footer">
+    <button id="cc-reset" class="cc-reset-btn">↩ Start over</button>
+    <span id="cc-status" class="cc-status-text"></span>
+  </div>
+</div>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const FUNCTION_URL = 'https://bppzlhrzoqzqgvechswu.supabase.co/functions/v1/career-counselor';
+
+  const messagesEl = document.getElementById('cc-messages') as HTMLDivElement;
+  const inputEl    = document.getElementById('cc-input') as HTMLTextAreaElement;
+  const sendBtn    = document.getElementById('cc-send') as HTMLButtonElement;
+  const resetBtn   = document.getElementById('cc-reset') as HTMLButtonElement;
+  const statusEl   = document.getElementById('cc-status') as HTMLSpanElement;
+
+  // Conversation history sent to the API (does NOT include the hardcoded greeting)
+  let history: { role: 'user' | 'assistant'; content: string }[] = [];
+  let busy = false;
+
+  function appendBubble(role: 'user' | 'assistant', text: string) {
+    const wrap = document.createElement('div');
+    wrap.className = `cc-bubble cc-bubble--${role}`;
+    const inner = document.createElement('div');
+    inner.className = 'cc-bubble__text';
+    inner.innerHTML = markdownToHtml(text);
+    wrap.appendChild(inner);
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return wrap;
+  }
+
+  function showTyping() {
+    const wrap = document.createElement('div');
+    wrap.className = 'cc-bubble cc-bubble--assistant cc-bubble--typing';
+    wrap.id = 'cc-typing';
+    wrap.innerHTML = '<div class="cc-typing-dots"><span></span><span></span><span></span></div>';
+    messagesEl.appendChild(wrap);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function removeTyping() {
+    document.getElementById('cc-typing')?.remove();
+  }
+
+  function setStatus(msg: string) { statusEl.textContent = msg; }
+  function setDisabled(v: boolean) {
+    sendBtn.disabled = v;
+    inputEl.disabled = v;
+    busy = v;
+  }
+
+  // Minimal markdown → HTML: bold, line breaks
+  function markdownToHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^### (.+)$/gm, '<strong>$1</strong>')
+      .replace(/^## (.+)$/gm, '<strong>$1</strong>')
+      .replace(/^# (.+)$/gm, '<strong>$1</strong>')
+      .replace(/^- (.+)$/gm, '• $1')
+      .replace(/\n/g, '<br>');
+  }
+
+  async function send() {
+    const text = inputEl.value.trim();
+    if (!text || busy) return;
+
+    inputEl.value = '';
+    setStatus('');
+    setDisabled(true);
+
+    appendBubble('user', text);
+    history.push({ role: 'user', content: text });
+
+    showTyping();
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setStatus('Sign in to use the counselor.'); removeTyping(); setDisabled(false); return; }
+
+      const res = await fetch(FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ messages: history }),
+      });
+
+      const data = await res.json();
+      removeTyping();
+
+      if (!res.ok || data.error) {
+        setStatus(`Error: ${data.error ?? res.statusText}`);
+        setDisabled(false);
+        return;
+      }
+
+      history.push({ role: 'assistant', content: data.reply });
+      appendBubble('assistant', data.reply);
+    } catch (err) {
+      removeTyping();
+      setStatus(`Network error: ${String(err)}`);
+    }
+
+    setDisabled(false);
+    inputEl.focus();
+  }
+
+  sendBtn.addEventListener('click', send);
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+
+  resetBtn.addEventListener('click', () => {
+    history = [];
+    // Remove all bubbles except the hardcoded first one
+    const bubbles = messagesEl.querySelectorAll('.cc-bubble');
+    bubbles.forEach((b, i) => { if (i > 0) b.remove(); });
+    setStatus('');
+    inputEl.value = '';
+    inputEl.focus();
+  });
+</script>
