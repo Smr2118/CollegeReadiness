@@ -1,0 +1,414 @@
+---
+// Junior programs are loaded from Supabase at runtime — sorted by deadline_date asc
+---
+
+<div class="jp-search-row">
+  <input
+    id="jp-search"
+    class="jp-search"
+    type="search"
+    placeholder="Search programs, orgs, tags…"
+    aria-label="Search junior programs"
+  />
+  <span class="results-count" id="jp-count">Loading…</span>
+</div>
+
+<div class="program-grid" id="jp-grid">
+  <p id="jp-loading" style="color:var(--sl-color-gray-2);padding:2rem 0">Loading programs…</p>
+</div>
+
+<p id="jp-empty" style="display:none; color:var(--sl-color-gray-2); margin-top:2rem;">
+  No programs match your search. Try different keywords.
+</p>
+
+<!-- Full-screen modal -->
+<div id="jp-modal" class="prog-modal" style="display:none" role="dialog" aria-modal="true" aria-labelledby="jp-modal-title">
+  <div class="prog-modal__backdrop" id="jp-modal-backdrop"></div>
+  <div class="prog-modal__panel">
+    <button class="prog-modal__close" id="jp-modal-close" aria-label="Close">✕</button>
+    <div class="prog-modal__body" id="jp-modal-body"></div>
+  </div>
+</div>
+
+<style>
+  .jp-search-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+  .jp-search {
+    flex: 1;
+    min-width: 200px;
+    padding: .45rem .75rem;
+    border-radius: 6px;
+    border: 1px solid var(--sl-color-gray-5);
+    background: var(--sl-color-bg);
+    color: var(--sl-color-text);
+    font-size: .9rem;
+  }
+  .jp-search:focus {
+    outline: 2px solid var(--sl-color-accent);
+  }
+  .badge--urgency-hot      { background: #dc2626; color: #fff; font-weight: 700; }
+  .badge--urgency-soon     { background: #ea580c; color: #fff; font-weight: 700; }
+  .badge--urgency-upcoming { background: #ca8a04; color: #fff; }
+  .badge--urgency-future   { background: var(--sl-color-accent-low); color: var(--sl-color-accent-high); }
+  .badge--urgency-passed   { background: var(--sl-color-gray-5); color: var(--sl-color-gray-2); }
+  .program-card__urgency   { font-size: .75rem; margin-top: .25rem; }
+</style>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  function esc(s: string | null | undefined): string {
+    return (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function toBullets(text: string): string {
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length <= 1) return `<p>${esc(text)}</p>`;
+    return `<ul class="prog-modal__bullets">${lines.map(l => `<li>${esc(l)}</li>`).join('')}</ul>`;
+  }
+
+  /** Parse a DATE column value (e.g. "2026-03-15") directly into a Date timestamp. */
+  function parseDeadlineDate(deadlineDate: string | null | undefined): number {
+    if (!deadlineDate) return Infinity;
+    const d = new Date(deadlineDate);
+    if (isNaN(d.getTime())) return Infinity;
+    return d.getTime();
+  }
+
+  /** Returns an urgency badge HTML string based on days until deadline. */
+  function urgencyBadge(deadlineDate: string | null | undefined, deadlineText: string | null | undefined): string {
+    if (!deadlineDate) return '';
+    const ms = parseDeadlineDate(deadlineDate);
+    if (ms === Infinity) return '';
+    const daysUntil = (ms - Date.now()) / 86_400_000;
+
+    if (daysUntil < 0) {
+      return `<span class="badge badge--urgency-passed program-card__urgency">Deadline Passed</span>`;
+    } else if (daysUntil < 14) {
+      return `<span class="badge badge--urgency-hot program-card__urgency">⚡ ${Math.ceil(daysUntil)} days</span>`;
+    } else if (daysUntil < 30) {
+      return `<span class="badge badge--urgency-soon program-card__urgency">🔥 ${Math.ceil(daysUntil)} days</span>`;
+    } else if (daysUntil < 60) {
+      return `<span class="badge badge--urgency-upcoming program-card__urgency">⏰ ${Math.ceil(daysUntil)} days</span>`;
+    } else {
+      return `<span class="badge badge--urgency-future program-card__urgency">${esc(deadlineText ?? deadlineDate)}</span>`;
+    }
+  }
+
+  // ── Readonly mode ────────────────────────────────────────────────────────
+  let isReadOnly = document.body.dataset.readonly === 'true';
+
+  document.addEventListener('app-readonly-state', (e: Event) => {
+    isReadOnly = (e as CustomEvent).detail?.isReadOnly === true;
+  });
+
+  // ── Program data store ───────────────────────────────────────────────────
+  let allPrograms: any[] = [];
+
+  // ── Compact card ────────────────────────────────────────────────────────
+  function makeCard(p: any): string {
+    const statusLabel: Record<string, string> = {
+      open: 'Open', closed: 'Closed', nextyear: 'Next Year',
+      conflict: 'Conflict', warning: 'Warning',
+    };
+    const interestKey = `jp-interest-${p.name}`;
+    const savedInt    = localStorage.getItem(interestKey) ?? '';
+    const chipDisabled = isReadOnly ? ' disabled' : '';
+    const daysUntil = (parseDeadlineDate(p.deadline_date) - Date.now()) / 86_400_000;
+    const soonClass = daysUntil > 0 && daysUntil <= 30 ? ' program-card--deadline-soon' : '';
+
+    return `<div class="program-card${soonClass}"
+      data-tier="${esc(String(p.tier ?? ''))}"
+      data-status="${esc(p.status)}"
+      data-cost="${esc(p.cost)}"
+      data-format="${esc(p.format)}"
+      data-name="${esc((p.name ?? '').toLowerCase())}"
+      data-org="${esc((p.org ?? '').toLowerCase())}"
+      data-tags="${esc((p.tags ?? []).join(' ').toLowerCase())}"
+      data-deadline="${esc(p.deadline ?? '')}"
+      data-deadline-date="${esc(p.deadline_date ?? '')}"
+      data-interest="${esc(savedInt)}"
+      data-interest-key="${esc(interestKey)}"
+      data-note-type="${esc(p.note_type ?? '')}">
+
+      <button class="program-card__toggle" data-open-name="${esc(p.name)}">
+        <div class="program-card__toggle-left">
+          <p class="program-card__name">${esc(p.name)}</p>
+          <p class="program-card__org">${esc(p.org)}</p>
+          ${urgencyBadge(p.deadline_date, p.deadline)}
+        </div>
+        <div class="program-card__toggle-right">
+          <span class="badge badge--${esc(p.status)}">${esc(statusLabel[p.status] ?? p.status)}</span>
+          <span class="program-card__chevron">›</span>
+        </div>
+      </button>
+
+      <div class="program-card__interest-row">
+        <span class="program-card__interest-label">Interest:</span>
+        <select class="interest-select"${chipDisabled} data-interest-key="${esc(interestKey)}">
+          <option value="">—</option>
+          <option value="applied"${savedInt === 'applied' ? ' selected' : ''}>✅ Applied</option>
+          <option value="applying"${savedInt === 'applying' ? ' selected' : ''}>🔥 Applying</option>
+          <option value="researching"${savedInt === 'researching' ? ' selected' : ''}>👀 Researching</option>
+          <option value="maybe"${savedInt === 'maybe' ? ' selected' : ''}>🤔 Maybe</option>
+          <option value="skip"${savedInt === 'skip' ? ' selected' : ''}>❌ Skip</option>
+        </select>
+      </div>
+    </div>`;
+  }
+
+  // ── Modal body ────────────────────────────────────────────────────────────
+  function makeModalBody(p: any): string {
+    const statusLabel: Record<string, string> = {
+      open: 'Open', closed: 'Closed', nextyear: 'Apply Next Year',
+      conflict: 'Conflict', warning: 'Warning',
+    };
+    const tierLabel: Record<number, string> = {
+      1: 'T1 – Elite', 2: 'T2 – Highly Selective',
+      3: 'T3 – Moderate', 4: 'T4 – Accessible',
+    };
+
+    const colImpact = Math.round(p.college_impact ?? 0);
+    const stars = '★'.repeat(Math.min(colImpact, 5)) + '☆'.repeat(Math.max(5 - colImpact, 0));
+
+    const costKey = (p.cost ?? '').toLowerCase().replace('/', '').replace(' ', '');
+    const interestKey = `jp-interest-${p.name}`;
+    const noteKey     = `jp-note-${p.name}`;
+    const savedNote   = localStorage.getItem(noteKey) ?? '';
+    const savedInt    = localStorage.getItem(interestKey) ?? '';
+    const chipDisabled = isReadOnly ? ' disabled' : '';
+    const noteReadonly = isReadOnly ? ' readonly' : '';
+
+    const tagsHtml = (p.tags ?? []).map((t: string) =>
+      `<span class="badge badge--tag">${esc(t)}</span>`).join('');
+
+    const noteTypeLabel: Record<string, string> = {
+      priority: '🚨 Priority', deadline: '⏰ Deadline Note',
+      info: 'ℹ️ Info', warning: '⚠️ Note',
+      conflict: '⚡ Conflict', nextyear: '📅 Next Year',
+    };
+    const noteHtml = p.note ? `
+      <div class="prog-modal__note prog-modal__note--${esc(p.note_type ?? 'info')}">
+        <div class="prog-modal__note-label">${noteTypeLabel[p.note_type ?? 'info'] ?? 'ℹ️ Note'}</div>
+        ${toBullets(p.note)}
+      </div>` : '';
+
+    const applyBtn = p.url && p.url.startsWith('http')
+      ? `<a class="prog-modal__apply-btn" href="${esc(p.url)}" target="_blank" rel="noopener">Apply →</a>`
+      : '';
+
+    return `
+      <div class="prog-modal__header">
+        <div>
+          <h2 class="prog-modal__title" id="jp-modal-title">${esc(p.name)}</h2>
+          <p class="prog-modal__org">${esc(p.org)}</p>
+        </div>
+        <span class="badge badge--${esc(p.status)} prog-modal__status">${esc(statusLabel[p.status] ?? p.status)}</span>
+      </div>
+
+      <div class="prog-modal__meta">
+        <span class="badge badge--tier${p.tier}">${esc(tierLabel[p.tier] ?? '')}</span>
+        <span class="badge badge--${esc(costKey)}">${esc(p.cost)}</span>
+        <span class="badge badge--format">${esc(p.format)}</span>
+        <span class="badge badge--format">📅 ${esc(p.duration)}</span>
+        <span class="badge badge--format">🎓 ${esc(p.grades)}</span>
+      </div>
+
+      <div class="prog-modal__stars">
+        <span class="stars">${stars}</span>
+        <span>${esc(p.selectivity_label)}</span>
+        <span class="prog-modal__impact">· College Impact: <strong>${esc(p.college_impact_label)}</strong></span>
+      </div>
+
+      <div class="prog-modal__section">
+        <h3 class="prog-modal__section-title">About</h3>
+        ${toBullets(p.description ?? '')}
+      </div>
+
+      ${noteHtml}
+
+      ${tagsHtml ? `<div class="prog-modal__tags">${tagsHtml}</div>` : ''}
+
+      <div class="prog-modal__section">
+        <h3 class="prog-modal__section-title">My Interest</h3>
+        <div class="prog-modal__interest-row">
+          <select class="interest-select"${chipDisabled} data-interest-key="${esc(interestKey)}">
+            <option value="">—</option>
+            <option value="applied"${savedInt === 'applied' ? ' selected' : ''}>✅ Applied</option>
+            <option value="applying"${savedInt === 'applying' ? ' selected' : ''}>🔥 Applying</option>
+            <option value="researching"${savedInt === 'researching' ? ' selected' : ''}>👀 Researching</option>
+            <option value="maybe"${savedInt === 'maybe' ? ' selected' : ''}>🤔 Maybe</option>
+            <option value="skip"${savedInt === 'skip' ? ' selected' : ''}>❌ Skip</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="prog-modal__section">
+        <h3 class="prog-modal__section-title">My Notes</h3>
+        <textarea class="program-card__user-note prog-modal__notes"
+          data-key="${esc(noteKey)}"
+          placeholder="Add your notes, application status, reminders…"
+          rows="4"${noteReadonly}>${esc(savedNote)}</textarea>
+      </div>
+
+      <div class="prog-modal__footer">
+        <span class="prog-modal__deadline">⏰ ${esc(p.deadline)}</span>
+        ${applyBtn}
+      </div>`;
+  }
+
+  // ── Modal open / close ───────────────────────────────────────────────────
+  let activeModalName = '';
+
+  function openModal(name: string) {
+    const p = allPrograms.find(x => x.name === name);
+    if (!p) return;
+    activeModalName = name;
+
+    document.getElementById('jp-modal-body')!.innerHTML = makeModalBody(p);
+    const modal = document.getElementById('jp-modal')!;
+    modal.style.display = '';
+    document.body.style.overflow = 'hidden';
+    document.getElementById('jp-modal-close')?.focus();
+  }
+
+  function closeModal() {
+    document.getElementById('jp-modal')!.style.display = 'none';
+    document.body.style.overflow = '';
+    activeModalName = '';
+  }
+
+  document.getElementById('jp-modal-close')!.addEventListener('click', closeModal);
+  document.getElementById('jp-modal-backdrop')!.addEventListener('click', closeModal);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // ── Search ───────────────────────────────────────────────────────────────
+  let searchQuery = '';
+
+  function applySearch() {
+    const grid    = document.getElementById('jp-grid')!;
+    const countEl = document.getElementById('jp-count')!;
+    const emptyEl = document.getElementById('jp-empty')!;
+    let visible = 0;
+    grid.querySelectorAll<HTMLElement>('.program-card').forEach(el => {
+      const matches =
+        searchQuery === '' ||
+        (el.dataset.name  ?? '').includes(searchQuery) ||
+        (el.dataset.org   ?? '').includes(searchQuery) ||
+        (el.dataset.tags  ?? '').includes(searchQuery);
+      el.style.display = matches ? '' : 'none';
+      if (matches) visible++;
+    });
+    countEl.textContent = `${visible} program${visible !== 1 ? 's' : ''}`;
+    emptyEl.style.display = visible === 0 ? '' : 'none';
+  }
+
+  // ── Event delegation ─────────────────────────────────────────────────────
+
+  // Card toggle button → open modal
+  document.addEventListener('click', e => {
+    const btn = (e.target as Element).closest<HTMLButtonElement>('.program-card__toggle');
+    if (!btn) return;
+    // Only handle clicks inside jp-grid
+    if (!document.getElementById('jp-grid')?.contains(btn)) return;
+    openModal(btn.dataset.openName!);
+  });
+
+  // Interest select (card row OR modal row) — scoped to jp components
+  document.addEventListener('change', e => {
+    const sel = (e.target as Element).closest<HTMLSelectElement>('.interest-select');
+    if (!sel) return;
+    // Only handle selects inside jp-grid or jp-modal
+    const inGrid  = document.getElementById('jp-grid')?.contains(sel);
+    const inModal = document.getElementById('jp-modal')?.contains(sel);
+    if (!inGrid && !inModal) return;
+    if (isReadOnly) return;
+
+    const interestKey = sel.dataset.interestKey ?? '';
+    if (!interestKey || !interestKey.startsWith('jp-interest-')) return;
+    const val = sel.value;
+    localStorage.setItem(interestKey, val);
+
+    // Update card data-interest + sync its select
+    const cardEl = document.querySelector<HTMLElement>(
+      `#jp-grid .program-card[data-interest-key="${interestKey}"]`
+    );
+    if (cardEl) {
+      cardEl.dataset.interest = val;
+      const cardSel = cardEl.querySelector<HTMLSelectElement>('.interest-select');
+      if (cardSel && cardSel !== sel) cardSel.value = val;
+    }
+
+    // Sync modal select if open
+    const modalSel = document.querySelector<HTMLSelectElement>(
+      '#jp-modal .prog-modal__interest-row .interest-select'
+    );
+    if (modalSel && modalSel.dataset.interestKey === interestKey && modalSel !== sel) {
+      modalSel.value = val;
+    }
+  });
+
+  // localStorage notes — scoped to jp-modal textarea
+  document.addEventListener('input', e => {
+    const ta = e.target as HTMLTextAreaElement;
+    if (!ta.classList.contains('program-card__user-note')) return;
+    if (!document.getElementById('jp-modal')?.contains(ta)) return;
+    if (isReadOnly) return;
+    if (ta.dataset.key) localStorage.setItem(ta.dataset.key, ta.value);
+  });
+
+  // Search input (debounced)
+  let debounceTimer: ReturnType<typeof setTimeout>;
+  document.addEventListener('input', e => {
+    const el = e.target as HTMLInputElement;
+    if (el.id !== 'jp-search') return;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      searchQuery = el.value.toLowerCase().trim();
+      applySearch();
+    }, 200);
+  });
+
+  // ── Load programs from Supabase ──────────────────────────────────────────
+  async function loadPrograms() {
+    const grid = document.getElementById('jp-grid')!;
+    grid.innerHTML = '<p id="jp-loading" style="color:var(--sl-color-gray-2);padding:2rem 0">Loading programs…</p>';
+    document.getElementById('jp-count')!.textContent = 'Loading…';
+    document.getElementById('jp-empty')!.style.display = 'none';
+
+    const { data, error } = await supabase
+      .from('junior_programs')
+      .select('*')
+      .order('deadline_date', { ascending: true, nullsFirst: false });
+
+    document.getElementById('jp-loading')?.remove();
+
+    if (error) {
+      grid.innerHTML = `<p style="color:var(--sl-color-red)">Failed to load programs: ${esc(error.message)}</p>`;
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      grid.innerHTML = '';
+      document.getElementById('jp-count')!.textContent = '0 programs';
+      const emptyEl = document.getElementById('jp-empty')!;
+      emptyEl.textContent = 'No junior programs found. Add programs via the Admin Panel.';
+      emptyEl.style.display = '';
+      return;
+    }
+
+    allPrograms = data;
+    grid.innerHTML = data.map(makeCard).join('');
+    document.getElementById('jp-count')!.textContent = `${data.length} program${data.length !== 1 ? 's' : ''}`;
+    applySearch();
+  }
+
+  loadPrograms();
+</script>

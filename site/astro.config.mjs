@@ -17,11 +17,13 @@ export default defineConfig({
 			},
 			sidebar: [
 				{ label: 'Home', link: '/' },
+				{ label: '🧭 Career Counselor', link: '/career/' },
 				{
 					label: 'Programs & Activities',
 					collapsed: true,
 					items: [
 						{ label: '☀️ College Summer Programs', link: '/programs/' },
+						{ label: '🎓 Junior Programs (2027)', link: '/junior-programs/' },
 						{ label: '💼 Internships', link: '/internships/' },
 						{ label: '🏆 Extra Curriculars', link: '/extracurriculars/' },
 						{ label: '🇮🇳 India Activities', link: '/india-activities/' },
@@ -39,7 +41,6 @@ export default defineConfig({
 						{ label: '🇮🇳 India Activities Ideas', link: '/india-ideas/' },
 						{ label: '🏃 Extra Curriculars', link: '/ec-ideas/' },
 						{ label: '🔧 Past Projects', link: '/past-projects/' },
-							{ label: '🧭 Career Counselor', link: '/career/' },
 					],
 				},
 				{
