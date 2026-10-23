@@ -57,6 +57,21 @@
   .badge--urgency-future   { background: var(--sl-color-accent-low); color: var(--sl-color-accent-high); }
   .badge--urgency-passed   { background: var(--sl-color-gray-5); color: var(--sl-color-gray-2); }
   .program-card__urgency   { font-size: .75rem; margin-top: .25rem; }
+  .jp-cover-note { font-size:.8rem; color:var(--sl-color-gray-2); margin:.25rem 0 .5rem; }
+  .jp-cover-wrapper { display:flex; flex-direction:column; gap:.5rem; }
+  .jp-cover-textarea {
+    width:100%; padding:.75rem; border:1px solid var(--sl-color-gray-5);
+    border-radius:6px; background:var(--sl-color-bg); color:var(--sl-color-text);
+    font-family:inherit; font-size:.85rem; line-height:1.65; resize:vertical;
+  }
+  .jp-cover-copy {
+    align-self:flex-end; padding:.4rem 1.1rem; border-radius:6px;
+    border:1px solid var(--sl-color-accent); background:transparent;
+    color:var(--sl-color-accent); cursor:pointer; font-size:.875rem; font-weight:600;
+    transition:background .15s, color .15s;
+  }
+  .jp-cover-copy:hover { background:var(--sl-color-accent); color:#fff; }
+  .jp-cover-copy--done { background:#16a34a; border-color:#16a34a; color:#fff; }
 </style>
 
 <script>
@@ -108,6 +123,138 @@
   document.addEventListener('app-readonly-state', (e: Event) => {
     isReadOnly = (e as CustomEvent).detail?.isReadOnly === true;
   });
+
+  const coverLetters: Record<string, string> = {
+
+'MIT PRIMES-USA': `I am a junior at AMES, a STEM academy in New Jersey, and mathematics is the subject that has defined my high school years more than any other. What draws me to PRIMES is not the name. It is the chance to sit with a genuinely open problem for months, work through the uncertainty, and arrive somewhere new.
+
+At AMES I have studied number theory and combinatorics beyond what my regular coursework covers. I read textbooks on my own during summers and work through problem sets not because anyone assigns them but because I find the problems interesting. When a problem resists my first several attempts, that is usually the moment I pay the most attention, because there is something I do not yet understand.
+
+Outside of academics, I coach special needs students in chess, robotics, and tennis at a local program. These students have taught me a great deal. Teaching chess to students who think in nonlinear ways has forced me to understand each concept at a deeper level. When I have to find five different explanations for the same idea, I come away with a clearer picture of it myself. That experience has made me believe that the best mathematics happens in community, not in isolation.
+
+I also compete on my school varsity tennis team. Tennis has taught me how to work consistently over a long season and how to stay focused when progress is slow.
+
+I want to do real mathematical research with a mentor who will challenge my assumptions and push me past what I already know. PRIMES is the right place for that, and I am ready to commit fully to the work it requires.`,
+
+'Research Science Institute (RSI)': `I am a junior at AMES, a STEM academy in New Jersey, and the Research Science Institute is the summer program I have had in mind since I first understood what scientific research actually looks like.
+
+My strongest academic interests are in mathematics, robotics, and physics. At AMES these three fields overlap constantly, and I have pursued all of them with serious effort. I build robots for competition and study the mechanics, kinematics, and optimization problems that make them work well. I also work through physics and mathematics beyond the level of my coursework, drawn to the places where clean mathematical structures explain physical behavior.
+
+What I want most from a research experience is the authentic version: a project with a real open question, a faculty mentor who takes the work seriously, and an outcome I could not have written down at the start. RSI is, from everything I understand, the clearest version of that experience available to a high school student.
+
+Outside of academics, I coach special needs students in chess, robotics, and tennis. This is a commitment I have held for several years and one I value deeply. Working with these students has shaped how I think about what a technical education is for. The most rewarding moments in that coaching are when a student who struggles in other settings succeeds at something genuinely hard. I want my research to eventually produce that same kind of concrete benefit for people.
+
+I play on my school varsity tennis team and have competed at the regional level.
+
+I am ready for the sustained challenge of six weeks of serious research. I believe I belong in this program, and I am eager to find out where the work leads.`,
+
+'Rockefeller Summer Science Research Program (SSRP)': `I am a junior at AMES, a STEM academy in New Jersey, and I have developed a strong interest in the quantitative side of biology over the past two years. My entry point was physics. I was studying how systems reach equilibrium and started asking the same question about biological systems, how cells regulate themselves, how populations grow and stabilize, and how the same equations appear in both physics and life science.
+
+At AMES I have strong foundations in biology and chemistry alongside my work in mathematics and physics. I have read independently in bioinformatics and systems biology, drawn to research that approaches living systems with the same precision that physics brings to physical ones.
+
+One of the most important things I do outside of school is coach special needs students in chess, robotics, and tennis. I have been doing this for several years. These students have made me more patient, more observant, and more creative in how I approach difficult problems. All of those qualities matter in laboratory research, where close attention and careful observation are fundamental.
+
+The Rockefeller SSRP attracts me because of the quality of the science being done there and the structured team environment in which students work. I would commit fully to the 35 hours per week and to making a genuine contribution to the project I am placed in.
+
+I play on my school varsity tennis team. Commuting from New Jersey to the program is something I can arrange, and I am excited about the chance to work at one of the most respected research institutions in the world.`,
+
+'NJ Governor\'s School in the Sciences': `I am a junior at AMES, a STEM academy in New Jersey, and I am applying to the Governor\'s School in the Sciences because I want to spend part of my summer in an environment where serious academic work and scientific curiosity are the shared purpose, alongside other New Jersey students who feel the same way.
+
+My strongest academic areas are mathematics, physics, and robotics. At AMES these three subjects connect naturally, and I have pursued each of them with real commitment. I participate in robotics competitions and find that the most interesting problems require me to draw on physics and mathematics at the same time. That overlap is exactly what I want to explore more deeply.
+
+Outside of academics, I coach special needs students in chess, robotics, and tennis. I have been doing this for a few years and it is one of the most meaningful things I do. It has made me a clearer communicator and a more flexible problem solver, because these students often find unexpected approaches that I would not have considered on my own.
+
+I compete on my high school varsity tennis team and have a strong record in regional competition.
+
+The Governor\'s School matters to me because it is designed specifically for New Jersey students who are serious about science. I want to be in a residential program where the entire focus is learning, where I can work with faculty doing real research and build connections with students from across the state. Three weeks of that kind of focused engagement would be one of the most valuable experiences of my high school career.`,
+
+'Carnegie Mellon SAMS': `I am a junior at AMES, a STEM academy in New Jersey, and I am applying to SAMS because I want to spend a summer at a university that is serious about both academic rigor and the question of who belongs in STEM.
+
+My primary interests are mathematics, physics, and robotics. At AMES I have had strong preparation in all three, and I want to continue developing that foundation in a college environment before beginning my senior year. Carnegie Mellon has the best combination of applied engineering and theoretical depth of any university I know, and being on that campus for six weeks would shape how I approach the rest of my high school education and my college applications.
+
+What motivates me in STEM is not just the problems themselves. I want the work I do to connect back to people. One of the ways I try to live that out is by coaching special needs students in chess, robotics, and tennis. I have done this for several years, and it has become a core part of how I think about what I want to do with a technical education. Seeing a student with developmental challenges learn to code a robot or calculate a chess move is one of the most rewarding things I have experienced. I want to be part of a program that shares that sense of purpose.
+
+I also play on my school varsity tennis team, which has built my focus and my ability to work steadily toward goals that require months of effort.
+
+I would bring genuine commitment to every part of SAMS. I am applying because this experience would make me a better student and a better person, and I am ready for that challenge.`,
+
+'Broad Summer Scholars Program (BSSP)': `I am a junior at AMES, a STEM academy in New Jersey, and I have spent the past year teaching myself the basics of genomics and computational biology. My starting point was statistics and probability, which I was studying seriously at AMES, and I began to notice how the same mathematical tools I was learning are used to analyze genetic data and model disease processes. That connection led me to the Broad Institute and the kind of research that happens there.
+
+My academic background at AMES is strong in biology, chemistry, and mathematics, and I have been building my computational skills independently through online courses and small projects. I am drawn to biomedical research that combines quantitative methods with real biological questions, and the Broad is one of the few places where that combination exists at the highest level.
+
+The reason this kind of research matters to me personally is connected to the coaching I do outside of school. I coach special needs students in chess, robotics, and tennis, and working closely with students who face neurological and developmental challenges has given me a concrete sense of why biomedical science is important. The work is abstract at the level of data and code, but its purpose is deeply human.
+
+I play on my school varsity tennis team, which has taught me consistency and the ability to perform under pressure over a long season.
+
+The Broad Summer Scholars Program is one of the most serious research experiences available to a high school student. I am ready to commit fully to six weeks of real biomedical research, and I believe I have the academic preparation and the motivation to contribute meaningfully to my lab.`,
+
+'Simons Summer Research Program': `I am a junior at AMES, a STEM academy in New Jersey, and the Simons Summer Research Program is the experience I have been working toward since I first understood what authentic scientific research looks like.
+
+My background is in mathematics, physics, and robotics, three areas that I pursue with genuine enthusiasm and that overlap in ways I find consistently interesting. I am drawn to quantitative problems where you can write down what you know, reason carefully, and arrive at something that was not predictable from the start. At AMES I have gone deep in all three areas: building robots for competition, studying mechanics and control systems independently, and exploring mathematical structures that appear across different fields.
+
+Teaching is also a major part of how I spend my time outside school. I coach special needs students in chess, robotics, and tennis at a local program. These students have taught me as much as I have taught them. Working with students who approach problems unconventionally has made me more creative and more careful in my own thinking. It has also reinforced something I believe deeply: that the desire to understand and the desire to help people are not separate impulses. They belong together.
+
+I am on my school varsity tennis team and compete regularly.
+
+The Simons program is designed specifically for current juniors, which means this is the one opportunity I have to apply. I do not want to miss it. Six weeks of research with a Stony Brook faculty mentor, working on a real open question in science, is exactly the kind of summer I have been preparing for.`,
+
+'Anson L. Clark Scholars Program': `I am a junior at AMES, a STEM academy in New Jersey, and I am applying to the Clark Scholars program because it is, as far as I can tell, one of the few programs that genuinely gives high school students the experience of doing original research rather than observing it.
+
+My interests center on mathematics, robotics, and physics, though I am open to research in any discipline that requires careful, structured thinking. What I want most is not a specific topic. It is the process: starting with an open question, working through the uncertainty with a faculty mentor, and producing a result that I could not have written down in June.
+
+At AMES I have been building toward exactly this kind of experience. I work on robotics competitions where the problems are real and the solutions are not in the textbook. I study mathematics on my own beyond the curriculum because the questions feel genuinely interesting to me, not because anyone asks me to. I have been looking for a summer program that takes me seriously as a researcher, and the Clark Scholars program is the most serious one I have found.
+
+Outside of academics, I coach special needs students in chess, robotics, and tennis. This work has shaped my thinking in ways that go beyond teaching. When I have to explain a concept to a student who processes information differently than I do, I come away with a deeper understanding of it. That patience and adaptability are qualities I would bring to a seven week research project.
+
+I play on my school varsity tennis team. The Clark Scholars program is small and the commitment is real, and both of those things make me want to apply more, not less.`,
+
+'Stanford SIMR': `I am a junior at AMES, a STEM academy in New Jersey, and I am applying to Stanford SIMR because I want to spend a summer working in a biomedical laboratory doing real research, and Stanford is one of the best places in the world to do that.
+
+My interest in biomedical science comes from the same place as my interest in physics and robotics. I am drawn to systems that are complex and layered but ultimately understandable if you pay close enough attention. Over the past year I have been reading more about computational biology and systems modeling, drawn to the way that quantitative methods from mathematics and physics are applied to biological problems.
+
+At AMES I have strong preparation in biology, chemistry, and mathematics, and I have been building my computational skills independently. I want to see what it looks like to work in a research lab full time, to understand how the process of scientific discovery actually works, not just from reading papers but from being inside it.
+
+The work I do outside of school reinforces why this matters to me. I coach special needs students in chess, robotics, and tennis, and working closely with students who face neurological and physical challenges has given me a concrete sense of what biomedical research is ultimately for. The science is abstract, but its purpose is to reduce suffering and extend human health, and that connection is one I think about often.
+
+I compete on my high school varsity tennis team, which has given me the discipline to work steadily toward goals that take months to achieve.
+
+I am ready to commit to eight weeks at Stanford and to bring the same focus and energy to the research that I bring to everything else I do seriously.`,
+
+'PROMYS — Program in Mathematics for Young Scientists': `I am a junior at AMES, a STEM academy, and mathematics is the subject I return to when I want to feel genuinely challenged. Not just technically difficult. Actually surprising. The kind of result where the proof is completely correct but something inside you still does not fully believe it.
+
+PROMYS is the program I have been most interested in attending since I first learned it exists. The idea of spending six weeks doing mathematics the way mathematicians actually do it, starting from basic axioms and building upward carefully, finding connections that are not obvious until they are, is exactly what I want from a summer experience. I do not want a program that teaches me the next chapter of calculus. I want one that makes me slower and more careful about what I already know.
+
+At AMES I have worked through number theory and discrete mathematics beyond my coursework on my own. I spent real time on the PROMYS problem set, not trying to get the right answer quickly but trying to understand what the questions were actually asking.
+
+Outside of academics, I coach special needs students in chess, robotics, and tennis. Chess has had an interesting effect on how I think about mathematics. Teaching a student to calculate three or four moves ahead requires the same kind of patient, sequential reasoning that a mathematical proof requires. I have found that the two things reinforce each other.
+
+I also play on my school varsity tennis team.
+
+I want to be at PROMYS this summer. I am prepared for the work, I am genuinely excited about the mathematics, and I believe six weeks of this kind of thinking would change how I approach every quantitative subject I study afterward.`,
+
+'Garcia Center for Polymers Summer Research': `I am a junior at AMES, a STEM academy in New Jersey, and I became interested in materials science through robotics. When I was designing a robot, I started asking questions about why certain materials behave the way they do under stress, how surface interactions affect precision, and what the connection is between the molecular structure of a material and its physical properties. Those questions eventually led me to the Garcia Center and to polymer science more broadly.
+
+At AMES I have completed chemistry and have gone further independently in physical chemistry and surface science. I am drawn to research that sits at the intersection of physics, chemistry, and engineering, the kind of work where you are not just learning a field but applying several fields simultaneously to answer a specific question.
+
+Outside of academics, I coach special needs students in chess, robotics, and tennis. Laboratory research and teaching have more in common than I expected when I first started coaching. Both require close observation, patience with slow progress, and the ability to recognize when your current approach is not working and to change it. Those are qualities I would bring to the Garcia research environment.
+
+I compete on my high school varsity tennis team. Seven weeks of focused, original research is a commitment I am comfortable with. I am used to sustained effort over long periods.
+
+The Garcia Center is NSF funded, accessible from New Jersey, and has a strong record of helping students produce work that is competitive for Regeneron STS and Intel ISEF. I would enter the program with the goal of producing a result worth submitting to competition, and I am prepared for the effort that goal requires.`,
+
+'Princeton Laboratory Learning Program (LLP)': `I am a junior at AMES, a STEM academy in New Jersey, and I am applying to the Princeton Laboratory Learning Program because I want to spend a summer doing real research at one of the best universities in the world, and I live close enough to do it.
+
+My academic strengths are in mathematics, physics, and robotics. At AMES I have gone beyond my coursework in all three of these areas, and I am at a point in my education where I want to test what I know in an actual research setting, working on a problem where the answer is not already known and where my contributions to the project are real rather than simulated.
+
+I would be enthusiastic about placement in almost any laboratory that does quantitative work. My background makes me well prepared for research in applied mathematics, physics, engineering, or computational science, but I am also genuinely open to computational biology or other fields where careful quantitative reasoning is central.
+
+Outside of academics, I coach special needs students in chess, robotics, and tennis at a local program. I have been doing this for several years. It has taught me how to explain complex ideas clearly, how to be patient when progress is slow, and how to stay focused when the outcome is uncertain. All of those skills transfer directly to research.
+
+I also compete on my school varsity tennis team. I understand what it means to show up every day and work toward a goal that takes months to achieve.
+
+The Princeton LLP is the program in New Jersey I most want to be part of. A full time summer of research at Princeton, accessible from where I live, with a real faculty mentor and a real scientific question, is exactly the kind of experience I have been working toward throughout high school.`,
+
+};
 
   // ── Program data store ───────────────────────────────────────────────────
   let allPrograms: any[] = [];
@@ -258,6 +405,16 @@
           rows="4"${noteReadonly}>${esc(savedNote)}</textarea>
       </div>
 
+      ${coverLetters[p.name] ? `
+      <div class="prog-modal__section">
+        <h3 class="prog-modal__section-title">Cover Letter Template</h3>
+        <p class="jp-cover-note">Personalize before submitting. Starting template only.</p>
+        <div class="jp-cover-wrapper">
+          <textarea class="jp-cover-textarea" rows="18">${esc(coverLetters[p.name])}</textarea>
+          <button class="jp-cover-copy">Copy to Clipboard</button>
+        </div>
+      </div>` : ''}
+
       <div class="prog-modal__footer">
         <span class="prog-modal__deadline">⏰ ${esc(p.deadline)}</span>
         ${applyBtn}
@@ -362,6 +519,25 @@
     if (!document.getElementById('jp-modal')?.contains(ta)) return;
     if (isReadOnly) return;
     if (ta.dataset.key) localStorage.setItem(ta.dataset.key, ta.value);
+  });
+
+  // Cover letter copy button
+  document.getElementById('jp-modal')!.addEventListener('click', e => {
+    const btn = (e.target as Element).closest<HTMLButtonElement>('.jp-cover-copy');
+    if (!btn) return;
+    const textarea = btn.closest('.jp-cover-wrapper')?.querySelector<HTMLTextAreaElement>('.jp-cover-textarea');
+    if (!textarea) return;
+    navigator.clipboard.writeText(textarea.value).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('jp-cover-copy--done');
+      setTimeout(() => {
+        btn.textContent = 'Copy to Clipboard';
+        btn.classList.remove('jp-cover-copy--done');
+      }, 2000);
+    }).catch(() => {
+      textarea.select();
+      document.execCommand('copy');
+    });
   });
 
   // Search input (debounced)
