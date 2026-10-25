@@ -1019,7 +1019,7 @@ const rolePaths: RolePath[] = [
     <div class="f1g-rp-bar">
       <label class="f1g-rp-label" for="f1g-rp-select">Choose a role for a personalised roadmap:</label>
       <div class="f1g-rp-controls">
-        <select class="f1g-rp-select" id="f1g-rp-select">
+        <select class="f1g-rp-select" id="f1g-rp-select" aria-label="Select F1 target role">
           <option value="">— Select a role —</option>
           <optgroup label="Aerodynamics">
             <option>Aerodynamicist</option>
@@ -1051,6 +1051,7 @@ const rolePaths: RolePath[] = [
           </optgroup>
         </select>
         <button class="f1g-rp-clear" id="f1g-rp-clear" hidden>✕ Clear</button>
+        <span class="f1g-rp-status" id="f1g-rp-status" hidden></span>
       </div>
     </div>
 
@@ -1727,6 +1728,17 @@ const rolePaths: RolePath[] = [
     cursor: pointer;
   }
   .f1g-rp-clear:hover { background: #fff5f5; }
+  .f1g-rp-status {
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .f1g-rp-status--saved   { background: #d1fae5; color: #065f46; }
+  .f1g-rp-status--saving  { background: #f3f4f6; color: #6b7280; }
+  .f1g-rp-status--error   { background: #fee2e2; color: #991b1b; }
+  .f1g-rp-status--loaded  { background: #ede9fe; color: #5b21b6; }
 
   /* ── Role Path Display ────────────────────────────────────────────────── */
   .f1g-rp-heading { margin-bottom: 1.25rem; }
@@ -1811,6 +1823,8 @@ const rolePaths: RolePath[] = [
 </style>
 
 <script>
+  import { supabase } from '../lib/supabase';
+
   const guide = document.getElementById('f1-guide');
   if (!guide) throw new Error('f1-guide not found');
 
@@ -1840,11 +1854,7 @@ const rolePaths: RolePath[] = [
       if (!body) return;
       const isOpen = btn.getAttribute('aria-expanded') === 'true';
       btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
-      if (isOpen) {
-        body.hidden = true;
-      } else {
-        body.hidden = false;
-      }
+      body.hidden = isOpen;
     });
   });
 
@@ -1861,9 +1871,10 @@ const rolePaths: RolePath[] = [
     });
   });
 
-  // Role path selector
-  const rpSelect = document.getElementById('f1g-rp-select') as HTMLSelectElement | null;
-  const rpClear  = document.getElementById('f1g-rp-clear') as HTMLButtonElement | null;
+  // ── Role path selector ───────────────────────────────────────────────────
+  const rpSelect      = document.getElementById('f1g-rp-select') as HTMLSelectElement | null;
+  const rpClear       = document.getElementById('f1g-rp-clear') as HTMLButtonElement | null;
+  const rpStatus      = document.getElementById('f1g-rp-status') as HTMLElement | null;
   const genericTracks = document.getElementById('f1g-generic-tracks');
   const orDivider     = document.getElementById('f1g-or-divider');
 
@@ -1873,20 +1884,68 @@ const rolePaths: RolePath[] = [
       const el = guide.querySelector<HTMLElement>(`.f1g-rp-path[data-role="${role}"]`);
       if (el) el.hidden = false;
       if (genericTracks) genericTracks.style.display = 'none';
-      if (orDivider) orDivider.style.display = 'none';
-      if (rpClear) rpClear.hidden = false;
+      if (orDivider)     orDivider.style.display = 'none';
+      if (rpClear)       rpClear.hidden = false;
     } else {
       if (genericTracks) genericTracks.style.display = '';
-      if (orDivider) orDivider.style.display = '';
-      if (rpClear) rpClear.hidden = true;
+      if (orDivider)     orDivider.style.display = '';
+      if (rpClear)       rpClear.hidden = true;
     }
   }
 
-  rpSelect?.addEventListener('change', () => showRolePath(rpSelect.value));
+  function setStatus(msg: string, cls: string, autoClear = true) {
+    if (!rpStatus) return;
+    rpStatus.textContent = msg;
+    rpStatus.className = `f1g-rp-status f1g-rp-status--${cls}`;
+    rpStatus.hidden = false;
+    if (autoClear) setTimeout(() => { if (rpStatus) rpStatus.hidden = true; }, 2500);
+  }
+
+  // ── Supabase: save target role ────────────────────────────────────────────
+  async function saveTargetRole(role: string) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    setStatus('Saving…', 'saving', false);
+    const { error } = await supabase
+      .from('user_profiles')
+      .update({ target_f1_role: role || null })
+      .eq('user_id', session.user.id);
+    if (error) {
+      setStatus('Save failed', 'error');
+    } else {
+      setStatus(role ? '★ Target role saved' : 'Cleared', 'saved');
+    }
+  }
+
+  // ── Supabase: load saved role on mount ────────────────────────────────────
+  async function loadSavedRole() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('target_f1_role')
+      .eq('user_id', session.user.id)
+      .single();
+    const saved = data?.target_f1_role as string | null;
+    if (saved) {
+      if (rpSelect) rpSelect.value = saved;
+      showRolePath(saved);
+      setStatus('★ Your saved target role', 'loaded');
+    }
+  }
+
+  loadSavedRole();
+
+  // ── Event handlers ────────────────────────────────────────────────────────
+  rpSelect?.addEventListener('change', () => {
+    showRolePath(rpSelect.value);
+    saveTargetRole(rpSelect.value);
+  });
 
   rpClear?.addEventListener('click', () => {
     if (rpSelect) rpSelect.value = '';
     showRolePath('');
+    saveTargetRole('');
   });
 
   // "Map My Path" buttons on role cards
@@ -1897,14 +1956,13 @@ const rolePaths: RolePath[] = [
     if (!role) return;
 
     // Switch to path tab
-    const pathTab = guide.querySelector<HTMLButtonElement>('.f1g-tab[data-tab="path"]');
-    pathTab?.click();
+    guide.querySelector<HTMLButtonElement>('.f1g-tab[data-tab="path"]')?.click();
 
-    // Set dropdown and show path
+    // Set dropdown, show path, and save
     if (rpSelect) rpSelect.value = role;
     showRolePath(role);
+    saveTargetRole(role);
 
-    // Scroll to path panel
     setTimeout(() => {
       document.getElementById('f1g-path')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 50);
