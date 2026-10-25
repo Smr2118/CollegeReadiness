@@ -18,6 +18,7 @@ export default defineConfig({
 			sidebar: [
 				{ label: 'Home', link: '/' },
 				{ label: '🧭 Career Counselor', link: '/career/' },
+				{ label: '🏎 F1 Careers Guide', link: '/f1-careers/' },
 				{
 					label: 'Programs & Activities',
 					collapsed: true,
