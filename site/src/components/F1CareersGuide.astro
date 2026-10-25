@@ -322,6 +322,398 @@ const demandLabel: Record<string, string> = {
   'medium': 'Specialist',
   'low': 'Senior Track',
 };
+
+interface RolePath {
+  role: string;
+  hs: { courses: string[]; activities: string[]; tip: string };
+  ug: { degree: string; why: string; uk: string[]; us: string[]; focus: string[]; fsae: string };
+  masters: { needed: 'required'|'recommended'|'optional'|'not-needed'; note: string; programs: {name:string;uni:string;why:string;url:string}[] };
+  entry: { title: string; salary: string; teamTip: string; growth: string };
+}
+
+const rolePaths: RolePath[] = [
+  {
+    role: 'Aerodynamicist',
+    hs: {
+      courses: ['AP Physics C: Mechanics — forces, fluid concepts, kinematics', 'AP Calculus BC — differential equations underpin all CFD work', 'AP CS A + Python self-study — aerodynamicists write code daily', 'AP Physics C: E&M'],
+      activities: ['FIRST Robotics: focus on mechanical design and aerodynamic packaging', 'Install OpenFOAM (free) and run a basic airfoil simulation — impressive on applications', 'MIT OCW 16.100 Aerodynamics (free) — watch in 11th grade to build intuition'],
+      tip: 'Maths foundation is everything. Aerodynamicists who hit ceilings almost always have weak calculus. AP Calc BC now = fluid dynamics later.',
+    },
+    ug: {
+      degree: 'Aerospace Engineering (BEng or MEng)',
+      why: 'Aerospace Engineering teaches the fluid mechanics, aerodynamics theory, and CFD methods that F1 aero roles require — highest-density degree for this specific career.',
+      uk: ['University of Southampton — MEng Aeronautics & Astronautics (#1 for F1 aero globally)', 'Imperial College London — MEng Aeronautical Engineering (14% of F1 aero engineers)', 'University of Cambridge — MEng Engineering, Aerospace/Aerothermal track', 'University of Bristol — MEng Aerospace Engineering'],
+      us: ['MIT — Aeronautics & Astronautics', 'Georgia Tech — Aerospace Engineering (#2 in US)', 'Purdue — Aeronautics & Astronautics', 'University of Michigan — Aerospace Engineering'],
+      focus: ['Fluid dynamics & aerodynamics modules — aim for top marks here', 'CFD coursework: hands-on with ANSYS Fluent or OpenFOAM in labs', 'MATLAB and Python proficiency throughout', 'Wind tunnel lab sessions — attend every optional session offered'],
+      fsae: 'Join the aero sub-team semester 1. Design a diffuser, floor, or front wing element. This is the most valuable F1 portfolio item available as a student.',
+    },
+    masters: {
+      needed: 'required',
+      note: 'Effectively required — competition is intense and most F1 aero hires hold postgrad qualifications. Southampton MSc Race Car Aerodynamics is the global gold standard.',
+      programs: [
+        { name: 'MSc Race Car Aerodynamics', uni: 'University of Southampton', why: 'Produces ~20% of all F1 aerodynamicists. The RJ Mitchell Wind Tunnel, direct F1 industry projects, and named employer Mercedes-AMG make this the single best step toward an F1 aero role.', url: 'https://www.southampton.ac.uk/courses/race-car-aerodynamics-masters-msc' },
+        { name: 'MSc Advanced Motorsport Engineering', uni: 'Cranfield University', why: 'Covers aero alongside vehicle dynamics, powertrain, and electronics — good if you want breadth or are unsure of your exact departmental specialisation.', url: 'https://www.cranfield.ac.uk/som/courses/advanced-motorsport-engineering-msc' },
+        { name: 'MSc Aerospace Engineering (Aerodynamics track)', uni: 'TU Delft', why: 'Cheaper than UK options; produces ~10-11% of F1 aero engineers (3rd globally). Strong CFD research and Dutch motorsport network.', url: 'https://www.tudelft.nl/en/education/programmes/masters/ae/msc-aerospace-engineering' },
+      ],
+    },
+    entry: { title: 'Junior Aerodynamicist', salary: '£35,000–£45,000 (UK, 2026)', teamTip: 'Apply August–October to Red Bull Racing (active early careers), Aston Martin F1 (major expansion hiring), and Williams Racing (dedicated Early Careers section).', growth: 'Junior Aerodynamicist → Senior Aerodynamicist (4–6 yrs) → Principal Aerodynamicist (8–12 yrs) → Head of Aerodynamics (15+ yrs).' },
+  },
+  {
+    role: 'CFD Engineer',
+    hs: {
+      courses: ['AP Calculus BC — numerical methods rely on deep calculus understanding', 'AP Physics C: Mechanics', 'AP CS A + Python self-study — CFD is programming-heavy', 'AP Statistics — uncertainty quantification and validation'],
+      activities: ['Install OpenFOAM (free CFD software) and simulate airflow around a 2D airfoil — directly relevant', 'Learn NumPy/SciPy in Python for numerical computing', 'FIRST Robotics: any role that involves sensors, data, or fluid/mechanical systems'],
+      tip: 'CFD is where maths, physics, and programming intersect. Being strong in all three matters more than being elite in one.',
+    },
+    ug: {
+      degree: 'Aerospace Engineering or Applied Mathematics with engineering modules',
+      why: 'Aerospace Engineering provides the aerodynamics theory; Applied Maths provides the numerical methods — either works if supplemented with strong programming.',
+      uk: ['University of Southampton — MEng Aeronautics & Astronautics + strong CFD labs', 'Imperial College London — MEng Aeronautical Engineering (research-strong)', 'University of Cambridge — MEng Engineering, Aerothermal track', 'TU Delft — MSc Aerospace (treat undergrad as pipeline to Delft MSc)'],
+      us: ['MIT — AeroAstro with CFD focus', 'Georgia Tech — Aerospace Engineering', 'Purdue — Aeronautics & Astronautics', 'University of Illinois Urbana-Champaign — strong computational fluid dynamics research'],
+      focus: ['Numerical methods and computational mathematics', 'Fluid dynamics and turbulence modelling', 'Python and C++ programming (both are used in F1 CFD)', 'Parallel computing concepts — F1 CFD runs on supercomputer clusters'],
+      fsae: 'Join the aero sub-team and focus specifically on CFD analysis of the car body. Running simulations for the team is directly translatable to F1 CFD work.',
+    },
+    masters: {
+      needed: 'required',
+      note: 'A Masters is expected. CFD roles require deep theoretical and computational knowledge that is typically only developed at postgraduate level.',
+      programs: [
+        { name: 'MSc Race Car Aerodynamics', uni: 'University of Southampton', why: 'The MSc includes dedicated modules in CFD, turbulence, and data-driven fluid mechanics alongside the wind tunnel work — directly targets F1 CFD analyst hires.', url: 'https://www.southampton.ac.uk/courses/race-car-aerodynamics-masters-msc' },
+        { name: 'MSc Aerospace Engineering (Aerodynamics & Wind Energy)', uni: 'TU Delft', why: 'World-class CFD research with a 1-year thesis. More research-oriented than Southampton — ideal if you want to go deep on computational methods.', url: 'https://www.tudelft.nl/en/education/programmes/masters/ae/msc-aerospace-engineering' },
+        { name: 'MEng / MSc Aeronautical Engineering', uni: 'Imperial College London', why: 'Exceptional CFD and fluid mechanics research, plus Mercedes-AMG research partnership. Best if you want an academic-research entry into F1.', url: 'https://www.imperial.ac.uk/study/courses/postgraduate-taught/advanced-aeronautical-engineering/' },
+      ],
+    },
+    entry: { title: 'Junior CFD Analyst', salary: '£33,000–£42,000 (UK, 2026)', teamTip: 'Apply to Red Bull Racing, Alpine F1 (large CFD team at Enstone), and Aston Martin F1. Check also Mercedes HPP (the engine division hires separately).', growth: 'Junior CFD Analyst → Senior CFD Engineer (4–6 yrs) → CFD Team Lead (8–12 yrs) → Head of CFD (15+ yrs).' },
+  },
+  {
+    role: 'Wind Tunnel Test Engineer',
+    hs: {
+      courses: ['AP Physics C: Mechanics — force measurement and pressure concepts', 'AP Calculus BC', 'AP Statistics — data processing and uncertainty analysis'],
+      activities: ['FIRST Robotics: sensor integration and data logging sub-teams', 'Any hands-on lab or workshop experience — building, measuring, troubleshooting', 'Learn basic MATLAB for data analysis'],
+      tip: 'This role values hands-on experimental skill over pure theory. Lab work and data collection experience matters alongside academic grades.',
+    },
+    ug: {
+      degree: 'Mechanical Engineering or Aerospace Engineering',
+      why: 'Either degree provides the experimental methods, instrumentation, and aerodynamics background needed. A placement year is very valuable for this role.',
+      uk: ['University of Southampton — proximity to the RJ Mitchell Wind Tunnel is a direct advantage', 'University of Bath — strong MEng Mechanical with placement year', 'University of Bristol — MEng Aerospace', 'Loughborough University — MEng Mechanical with motorsport links'],
+      us: ['University of Michigan — large aero labs', 'Purdue — Aeronautics & Astronautics', 'Georgia Tech — Aerospace', 'Rutgers University — Mechanical & Aerospace (NJ in-state, cost-effective)'],
+      focus: ['Experimental aerodynamics and instrumentation modules', 'MATLAB for data processing and analysis', 'Pressure measurement, force balance, and flow visualisation techniques', 'LabVIEW for data acquisition systems'],
+      fsae: 'Build or operate aerodynamic test rigs for the Formula SAE car. Any experience running structured tests and analysing force/pressure data translates directly.',
+    },
+    masters: {
+      needed: 'optional',
+      note: 'Not required for entry — strong experimental skills and a good undergraduate degree can be sufficient. Southampton MSc Race Car Aerodynamics can differentiate your application.',
+      programs: [
+        { name: 'MSc Race Car Aerodynamics', uni: 'University of Southampton', why: 'Includes extensive wind tunnel sessions in the RJ Mitchell facility — direct hands-on experience with the kind of equipment F1 teams use.', url: 'https://www.southampton.ac.uk/courses/race-car-aerodynamics-masters-msc' },
+      ],
+    },
+    entry: { title: 'Wind Tunnel Technician / Aero Test Engineer', salary: '£28,000–£36,000 (UK, 2026)', teamTip: 'Mercedes-AMG (Brackley), Red Bull Racing (Milton Keynes), and McLaren (Woking) all operate large wind tunnel programmes. Check their early careers portals.', growth: 'Wind Tunnel Technician → Senior Aero Test Engineer (4–6 yrs) → Wind Tunnel Manager (10+ yrs) or transition into Aerodynamicist role with additional qualification.' },
+  },
+  {
+    role: 'Vehicle Dynamics Engineer',
+    hs: {
+      courses: ['AP Physics C: Mechanics — springs, dampers, inertia are your daily tools', 'AP Calculus BC — dynamics and control theory are calculus-based', 'AP CS A — MATLAB and Python simulation requires programming foundations'],
+      activities: ['FIRST Robotics: mechanical design and controls sub-teams — directly relevant', 'Learn MATLAB basics: simulate a spring-damper system (10 lines of code, very approachable)', 'Play lap simulation games (iRacing, Assetto Corsa) with a physics mindset — understand what setup changes do'],
+      tip: 'Vehicle dynamics is applied Newtonian mechanics. If you love Physics C: Mechanics and want to apply it to racing cars, this is your role.',
+    },
+    ug: {
+      degree: 'Mechanical Engineering or Automotive Engineering (MEng preferred)',
+      why: 'Automotive Engineering degree at Loughborough is the highest-density path — it has the most F1 vehicle dynamics alumni of any program. Mechanical Engineering is the strong general-purpose alternative.',
+      uk: ['Loughborough University — MEng Automotive Engineering with Motorsport (#1 choice; Ayao Komatsu, Neil Houldey, Tim Wright all alumni)', 'University of Bath — MEng Mechanical Engineering with strong dynamics modules', 'University of Southampton — MEng Mechanical Engineering', 'Oxford Brookes — BEng/MEng Motorsport Engineering (most direct motorsport focus)'],
+      us: ['University of Michigan — Mechanical Engineering; strong automotive culture', 'MIT — Mechanical Engineering', 'Purdue — Mechanical Engineering', 'Cornell — Mechanical Engineering; accessible from NJ', 'Rutgers — Mechanical & Aerospace Engineering (NJ in-state)'],
+      focus: ['Dynamics, vibrations, and control theory modules', 'Multi-body dynamics (ADAMS/Car is the industry standard)', 'MATLAB/Simulink proficiency', 'Tyre mechanics and suspension geometry coursework if available'],
+      fsae: 'Join the vehicle dynamics or chassis sub-team. Optimise suspension geometry, run lap simulations, correlate predicted vs. actual tyre data. This is exactly what the job is.',
+    },
+    masters: {
+      needed: 'recommended',
+      note: 'Recommended — the role is competitive and most hires from US undergrads will need a postgrad qualification to be competitive with UK MEng graduates.',
+      programs: [
+        { name: 'MSc Advanced Motorsport Engineering', uni: 'Cranfield University', why: 'Dedicated Vehicle Dynamics module plus the breadth of motorsport engineering. Industry projects often placed inside F1 teams including Red Bull.', url: 'https://www.cranfield.ac.uk/som/courses/advanced-motorsport-engineering-msc' },
+        { name: 'MSc Motorsport Engineering', uni: 'Oxford Brookes University', why: 'Lap Simulation & Race Engineering module is directly on-target. Located inside Motorsport Valley — Red Bull Racing is a formal placement partner.', url: 'https://www.brookes.ac.uk/courses/postgraduate/motorsport-engineering' },
+      ],
+    },
+    entry: { title: 'Junior Vehicle Dynamics Engineer', salary: '£32,000–£42,000 (UK, 2026)', teamTip: 'Red Bull Racing, Mercedes-AMG F1, and McLaren Racing all have strong vehicle dynamics departments. Apply through their early careers portals in August–October.', growth: 'Junior VD Engineer → Senior VD Engineer (4–6 yrs) → Principal VD Engineer (8–12 yrs) → Head of Vehicle Performance (15+ yrs).' },
+  },
+  {
+    role: 'Driver-in-Loop Simulation Engineer',
+    hs: {
+      courses: ['AP CS A — programming is 50% of this job', 'AP Physics C: Mechanics — you are modelling car physics', 'AP Calculus BC — numerical integration of vehicle motion'],
+      activities: ['FIRST Robotics: software and controls sub-teams — directly relevant', 'Learn C++ basics (this role uses C++ for real-time simulation, not just Python)', 'Build a simple physics simulation in Python: a mass-spring-damper or a 2D vehicle point mass'],
+      tip: 'This role sits at the intersection of physics modelling and software engineering. Being comfortable writing both physics equations and clean production code is the differentiator.',
+    },
+    ug: {
+      degree: 'Mechanical Engineering, Computer Science, or Aerospace Engineering',
+      why: 'The role requires both physics-based modelling (better from Mechanical/Aero) and real-time software engineering (better from CS). Either degree works with strong self-development in the other domain.',
+      uk: ['Loughborough University — MEng Mechanical or Automotive with strong simulation culture', 'University of Southampton — MEng Mechanical or Aerospace', 'Imperial College London — MEng Mechanical or Computing', 'University of Bath — MEng Mechanical Engineering'],
+      us: ['MIT — Mechanical Engineering or EECS', 'Carnegie Mellon University — Mechanical Engineering or CS (robotics focus)', 'Georgia Tech — Mechanical or CS', 'Cornell — Mechanical Engineering; accessible from NJ'],
+      focus: ['Real-time systems and embedded programming', 'MATLAB/Simulink for physics modelling', 'C++ (essential — simulation software is C++, not Python)', 'Control theory and signal processing'],
+      fsae: 'Build or contribute to the Formula SAE lap simulation tool. Developing a vehicle model that predicts lap times is precisely the core skill for this role.',
+    },
+    masters: {
+      needed: 'optional',
+      note: 'Not strictly required — a strong portfolio of simulation projects can be more persuasive than a Masters. Cranfield is worth considering for the industry connections.',
+      programs: [
+        { name: 'MSc Advanced Motorsport Engineering', uni: 'Cranfield University', why: 'The Motorsport Simulation module and industry project give direct exposure to F1 simulation tooling. Good if you want to transition from a pure CS background.', url: 'https://www.cranfield.ac.uk/som/courses/advanced-motorsport-engineering-msc' },
+      ],
+    },
+    entry: { title: 'Junior Simulation Engineer / Graduate Software Developer (Simulation)', salary: '£30,000–£40,000 (UK, 2026)', teamTip: 'Red Bull Racing, McLaren, and Mercedes-AMG all have large simulator programs. McLaren Racing NEXT graduate scheme explicitly recruits simulation engineers.', growth: 'Junior Simulation Engineer → Senior Simulation Engineer (4–6 yrs) → Lead Simulation Engineer → Simulation Technology Manager (12+ yrs).' },
+  },
+  {
+    role: 'Powertrain Engineer',
+    hs: {
+      courses: ['AP Physics C: Mechanics and E&M — both halves of the power unit', 'AP Chemistry — combustion chemistry, thermodynamics foundations', 'AP Calculus BC — thermodynamic cycles are calculus-based', 'AP CS A — modern powertrain work involves simulation code'],
+      activities: ['FIRST Robotics: drivetrain and power systems sub-teams', 'Study how a 4-stroke engine works; understand the basics of combustion, fuel injection, and turbocharging', 'Learn Python basics for data analysis'],
+      tip: 'The 2026 F1 power unit is ~50% electrical. This role now requires understanding of both ICE thermodynamics AND battery/hybrid systems. Electrical knowledge is increasingly valuable.',
+    },
+    ug: {
+      degree: 'Mechanical Engineering (with thermodynamics/propulsion focus)',
+      why: 'Mechanical Engineering with strong thermodynamics, heat transfer, and combustion modules is the standard path. Chemical Engineering is also a viable route for the fuel and combustion chemistry side.',
+      uk: ['Imperial College London — MEng Mechanical Engineering with propulsion research', 'Loughborough University — MEng Mechanical Engineering with motorsport links', 'University of Bath — MEng Mechanical Engineering', 'University of Southampton — MEng Mechanical Engineering'],
+      us: ['University of Michigan — Mechanical Engineering; strong automotive powertrain culture', 'MIT — Mechanical Engineering', 'Purdue — Mechanical Engineering; strong propulsion/combustion research', 'Georgia Tech — Mechanical Engineering'],
+      focus: ['Thermodynamics and heat transfer modules — highest priority', 'Combustion science and internal combustion engines', 'MATLAB for simulation and data analysis', 'Hybrid/electric vehicle technology if offered as elective'],
+      fsae: 'Join the powertrain or engine sub-team. Work on engine mapping, cooling, or drivetrain development. Any experience with engine dyno testing or fuel system calibration is gold.',
+    },
+    masters: {
+      needed: 'recommended',
+      note: 'Recommended — especially for US undergrads. The Cranfield programme has dedicated powertrain modules and industry connections to the F1 engine manufacturers.',
+      programs: [
+        { name: 'MSc Advanced Motorsport Engineering', uni: 'Cranfield University', why: 'Motorsport Powertrains module covers ICE, ERS, and hybrid systems in an F1 context. Industry projects can be placed inside powertrain departments.', url: 'https://www.cranfield.ac.uk/som/courses/advanced-motorsport-engineering-msc' },
+      ],
+    },
+    entry: { title: 'Junior Powertrain / Thermofluids Engineer', salary: '£32,000–£42,000 (UK, 2026)', teamTip: 'Note: F1 power units are made by only 4 manufacturers (Mercedes HPP, Ferrari Power Unit, Red Bull Powertrains, Honda). Apply to those divisions specifically for powertrain roles — they hire separately from the racing teams.', growth: 'Junior Powertrain Engineer → Senior Powertrain Engineer (4–6 yrs) → Principal Engineer (8–12 yrs) → Chief Engineer, Power Unit (15+ yrs).' },
+  },
+  {
+    role: 'Engine Calibration Engineer',
+    hs: {
+      courses: ['AP Physics C: Mechanics and E&M', 'AP Calculus BC', 'AP CS A — calibration tools are software-driven'],
+      activities: ['FIRST Robotics: any sub-team involving tuning, sensors, or iterative optimisation', 'Hands-on electronics tinkering: Arduino, Raspberry Pi, or car ECU hobbyist projects', 'Learn Python for data analysis'],
+      tip: 'This role is more practical/experimental than theoretical. Strong bench skills and a methodical approach to testing and tuning matter alongside academic grades.',
+    },
+    ug: {
+      degree: 'Mechanical Engineering or Electrical/Electronic Engineering',
+      why: 'Either degree works — this role bridges mechanical and electrical systems. Strong instrumentation, control systems, and data acquisition coursework is the priority.',
+      uk: ['Loughborough University — MEng Mechanical or Automotive Engineering', 'University of Bath — MEng Mechanical Engineering', 'University of Southampton — MEng Mechanical Engineering'],
+      us: ['University of Michigan — Mechanical Engineering (strong automotive culture)', 'Purdue — Mechanical Engineering', 'Georgia Tech — Mechanical or Electrical Engineering', 'Rutgers — Mechanical & Aerospace Engineering (NJ in-state)'],
+      focus: ['Control systems and signal processing', 'Instrumentation and measurement systems', 'Internal combustion engine operation and diagnostics', 'MATLAB and data analysis'],
+      fsae: 'Work on the engine calibration or fuel system sub-team. Any experience mapping an engine, logging data, and iterating on control parameters is directly applicable.',
+    },
+    masters: {
+      needed: 'not-needed',
+      note: 'Not required — practical skills and industry experience carry more weight. A placement year during undergrad is more valuable than a Masters for this specific role.',
+      programs: [],
+    },
+    entry: { title: 'Test / Calibration Engineer', salary: '£28,000–£38,000 (UK, 2026)', teamTip: 'Apply to Mercedes HPP (Brixworth), Ferrari Power Unit, Red Bull Powertrains, and Honda. These engine divisions hire calibration engineers separately from the racing teams.', growth: 'Calibration Engineer → Senior Calibration Engineer (4–6 yrs) → Lead Calibration Engineer → Performance / Dyno Test Manager (10+ yrs).' },
+  },
+  {
+    role: 'Electronics Engineer',
+    hs: {
+      courses: ['AP Physics C: E&M — essential; circuit theory is its direct descendant', 'AP CS A — electronics engineers write firmware and automation scripts', 'AP Calculus BC'],
+      activities: ['FIRST Robotics: electronics and wiring sub-team — this is the most directly relevant school activity for this role', 'Build circuits: start with Arduino, then learn PCB design basics (KiCad is free)', 'Learn to read wiring diagrams and electrical schematics'],
+      tip: 'Your FIRST Robotics electronics experience is directly applicable. F1 electronics engineers start out doing exactly what robotics electronics teams do — just with higher stakes and smaller tolerances.',
+    },
+    ug: {
+      degree: 'Electrical/Electronic Engineering or Mechatronics Engineering',
+      why: 'Electrical/Electronic Engineering provides the circuit design, signal processing, and systems knowledge that is the core of this role. Mechatronics adds the mechanical integration perspective that is valuable in an F1 context.',
+      uk: ['Imperial College London — MEng Electrical and Electronic Engineering', 'Loughborough University — MEng Electronic and Electrical Engineering', 'University of Southampton — MEng Electronics and Electrical Engineering', 'University of Bath — MEng Electrical and Electronic Engineering'],
+      us: ['MIT — Electrical Engineering and Computer Science', 'Georgia Tech — Electrical and Computer Engineering', 'Purdue — Electrical and Computer Engineering', 'University of Michigan — Electrical Engineering', 'Rutgers — Electrical and Computer Engineering (NJ in-state)'],
+      focus: ['Circuit design and PCB layout (Altium or KiCad)', 'Automotive electronics and CAN bus communication protocols', 'Signal processing and instrumentation', 'LabVIEW for data acquisition systems'],
+      fsae: 'Lead or contribute to the electronics and wiring sub-team on the Formula SAE car. Design the wiring harness, set up the data logging system, or build sensor interfaces.',
+    },
+    masters: {
+      needed: 'not-needed',
+      note: 'Not required. Practical skills, industry experience, and a strong undergraduate electronics portfolio carry more weight than a postgraduate degree for this role.',
+      programs: [],
+    },
+    entry: { title: 'Junior Electronics / Electrical Systems Engineer', salary: '£30,000–£38,000 (UK, 2026)', teamTip: 'All 10 F1 teams hire electronics engineers. Red Bull Racing, McLaren, and Williams have active early careers programmes. Apply August–October.', growth: 'Junior Electronics Engineer → Senior Electronics Engineer (4–6 yrs) → Electronics Team Lead → Head of Electronics (12+ yrs).' },
+  },
+  {
+    role: 'Control Systems / ERS Engineer',
+    hs: {
+      courses: ['AP Physics C: E&M — essential; control systems build on electrical fundamentals', 'AP CS A — embedded firmware is written in C/C++; programming foundation is critical', 'AP Calculus BC — control theory uses Laplace transforms and differential equations'],
+      activities: ['FIRST Robotics: programming and controls sub-team — this is the single most relevant school activity for this role', 'Learn basic C++ (not just Java): start with Arduino projects', 'Experiment with PID control: build a self-balancing robot or line follower — these are control systems in miniature'],
+      tip: 'Your FIRST Robotics programming and controls experience maps almost directly to this role. F1 ERS engineers write embedded C++ to control electric motors, manage battery state, and optimise energy deployment — exactly the kind of problem you solve in robotics.',
+    },
+    ug: {
+      degree: 'Electrical Engineering or Mechatronics Engineering or CS (embedded systems track)',
+      why: 'Electrical Engineering with control theory and embedded systems focus is the most direct path. Mechatronics integrates mechanical, electrical, and software — excellent fit for the hybrid systems in F1.',
+      uk: ['Imperial College London — MEng Electrical and Electronic Engineering', 'Loughborough University — MEng Electronic and Electrical Engineering', 'University of Warwick — MEng Mechatronics and Robotics', 'University of Bath — MEng Electrical and Electronic Engineering'],
+      us: ['MIT — Electrical Engineering and Computer Science', 'Carnegie Mellon University — Electrical/Computer Engineering or Robotics', 'Georgia Tech — Electrical and Computer Engineering', 'University of Michigan — Electrical Engineering or Robotics'],
+      focus: ['Control theory (PID, state-space, optimal control)', 'Embedded systems programming: C and C++', 'CAN bus and automotive communication protocols', 'MATLAB/Simulink for control system design and simulation'],
+      fsae: 'Take on the controls or electronics team lead role in Formula SAE. Write the motor controller firmware, design the battery management interface, or develop the data telemetry system. This is exactly the work.',
+    },
+    masters: {
+      needed: 'not-needed',
+      note: 'Not required — embedded systems experience and a strong undergraduate engineering degree are what hiring managers look for. Your robotics background is already a strong signal.',
+      programs: [
+        { name: 'MSc Advanced Motorsport Engineering', uni: 'Cranfield University', why: 'The Data Acquisition & Electronics module provides motorsport-specific context for your controls background. Useful if you have a Mechanical Engineering undergrad and want to move into controls.', url: 'https://www.cranfield.ac.uk/som/courses/advanced-motorsport-engineering-msc' },
+      ],
+    },
+    entry: { title: 'Junior Controls Engineer / ERS Software Engineer', salary: '£30,000–£42,000 (UK, 2026)', teamTip: 'Red Bull Racing (active early careers, advanced ERS programme), Mercedes-AMG F1 (critical for the 2026 power unit), and Aston Martin F1 (expanding controls team) are the top targets.', growth: 'Junior Controls Engineer → Senior Controls Engineer (4–6 yrs) → Principal ERS Engineer → Head of Hybrid Systems (12+ yrs).' },
+  },
+  {
+    role: 'Performance Data Engineer',
+    hs: {
+      courses: ['AP CS A — Python and SQL will be your daily tools; start now', 'AP Statistics — data analysis requires real statistical understanding', 'AP Calculus BC — signals and telemetry processing is maths-heavy'],
+      activities: ['Install the FastF1 Python library (free) and analyse real F1 telemetry: plot tyre degradation across a stint, compare sector times between drivers — this is what the job looks like', 'FIRST Robotics: any data logging, telemetry, or sensor data analysis work', 'Build a Python data project and put it on GitHub'],
+      tip: 'The FastF1 Python library gives you free access to real F1 race data. Building even a basic tyre model or lap time comparison tool in Python is a more impressive portfolio item than almost any grade.',
+    },
+    ug: {
+      degree: 'Computer Science, Data Science, or Mathematics with CS modules',
+      why: 'CS or Data Science provides the pipeline engineering, database, and programming fundamentals. Pure Mathematics works if combined with strong self-taught Python/SQL skills.',
+      uk: ['Imperial College London — MEng Computing or MSc Computing', 'University of Cambridge — MEng Computer Science or Engineering', 'University of Southampton — BSc Computer Science', 'University College London (UCL) — BSc Computer Science'],
+      us: ['MIT — EECS or Course 18 (Mathematics)', 'Stanford — CS', 'Cornell — CS or Information Science; accessible from NJ', 'Rutgers — CS (NJ in-state, cost-effective)', 'Princeton — CS or Mathematics (NJ in-state option)'],
+      focus: ['Data structures and algorithms', 'Databases: SQL (PostgreSQL) and NoSQL (MongoDB)', 'Data pipelines: Python with Pandas, PySpark, Apache Kafka', 'Cloud platforms: AWS or Azure (F1 teams use both)'],
+      fsae: 'Build the data logging and telemetry system for the Formula SAE car. Process and visualise the raw data after test sessions. Set up automated reporting for the engineering team.',
+    },
+    masters: {
+      needed: 'optional',
+      note: 'Optional — a strong CS/Data Science undergrad plus a portfolio of data projects is often sufficient. A 1-year MSc adds differentiation.',
+      programs: [
+        { name: 'MSc Computing (Machine Learning track)', uni: 'Imperial College London', why: 'Machine learning is increasingly embedded in F1 data pipelines and strategy models. Imperial\'s ML track + Mercedes research partnership is a strong combination.', url: 'https://www.imperial.ac.uk/computing/prospective-students/pg/' },
+      ],
+    },
+    entry: { title: 'Junior Data Engineer / Telemetry Analyst', salary: '£28,000–£38,000 (UK, 2026)', teamTip: 'Haas F1 (US base in Kannapolis, NC) and Cadillac F1 (new US team) are the most accessible for US applicants. Any team hires — check all portals.', growth: 'Junior Data Engineer → Senior Performance Data Engineer (4–5 yrs) → Data Science Lead → Head of Performance (10+ yrs).' },
+  },
+  {
+    role: 'Strategy Engineer',
+    hs: {
+      courses: ['AP Statistics — race strategy is applied probability and decision theory', 'AP Calculus BC — optimisation problems underpin tyre window calculations', 'AP CS A — Python is the primary language for strategy models'],
+      activities: ['Chess coaching and competitive play: multi-move planning and game theory translate directly to race strategy thinking — highlight this on applications', 'Build a Python race strategy model using the FastF1 library — simulate pit stop windows, calculate undercut scenarios', 'FIRST Robotics: strategy and autonomous programming sub-teams'],
+      tip: 'Race strategy is game theory under time pressure with probabilistic outcomes. Your chess background — planning multiple moves ahead, adjusting to opponent actions, managing resources (time, tyres, fuel) — is genuinely relevant. Articulate this connection clearly in applications.',
+    },
+    ug: {
+      degree: 'Mathematics (with Statistics) or Computer Science or Engineering + CS double major',
+      why: 'Mathematics with Statistics is the highest-density path — it directly provides probability, optimisation, and decision theory. CS works if supplemented with strong statistics coursework.',
+      uk: ['University of Cambridge — BA/MMath Mathematics (produces multiple F1 strategy engineers)', 'University of Warwick — MMath Mathematics with Statistics', 'Imperial College London — MEng Mathematics or Computing', 'University of Oxford — MMath Mathematics'],
+      us: ['MIT — Mathematics or CS with statistics focus', 'Princeton — Mathematics or Operations Research; NJ in-state option', 'Stanford — Mathematics or CS', 'Cornell — Operations Research and Information Engineering; NJ-accessible'],
+      focus: ['Probability, statistics, and stochastic processes', 'Optimisation: linear programming, dynamic programming', 'Python: simulation, Monte Carlo methods, data analysis', 'Game theory and decision-making under uncertainty'],
+      fsae: 'Become the race strategy and data analyst for the Formula SAE team. Build the lap simulation tool. Develop tyre strategy models for endurance events. This is the exact job description compressed into a student project.',
+    },
+    masters: {
+      needed: 'optional',
+      note: 'Often not required — a strong maths or CS undergraduate degree is sufficient for many F1 strategy teams. Experience and a demonstrable strategy simulation project can outweigh a Masters.',
+      programs: [
+        { name: 'MSc Computing (Machine Learning / AI track)', uni: 'Imperial College London', why: 'F1 strategy teams are increasingly using ML for tyre models and real-time decision systems. Imperial + Mercedes AI research partnership is a direct entry path.', url: 'https://www.imperial.ac.uk/computing/prospective-students/pg/' },
+      ],
+    },
+    entry: { title: 'Junior Strategy Engineer / Performance Analyst', salary: '£30,000–£42,000 (UK, 2026)', teamTip: 'Mercedes-AMG F1 (the gold standard for race strategy), Red Bull Racing, and McLaren Racing all have strong strategy departments. Apply August–October.', growth: 'Junior Strategy Analyst → Strategy Engineer (3–5 yrs) → Senior Strategy Engineer → Head of Strategy (10–15 yrs).' },
+  },
+  {
+    role: 'Simulation Software Engineer',
+    hs: {
+      courses: ['AP CS A — start here; extend to C++ outside of school', 'AP Physics C: Mechanics — you are modelling physical systems in code', 'AP Calculus BC — numerical integration of differential equations is the foundation'],
+      activities: ['FIRST Robotics: software sub-team — autonomous programming and control systems', 'Learn C++ specifically (F1 simulation software is C++, not Python)', 'Build a physics simulation: bouncing ball, double pendulum, 2D vehicle model — any real-time physics in code'],
+      tip: 'C++ is the dominant language in F1 simulation software. Start learning it in high school — even basic object-oriented C++ gives you a significant head start over peers who only know Java or Python.',
+    },
+    ug: {
+      degree: 'Computer Science or Software Engineering',
+      why: 'CS provides the software engineering foundations: algorithms, data structures, systems programming, and real-time software architecture. A Mechanical Engineering degree with strong CS self-teaching also works.',
+      uk: ['Imperial College London — MEng Computing', 'University of Cambridge — MEng Computer Science', 'University of Southampton — BSc/MEng Computer Science', 'University of Edinburgh — MEng Informatics'],
+      us: ['MIT — EECS', 'Carnegie Mellon University — CS (strongest real-time and systems focus)', 'Stanford — CS', 'Cornell — CS; accessible from NJ', 'Rutgers — CS (NJ in-state)'],
+      focus: ['C++ programming: object-oriented, templates, performance optimisation', 'Real-time systems and embedded software concepts', 'Numerical methods and physics simulation', 'Software architecture and design patterns'],
+      fsae: 'Build the vehicle dynamics simulation or driver-in-loop simulator for the Formula SAE team. Contribute to the lap simulation codebase. Any real-time physics simulation project counts.',
+    },
+    masters: {
+      needed: 'not-needed',
+      note: 'Not required — this is a software engineering role where your portfolio and demonstrated C++ ability matter more than a postgrad degree. Strong GitHub projects > Masters certificate.',
+      programs: [],
+    },
+    entry: { title: 'Graduate Software Developer (Simulation)', salary: '£30,000–£40,000 (UK, 2026)', teamTip: 'McLaren Racing NEXT graduate scheme explicitly recruits simulation software engineers. Red Bull Racing and Williams also have graduate software roles.', growth: 'Graduate Software Developer → Senior Simulation Engineer (4–6 yrs) → Principal Simulation Software Engineer → Simulation Technology Manager (12+ yrs).' },
+  },
+  {
+    role: 'General Software Developer',
+    hs: {
+      courses: ['AP CS A — essential foundation', 'AP Calculus BC', 'AP Statistics'],
+      activities: ['Build real projects: web apps, command-line tools, scripts — quantity of shipping things matters', 'FIRST Robotics: software sub-team', 'Learn Python alongside Java: Python is dominant in F1 tooling'],
+      tip: 'Build things and put them on GitHub. A portfolio of 3-5 real projects that do something useful matters more than grades alone for software roles.',
+    },
+    ug: {
+      degree: 'Computer Science or Software Engineering',
+      why: 'CS provides algorithms, systems, databases, and software engineering principles — all directly applicable. Any strong CS program works.',
+      uk: ['Imperial College London', 'University of Cambridge', 'University College London', 'University of Edinburgh'],
+      us: ['MIT', 'Stanford', 'Carnegie Mellon University', 'Cornell University', 'Rutgers University (NJ in-state)'],
+      focus: ['Algorithms and data structures', 'Databases: SQL and NoSQL', 'Cloud platforms: AWS or Azure', 'Full-stack or backend engineering in Python, C#, or TypeScript'],
+      fsae: 'Build the team website, internal data dashboard, telemetry visualisation system, or any tooling the Formula SAE team needs. Software developers support every sub-team.',
+    },
+    masters: {
+      needed: 'not-needed',
+      note: 'Not required — software roles in F1 are portfolio and skills-driven. Build real projects.',
+      programs: [],
+    },
+    entry: { title: 'Graduate Software Engineer', salary: '£28,000–£38,000 (UK, 2026)', teamTip: 'Haas F1 (US base), Cadillac F1 (new US team), and Williams Racing (Early Careers section) are good starting points. All 10 teams hire software developers.', growth: 'Graduate Software Engineer → Senior Software Engineer (3–5 yrs) → Principal Engineer → Head of Software (12+ yrs).' },
+  },
+  {
+    role: 'Composites Design Engineer',
+    hs: {
+      courses: ['AP Physics C: Mechanics — structural mechanics and stress/strain concepts', 'AP Chemistry — polymer and fibre chemistry fundamentals', 'AP Calculus BC', 'AP CS A — CAD and FEA tools require scripting skills'],
+      activities: ['FIRST Robotics: mechanical design and chassis sub-team', 'Learn the basics of carbon fibre — what it is, how it is manufactured, why orientation matters', 'Learn basic CAD: Fusion 360 is free for students'],
+      tip: 'This is a specialist materials + structural engineering role. Strong mechanical design skills and an interest in materials science (not just software or fluids) are the key differentiators.',
+    },
+    ug: {
+      degree: 'Materials Science or Aerospace Engineering (structures track) or Mechanical Engineering',
+      why: 'Materials Science provides the deepest foundation in composites and fibre science. Aerospace Engineering structures track teaches the FEA and lightweight design methods used in F1 chassis design.',
+      uk: ['Imperial College London — MEng Materials Science and Engineering', 'University of Oxford — MEng Materials Science', 'University of Bath — MEng Mechanical Engineering', 'University of Manchester — MEng Materials Science'],
+      us: ['MIT — Materials Science and Engineering', 'Northwestern University — Materials Science (top-ranked)', 'University of Michigan — Materials Science or Aerospace', 'Georgia Tech — Materials Science or Aerospace (structures)'],
+      focus: ['Composites and polymer science modules', 'Structural mechanics and finite element analysis (FEA)', 'CAD: CATIA V5 (F1 standard) or SolidWorks', 'Manufacturing processes for carbon fibre components'],
+      fsae: 'Design and manufacture composite components for the Formula SAE car: bodywork, nosecone, or monocoque if your team is competitive. Even designing a simple carbon fibre bracket demonstrates the skills.',
+    },
+    masters: {
+      needed: 'optional',
+      note: 'Not required for entry, but an MSc in Composite Materials or Aerospace Structures can accelerate progression to senior roles.',
+      programs: [
+        { name: 'MSc Composite Materials', uni: 'Imperial College London', why: 'Deep technical focus on fibre-reinforced polymers, structural analysis, and manufacturing — directly applicable to F1 chassis and bodywork design.', url: 'https://www.imperial.ac.uk/materials/' },
+      ],
+    },
+    entry: { title: 'Junior Composites / Structures Engineer', salary: '£28,000–£38,000 (UK, 2026)', teamTip: 'McLaren, Red Bull, and Williams all have large composites departments manufacturing components in-house. Check their early careers portals.', growth: 'Junior Composites Engineer → Senior Composites Engineer (4–6 yrs) → Principal Structures Engineer → Head of Composites (12+ yrs).' },
+  },
+  {
+    role: 'Tyre Engineer',
+    hs: {
+      courses: ['AP Physics C: Mechanics — friction, normal force, and contact mechanics are central', 'AP Chemistry — rubber and polymer chemistry fundamentals', 'AP Calculus BC', 'AP Statistics — tyre data is noisy and requires statistical methods'],
+      activities: ['FIRST Robotics: drivetrain and wheel-ground interaction work', 'Learn Python for data analysis: tyre wear modelling is a data-heavy discipline', 'Study how Pirelli makes F1 tyres: understand compound differences, thermal windows, and degradation mechanisms'],
+      tip: 'Tyre engineering is where chemistry, physics, and data science intersect. Strong maths + curiosity about materials and tribology (the science of friction) sets the best candidates apart.',
+    },
+    ug: {
+      degree: 'Mechanical Engineering or Materials Science or Physics',
+      why: 'Mechanical Engineering with thermodynamics and materials modules is the most common path. Materials Science provides deeper polymer and tribology knowledge. Physics works if supplemented with engineering design coursework.',
+      uk: ['Loughborough University — MEng Mechanical or Automotive Engineering', 'University of Bath — MEng Mechanical Engineering', 'University of Southampton — MEng Mechanical Engineering', 'Imperial College London — MEng Materials or Mechanical Engineering'],
+      us: ['University of Michigan — Mechanical Engineering (tyre industry proximity)', 'Purdue — Mechanical Engineering', 'Georgia Tech — Mechanical Engineering', 'Rutgers — Mechanical & Aerospace Engineering (NJ in-state)'],
+      focus: ['Tribology: friction, wear, and lubrication science', 'Thermal modelling: tyre temperature is critical to performance', 'Polymer and rubber materials science', 'MATLAB/Python for tyre data analysis and model building'],
+      fsae: 'Take on tyre and suspension data analysis for the Formula SAE car. Build a tyre model from on-car data. Correlate predicted vs. measured tyre temperatures and wear. This is exactly the role.',
+    },
+    masters: {
+      needed: 'optional',
+      note: 'Not required for entry. The Cranfield MSc provides motorsport context if your undergrad is from a non-motorsport university.',
+      programs: [
+        { name: 'MSc Advanced Motorsport Engineering', uni: 'Cranfield University', why: 'Vehicle Dynamics and tyre modelling modules in a motorsport context. Industry connections to Pirelli and F1 tyre engineering departments.', url: 'https://www.cranfield.ac.uk/som/courses/advanced-motorsport-engineering-msc' },
+      ],
+    },
+    entry: { title: 'Junior Tyre Engineer', salary: '£28,000–£36,000 (UK, 2026)', teamTip: 'Also consider applying directly to Pirelli (the F1 tyre supplier) — their track engineers work closely with all 10 teams. Pirelli UK is based in Didcot, Oxfordshire, inside Motorsport Valley.', growth: 'Junior Tyre Engineer → Senior Tyre Engineer (4–6 yrs) → Tyre Performance Manager → Head of Tyre Strategy (12+ yrs).' },
+  },
+  {
+    role: 'Race Engineer',
+    hs: {
+      courses: ['AP Physics C: Mechanics and E&M', 'AP Calculus BC', 'AP CS A'],
+      activities: ['FIRST Robotics: take a team leadership or strategy role — Race Engineer is as much leadership as engineering', 'Study F1 races analytically: watch pit wall radio transcripts, study team strategy decisions', 'IMPORTANT: Race Engineer is not an entry-level job — plan to enter F1 as a Performance Engineer or Data Analyst first'],
+      tip: 'Race Engineer is reached after 7-10 years in F1, not on day one. There are fewer than 20 Race Engineer seats across the entire sport. Focus your initial path on a specific technical discipline (vehicle dynamics, data, or aero) and work toward trackside roles over time.',
+    },
+    ug: {
+      degree: 'Mechanical Engineering or Aerospace Engineering — any strong engineering background',
+      why: 'Race Engineers come from all engineering backgrounds. Vehicle Dynamics and Performance Engineering routes are the most common paths to the pit wall. Pick a specific technical discipline for your undergraduate degree.',
+      uk: ['Loughborough University — MEng Automotive/Mechanical Engineering', 'University of Southampton — MEng Mechanical or Aerospace', 'Oxford Brookes University — MEng Motorsport Engineering'],
+      us: ['University of Michigan — Mechanical Engineering', 'Georgia Tech — Aerospace or Mechanical Engineering', 'Purdue — Mechanical Engineering', 'Rutgers — Mechanical & Aerospace (NJ in-state)'],
+      focus: ['Mechanics, dynamics, and control theory', 'MATLAB/Simulink for vehicle performance simulation', 'Communication skills — Race Engineers speak to drivers and manage engineers simultaneously', 'Data analysis: telemetry processing, lap analysis'],
+      fsae: 'Become the Race Engineer for the Formula SAE team at endurance events. Make real-time setup and strategy calls during the race. Communicate with the driver. This is the role compressed into a student competition.',
+    },
+    masters: {
+      needed: 'not-needed',
+      note: 'Not needed for the entry path. Focus on getting into F1 as a Performance or Data Engineer first — Race Engineer is where you end up, not where you start.',
+      programs: [
+        { name: 'MSc Motorsport Engineering', uni: 'Oxford Brookes University', why: 'The Lap Simulation & Race Engineering module is the most direct academic preparation for the Race Engineer role. Located inside Motorsport Valley near Williams, Red Bull, and Mercedes.', url: 'https://www.brookes.ac.uk/courses/postgraduate/motorsport-engineering' },
+      ],
+    },
+    entry: { title: 'Junior Performance Engineer / Data Analyst → Race Engineer after 7-10 years', salary: '£28,000–£38,000 starting; £80,000–£120,000+ as Race Engineer', teamTip: 'Enter F1 via a Performance Engineer or Data Analyst role — all teams hire these. After 3-5 years, move toward trackside positions. The Race Engineer role is earned, not applied for on day one.', growth: 'Junior Performance Engineer → Senior Performance Engineer (4–6 yrs) → Trackside Performance Engineer → Race Engineer (7–10 yrs from graduation).' },
+  },
+];
 ---
 
 <div class="f1g" id="f1-guide">
@@ -395,6 +787,7 @@ const demandLabel: Record<string, string> = {
                     {role.tools.map(t => <span class="f1g-tag">{t}</span>)}
                   </div>
                 </div>
+                <button class="f1g-map-btn" data-role={role.title}>📍 Map My Path to {role.title} →</button>
               </div>
             ))}
           </div>
@@ -620,8 +1013,157 @@ const demandLabel: Record<string, string> = {
 
   <!-- ── PATH ───────────────────────────────────────────────────────────── -->
   <div class="f1g-panel f1g-panel--hide" id="f1g-path">
-    <p class="f1g-intro">You are currently in 11th grade in NJ, strong in maths, physics, and robotics. Here is a concrete path to F1 — with two tracks depending on which part of the sport interests you most.</p>
+    <p class="f1g-intro">Select a specific role to see your step-by-step path from high school through university, Masters, and into F1. Or use the general tracks below.</p>
 
+    <!-- Role selector -->
+    <div class="f1g-rp-bar">
+      <label class="f1g-rp-label" for="f1g-rp-select">Choose a role for a personalised roadmap:</label>
+      <div class="f1g-rp-controls">
+        <select class="f1g-rp-select" id="f1g-rp-select">
+          <option value="">— Select a role —</option>
+          <optgroup label="Aerodynamics">
+            <option>Aerodynamicist</option>
+            <option>CFD Engineer</option>
+            <option>Wind Tunnel Test Engineer</option>
+          </optgroup>
+          <optgroup label="Vehicle Dynamics">
+            <option>Vehicle Dynamics Engineer</option>
+            <option>Driver-in-Loop Simulation Engineer</option>
+          </optgroup>
+          <optgroup label="Powertrain & Engine">
+            <option>Powertrain Engineer</option>
+            <option>Engine Calibration Engineer</option>
+          </optgroup>
+          <optgroup label="Electronics & Controls">
+            <option>Electronics Engineer</option>
+            <option>Control Systems / ERS Engineer</option>
+          </optgroup>
+          <optgroup label="Data & Software">
+            <option>Performance Data Engineer</option>
+            <option>Strategy Engineer</option>
+            <option>Simulation Software Engineer</option>
+            <option>General Software Developer</option>
+          </optgroup>
+          <optgroup label="Structures & Race Ops">
+            <option>Composites Design Engineer</option>
+            <option>Tyre Engineer</option>
+            <option>Race Engineer</option>
+          </optgroup>
+        </select>
+        <button class="f1g-rp-clear" id="f1g-rp-clear" hidden>✕ Clear</button>
+      </div>
+    </div>
+
+    <!-- Role-specific paths (rendered at build time, shown/hidden by JS) -->
+    <div id="f1g-rp-display">
+      {rolePaths.map(rp => (
+        <div class="f1g-rp-path" data-role={rp.role} hidden>
+          <div class="f1g-rp-heading">
+            <h3 class="f1g-rp-title">Path to: <strong>{rp.role}</strong></h3>
+          </div>
+          <div class="f1g-timeline">
+
+            <div class="f1g-phase f1g-phase--now">
+              <div class="f1g-phase-dot"></div>
+              <div class="f1g-phase-content">
+                <div class="f1g-phase-label">PHASE 1 — NOW (High School)</div>
+                <h4 class="f1g-phase-title">Courses to take</h4>
+                <ul class="f1g-phase-list">
+                  {rp.hs.courses.map(c => <li>{c}</li>)}
+                </ul>
+                <h4 class="f1g-phase-title" style="margin-top:0.75rem">Activities</h4>
+                <ul class="f1g-phase-list">
+                  {rp.hs.activities.map(a => <li>{a}</li>)}
+                </ul>
+                <div class="f1g-rp-tip">💡 {rp.hs.tip}</div>
+              </div>
+            </div>
+
+            <div class="f1g-phase">
+              <div class="f1g-phase-dot"></div>
+              <div class="f1g-phase-content">
+                <div class="f1g-phase-label">PHASE 2 — UNDERGRADUATE (4 years)</div>
+                <h4 class="f1g-phase-title">{rp.ug.degree}</h4>
+                <p class="f1g-phase-sub">{rp.ug.why}</p>
+                <div class="f1g-rp-uni-row">
+                  <div class="f1g-rp-uni-col">
+                    <span class="f1g-meta-lbl">🇬🇧 UK Universities</span>
+                    <ul class="f1g-rp-uni-list">
+                      {rp.ug.uk.map(u => <li>{u}</li>)}
+                    </ul>
+                  </div>
+                  <div class="f1g-rp-uni-col">
+                    <span class="f1g-meta-lbl">🇺🇸 US Universities</span>
+                    <ul class="f1g-rp-uni-list">
+                      {rp.ug.us.map(u => <li>{u}</li>)}
+                    </ul>
+                  </div>
+                </div>
+                <span class="f1g-meta-lbl" style="margin-top:0.75rem;display:block">Focus areas within the degree</span>
+                <ul class="f1g-phase-list">
+                  {rp.ug.focus.map(f => <li>{f}</li>)}
+                </ul>
+                <div class="f1g-rp-fsae">🏎 <strong>Formula SAE:</strong> {rp.ug.fsae}</div>
+              </div>
+            </div>
+
+            <div class={`f1g-phase ${rp.masters.needed === 'not-needed' ? 'f1g-phase--dim' : ''}`}>
+              <div class="f1g-phase-dot"></div>
+              <div class="f1g-phase-content">
+                <div class="f1g-phase-label">PHASE 3 — MASTERS / FURTHER STUDY</div>
+                <h4 class="f1g-phase-title">
+                  {rp.masters.needed === 'required' && <span class="f1g-rp-needed f1g-rp-needed--req">Required</span>}
+                  {rp.masters.needed === 'recommended' && <span class="f1g-rp-needed f1g-rp-needed--rec">Recommended</span>}
+                  {rp.masters.needed === 'optional' && <span class="f1g-rp-needed f1g-rp-needed--opt">Optional</span>}
+                  {rp.masters.needed === 'not-needed' && <span class="f1g-rp-needed f1g-rp-needed--no">Not Required</span>}
+                </h4>
+                <p class="f1g-phase-sub">{rp.masters.note}</p>
+                {rp.masters.programs.length > 0 && (
+                  <div class="f1g-rp-programs">
+                    {rp.masters.programs.map(p => (
+                      <div class="f1g-rp-program">
+                        <div class="f1g-rp-prog-head">
+                          <span class="f1g-rp-prog-name">{p.name}</span>
+                          <span class="f1g-rp-prog-uni">{p.uni}</span>
+                        </div>
+                        <p class="f1g-rp-prog-why">{p.why}</p>
+                        <a class="f1g-rp-prog-link" href={p.url} target="_blank" rel="noopener noreferrer">View program →</a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div class="f1g-phase f1g-phase--f1">
+              <div class="f1g-phase-dot"></div>
+              <div class="f1g-phase-content">
+                <div class="f1g-phase-label">PHASE 4 — F1 ENTRY</div>
+                <h4 class="f1g-phase-title">{rp.entry.title}</h4>
+                <div class="f1g-rp-entry-grid">
+                  <div class="f1g-meta-item">
+                    <span class="f1g-meta-lbl">Starting salary</span>
+                    <span class="f1g-meta-val">{rp.entry.salary}</span>
+                  </div>
+                  <div class="f1g-meta-item">
+                    <span class="f1g-meta-lbl">10-year path</span>
+                    <span class="f1g-meta-val">{rp.entry.growth}</span>
+                  </div>
+                </div>
+                <div class="f1g-rp-tip f1g-rp-tip--team">🏁 {rp.entry.teamTip}</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="f1g-or-divider" id="f1g-or-divider">
+      <span>or browse by general track</span>
+    </div>
+
+    <div id="f1g-generic-tracks">
     <div class="f1g-path-tracks">
       <button class="f1g-track-btn f1g-track-btn--on" data-track="eng">⚙️ Engineering Track (Aero / VD / Powertrain)</button>
       <button class="f1g-track-btn" data-track="tech">💻 Tech Track (Software / Data / Strategy)</button>
@@ -758,6 +1300,8 @@ const demandLabel: Record<string, string> = {
 
       </div>
     </div>
+
+    </div> <!-- /f1g-generic-tracks -->
 
     <div class="f1g-callout f1g-callout--tip" style="margin-top:2rem">
       <strong>Application timing is everything.</strong> F1 teams open graduate and placement positions in <strong>August-October</strong> for the following year's intake. Set a calendar reminder. Check all 10 team career portals in this window every year from your second year of university. Many positions are filled before December.
@@ -1131,6 +1675,139 @@ const demandLabel: Record<string, string> = {
     text-decoration: none;
   }
   .f1g-team-link:hover { text-decoration: underline; }
+
+  /* ── Map My Path button ──────────────────────────────────────────────── */
+  .f1g-map-btn {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.45rem 0.9rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: #e10600;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .f1g-map-btn:hover { background: #b30500; }
+
+  /* ── Role Path Selector ───────────────────────────────────────────────── */
+  .f1g-rp-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: var(--sl-color-bg-sidebar, #f9fafb);
+    border: 1px solid var(--sl-color-hairline-light, #e5e7eb);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .f1g-rp-label { font-size: 0.85rem; font-weight: 600; color: var(--sl-color-text, #111); }
+  .f1g-rp-controls { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .f1g-rp-select {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.85rem;
+    border: 1px solid var(--sl-color-hairline-light, #d1d5db);
+    border-radius: 6px;
+    background: var(--sl-color-bg, #fff);
+    color: var(--sl-color-text, #111);
+    cursor: pointer;
+  }
+  .f1g-rp-clear {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1px solid #e10600;
+    color: #e10600;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .f1g-rp-clear:hover { background: #fff5f5; }
+
+  /* ── Role Path Display ────────────────────────────────────────────────── */
+  .f1g-rp-heading { margin-bottom: 1.25rem; }
+  .f1g-rp-title { font-size: 1.1rem; font-weight: 700; color: var(--sl-color-text, #111); margin: 0; }
+  .f1g-rp-title strong { color: #e10600; }
+
+  .f1g-rp-uni-row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin: 0.75rem 0 0; }
+  .f1g-rp-uni-col { flex: 1; min-width: 180px; }
+  .f1g-rp-uni-list { margin: 0.3rem 0 0; padding-left: 1.25rem; font-size: 0.82rem; line-height: 1.7; color: var(--sl-color-text, #111); }
+  .f1g-rp-uni-list li { margin-bottom: 0.15rem; }
+
+  .f1g-rp-tip {
+    background: #fef9c3;
+    border-left: 3px solid #eab308;
+    border-radius: 4px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    margin-top: 0.75rem;
+  }
+  .f1g-rp-tip--team { background: #f0fdf4; border-left-color: #16a34a; }
+
+  .f1g-rp-fsae {
+    background: #ede9fe;
+    border-left: 3px solid #7c3aed;
+    border-radius: 4px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    margin-top: 0.75rem;
+  }
+
+  .f1g-phase--dim { opacity: 0.65; }
+
+  .f1g-rp-needed {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .f1g-rp-needed--req { background: #fee2e2; color: #991b1b; }
+  .f1g-rp-needed--rec { background: #fef3c7; color: #92400e; }
+  .f1g-rp-needed--opt { background: #dbeafe; color: #1e40af; }
+  .f1g-rp-needed--no  { background: #d1fae5; color: #065f46; }
+
+  .f1g-rp-programs { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem; }
+  .f1g-rp-program {
+    border: 1px solid var(--sl-color-hairline-light, #e5e7eb);
+    border-left: 3px solid #e10600;
+    border-radius: 6px;
+    padding: 0.75rem 0.9rem;
+    background: var(--sl-color-bg, #fff);
+  }
+  .f1g-rp-prog-head { display: flex; flex-direction: column; gap: 0.1rem; margin-bottom: 0.35rem; }
+  .f1g-rp-prog-name { font-size: 0.88rem; font-weight: 700; color: var(--sl-color-text, #111); }
+  .f1g-rp-prog-uni  { font-size: 0.75rem; color: #e10600; font-weight: 600; }
+  .f1g-rp-prog-why  { font-size: 0.81rem; color: var(--sl-color-gray-2, #374151); line-height: 1.5; margin: 0 0 0.4rem; }
+  .f1g-rp-prog-link { font-size: 0.78rem; font-weight: 600; color: #e10600; text-decoration: none; }
+  .f1g-rp-prog-link:hover { text-decoration: underline; }
+
+  .f1g-rp-entry-grid { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+
+  /* ── Or divider ────────────────────────────────────────────────────────── */
+  .f1g-or-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.5rem 0 1rem;
+    color: var(--sl-color-gray-3, #9ca3af);
+    font-size: 0.8rem;
+  }
+  .f1g-or-divider::before,
+  .f1g-or-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--sl-color-hairline-light, #e5e7eb);
+  }
 </style>
 
 <script>
@@ -1182,5 +1859,54 @@ const demandLabel: Record<string, string> = {
       const panel = document.getElementById(`f1g-track-${track}`);
       if (panel) panel.classList.remove('f1g-track--hide');
     });
+  });
+
+  // Role path selector
+  const rpSelect = document.getElementById('f1g-rp-select') as HTMLSelectElement | null;
+  const rpClear  = document.getElementById('f1g-rp-clear') as HTMLButtonElement | null;
+  const genericTracks = document.getElementById('f1g-generic-tracks');
+  const orDivider     = document.getElementById('f1g-or-divider');
+
+  function showRolePath(role: string) {
+    guide.querySelectorAll<HTMLElement>('.f1g-rp-path').forEach(p => { p.hidden = true; });
+    if (role) {
+      const el = guide.querySelector<HTMLElement>(`.f1g-rp-path[data-role="${role}"]`);
+      if (el) el.hidden = false;
+      if (genericTracks) genericTracks.style.display = 'none';
+      if (orDivider) orDivider.style.display = 'none';
+      if (rpClear) rpClear.hidden = false;
+    } else {
+      if (genericTracks) genericTracks.style.display = '';
+      if (orDivider) orDivider.style.display = '';
+      if (rpClear) rpClear.hidden = true;
+    }
+  }
+
+  rpSelect?.addEventListener('change', () => showRolePath(rpSelect.value));
+
+  rpClear?.addEventListener('click', () => {
+    if (rpSelect) rpSelect.value = '';
+    showRolePath('');
+  });
+
+  // "Map My Path" buttons on role cards
+  guide.addEventListener('click', e => {
+    const btn = (e.target as Element).closest<HTMLButtonElement>('.f1g-map-btn');
+    if (!btn) return;
+    const role = btn.dataset.role;
+    if (!role) return;
+
+    // Switch to path tab
+    const pathTab = guide.querySelector<HTMLButtonElement>('.f1g-tab[data-tab="path"]');
+    pathTab?.click();
+
+    // Set dropdown and show path
+    if (rpSelect) rpSelect.value = role;
+    showRolePath(role);
+
+    // Scroll to path panel
+    setTimeout(() => {
+      document.getElementById('f1g-path')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
   });
 </script>
