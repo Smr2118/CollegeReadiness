@@ -1061,6 +1061,10 @@ const rolePaths: RolePath[] = [
         <div class="f1g-rp-path" data-role={rp.role} hidden>
           <div class="f1g-rp-heading">
             <h3 class="f1g-rp-title">Path to: <strong>{rp.role}</strong></h3>
+            <div class="f1g-rp-export">
+              <button class="f1g-export-btn" data-format="pdf" data-role={rp.role}>📄 Save as PDF</button>
+              <button class="f1g-export-btn" data-format="csv" data-role={rp.role}>📊 Download CSV</button>
+            </div>
           </div>
           <div class="f1g-timeline">
 
@@ -1741,9 +1745,22 @@ const rolePaths: RolePath[] = [
   .f1g-rp-status--loaded  { background: #ede9fe; color: #5b21b6; }
 
   /* ── Role Path Display ────────────────────────────────────────────────── */
-  .f1g-rp-heading { margin-bottom: 1.25rem; }
+  .f1g-rp-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem; }
   .f1g-rp-title { font-size: 1.1rem; font-weight: 700; color: var(--sl-color-text, #111); margin: 0; }
   .f1g-rp-title strong { color: #e10600; }
+  .f1g-rp-export { display: flex; gap: 0.4rem; flex-shrink: 0; }
+  .f1g-export-btn {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: 1px solid var(--sl-color-hairline-light, #d1d5db);
+    border-radius: 5px;
+    background: var(--sl-color-bg, #fff);
+    color: var(--sl-color-text, #111);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .f1g-export-btn:hover { border-color: #e10600; background: #fff5f5; color: #e10600; }
 
   .f1g-rp-uni-row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin: 0.75rem 0 0; }
   .f1g-rp-uni-col { flex: 1; min-width: 180px; }
@@ -1819,6 +1836,76 @@ const rolePaths: RolePath[] = [
     flex: 1;
     height: 1px;
     background: var(--sl-color-hairline-light, #e5e7eb);
+  }
+</style>
+
+<style is:global>
+  @media print {
+    /* Hide everything on the page except the F1 role path */
+    header, nav, footer, aside,
+    .sidebar, .sl-sidebar, .right-sidebar,
+    [class*="sidebar"], [class*="header"], [class*="nav"],
+    .f1g-hero, .f1g-tabs, .f1g-rp-bar, .f1g-or-divider,
+    #f1g-generic-tracks, .f1g-callout, .f1g-rp-export,
+    .f1g-map-btn {
+      display: none !important;
+    }
+
+    /* Make the path panel visible even if it has the hide class */
+    #f1g-path { display: block !important; }
+
+    /* Hide non-path tab panels */
+    #f1g-jobs, #f1g-unis, #f1g-degrees, #f1g-masters, #f1g-teams { display: none !important; }
+
+    /* Hide inactive role paths; show the active one */
+    .f1g-rp-path[hidden] { display: none !important; }
+    .f1g-rp-path:not([hidden]) { display: block !important; }
+
+    /* Hide dimmed phases (masters "not needed" still prints, just unstyled) */
+    .f1g-phase--dim { opacity: 1; }
+
+    /* Timeline: remove the left line and dots for cleaner print */
+    .f1g-timeline::before { display: none; }
+    .f1g-phase-dot { display: none; }
+    .f1g-timeline { padding-left: 0; }
+    .f1g-phase { margin-bottom: 1.25rem; page-break-inside: avoid; }
+
+    /* Phase label as a section divider */
+    .f1g-phase-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #666;
+      border-top: 1px solid #ccc;
+      padding-top: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+
+    /* Tighten font sizes */
+    .f1g-rp-title  { font-size: 1.2rem; }
+    .f1g-phase-title { font-size: 0.95rem; }
+    .f1g-phase-list { font-size: 0.82rem; }
+    .f1g-rp-uni-list { font-size: 0.82rem; }
+    .f1g-rp-tip, .f1g-rp-fsae { font-size: 0.8rem; }
+
+    /* Remove colored backgrounds from callouts for print */
+    .f1g-rp-tip, .f1g-rp-fsae { background: none; border-left-width: 2px; }
+    .f1g-rp-program { border: 1px solid #ccc; }
+
+    /* Make links show their URL */
+    .f1g-rp-prog-link::after { content: ' (' attr(href) ')'; font-size: 0.7rem; color: #555; }
+
+    /* Page header via CSS */
+    #f1g-path::before {
+      content: 'F1 Career Path — College Readiness Hub';
+      display: block;
+      font-size: 0.75rem;
+      color: #888;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 0.4rem;
+    }
   }
 </style>
 
@@ -1935,6 +2022,110 @@ const rolePaths: RolePath[] = [
   }
 
   loadSavedRole();
+
+  // ── CSV export ────────────────────────────────────────────────────────────
+  function csvCell(s: string) { return `"${(s ?? '').replace(/"/g, '""').trim()}"`; }
+
+  function buildCsv(roleEl: HTMLElement): string {
+    const rows: string[][] = [['Section', 'Item']];
+    const roleName = roleEl.querySelector<HTMLElement>('.f1g-rp-title strong')?.textContent?.trim() ?? '';
+    rows.push(['Role', roleName]);
+
+    const phases = roleEl.querySelectorAll<HTMLElement>('.f1g-phase');
+
+    // Phase 1 — High School
+    const ph1 = phases[0];
+    if (ph1) {
+      const lists = ph1.querySelectorAll<HTMLElement>('ul.f1g-phase-list');
+      lists[0]?.querySelectorAll('li').forEach(li => rows.push(['High School — Courses', li.textContent ?? '']));
+      lists[1]?.querySelectorAll('li').forEach(li => rows.push(['High School — Activities', li.textContent ?? '']));
+      const tip = ph1.querySelector<HTMLElement>('.f1g-rp-tip:not(.f1g-rp-tip--team)')?.textContent?.trim();
+      if (tip) rows.push(['High School — Tip', tip]);
+    }
+
+    // Phase 2 — Undergraduate
+    const ph2 = phases[1];
+    if (ph2) {
+      const degree = ph2.querySelector<HTMLElement>('.f1g-phase-title')?.textContent?.trim();
+      if (degree) rows.push(['Undergraduate — Degree', degree]);
+      const why = ph2.querySelector<HTMLElement>('.f1g-phase-sub')?.textContent?.trim();
+      if (why) rows.push(['Undergraduate — Why', why]);
+      const uniLists = ph2.querySelectorAll<HTMLElement>('.f1g-rp-uni-list');
+      uniLists[0]?.querySelectorAll('li').forEach(li => rows.push(['Undergraduate — UK University', li.textContent ?? '']));
+      uniLists[1]?.querySelectorAll('li').forEach(li => rows.push(['Undergraduate — US University', li.textContent ?? '']));
+      ph2.querySelector<HTMLElement>('.f1g-phase-list')?.querySelectorAll('li').forEach(li => rows.push(['Undergraduate — Focus Area', li.textContent ?? '']));
+      const fsae = ph2.querySelector<HTMLElement>('.f1g-rp-fsae')?.textContent?.trim();
+      if (fsae) rows.push(['Undergraduate — Formula SAE', fsae]);
+    }
+
+    // Phase 3 — Masters
+    const ph3 = phases[2];
+    if (ph3) {
+      const needed = ph3.querySelector<HTMLElement>('.f1g-rp-needed')?.textContent?.trim();
+      if (needed) rows.push(['Masters — Required?', needed]);
+      const note = ph3.querySelector<HTMLElement>('.f1g-phase-sub')?.textContent?.trim();
+      if (note) rows.push(['Masters — Note', note]);
+      ph3.querySelectorAll<HTMLElement>('.f1g-rp-program').forEach(prog => {
+        const name = prog.querySelector<HTMLElement>('.f1g-rp-prog-name')?.textContent?.trim() ?? '';
+        const uni  = prog.querySelector<HTMLElement>('.f1g-rp-prog-uni')?.textContent?.trim() ?? '';
+        const why  = prog.querySelector<HTMLElement>('.f1g-rp-prog-why')?.textContent?.trim() ?? '';
+        const url  = prog.querySelector<HTMLAnchorElement>('.f1g-rp-prog-link')?.href ?? '';
+        rows.push(['Masters — Program', `${name} — ${uni}`]);
+        rows.push(['Masters — Why', why]);
+        if (url) rows.push(['Masters — URL', url]);
+      });
+    }
+
+    // Phase 4 — Entry
+    const ph4 = phases[3];
+    if (ph4) {
+      const title = ph4.querySelector<HTMLElement>('.f1g-phase-title')?.textContent?.trim();
+      if (title) rows.push(['Entry — Job Title', title]);
+      ph4.querySelectorAll<HTMLElement>('.f1g-meta-item').forEach(item => {
+        const lbl = item.querySelector<HTMLElement>('.f1g-meta-lbl')?.textContent?.trim() ?? '';
+        const val = item.querySelector<HTMLElement>('.f1g-meta-val')?.textContent?.trim() ?? '';
+        if (lbl && val) rows.push([`Entry — ${lbl}`, val]);
+      });
+      const teamTip = ph4.querySelector<HTMLElement>('.f1g-rp-tip--team')?.textContent?.trim();
+      if (teamTip) rows.push(['Entry — Team tip', teamTip]);
+    }
+
+    return rows.map(r => r.map(csvCell).join(',')).join('\r\n');
+  }
+
+  function downloadCsv(csv: string, filename: string) {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ── PDF export ────────────────────────────────────────────────────────────
+  function printRolePath() {
+    window.print();
+  }
+
+  // ── Export button handler ─────────────────────────────────────────────────
+  guide.addEventListener('click', e => {
+    const btn = (e.target as Element).closest<HTMLButtonElement>('.f1g-export-btn');
+    if (!btn) return;
+    const { format, role } = btn.dataset;
+    if (!format || !role) return;
+
+    const roleEl = guide.querySelector<HTMLElement>(`.f1g-rp-path[data-role="${role}"]`);
+    if (!roleEl) return;
+
+    if (format === 'csv') {
+      const csv = buildCsv(roleEl);
+      const safe = role.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+      downloadCsv(csv, `f1-path-${safe}.csv`);
+    } else if (format === 'pdf') {
+      printRolePath();
+    }
+  });
 
   // ── Event handlers ────────────────────────────────────────────────────────
   rpSelect?.addEventListener('change', () => {
